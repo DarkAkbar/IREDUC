@@ -1,0 +1,13 @@
+---
+description: Règles de développement du projet IREDUC
+alwaysApply: true
+---
+
+# IREDUC — règles de développement
+
+- Code en **TypeScript strict** (`strict: true`).
+- Messages d'erreur et textes utilisateur en **français**.
+- Noms de variables, fonctions et fichiers en **anglais**.
+- Validation des entrées avec **Zod**.
+- **Jamais** de secrets dans le code (utiliser les variables d'environnement).
+- **Une fonctionnalité par module** (dossier dans `api/src/modules/`).
