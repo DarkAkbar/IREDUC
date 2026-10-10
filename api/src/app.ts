@@ -6,14 +6,20 @@ import swaggerUi from "swagger-ui-express";
 import { swaggerSpec } from "./docs/swagger";
 import { errorHandler } from "./middlewares/errorHandler";
 import { adminRouter } from "./modules/admin/admin.routes";
+import { alertsRouter } from "./modules/alerts/alerts.routes";
 import { authRouter } from "./modules/auth/auth.routes";
 import {
   categoriesRouter,
   communesRouter,
 } from "./modules/catalog/catalog.routes";
+import { conversationsRouter } from "./modules/conversations/conversations.routes";
+import { favoritesRouter } from "./modules/favorites/favorites.routes";
 import { homeRouter } from "./modules/home/home.routes";
+import { notificationsRouter } from "./modules/notifications/notifications.routes";
 import { propertiesRouter } from "./modules/properties/properties.routes";
 import { providersRouter } from "./modules/providers/providers.routes";
+import { requestsRouter } from "./modules/requests/requests.routes";
+import { reviewsRouter } from "./modules/reviews/reviews.routes";
 import { servicesRouter } from "./modules/services/services.routes";
 import { usersRouter } from "./modules/users/users.routes";
 
@@ -42,6 +48,12 @@ export function createApp() {
   app.use("/api/v1/properties", propertiesRouter);
   app.use("/api/v1/services", servicesRouter);
   app.use("/api/v1/home", homeRouter);
+  app.use("/api/v1/requests", requestsRouter);
+  app.use("/api/v1/conversations", conversationsRouter);
+  app.use("/api/v1/favorites", favoritesRouter);
+  app.use("/api/v1/alerts", alertsRouter);
+  app.use("/api/v1/reviews", reviewsRouter);
+  app.use("/api/v1/notifications", notificationsRouter);
   app.use("/api/v1/admin", adminRouter);
 
   app.use(errorHandler);
