@@ -62,7 +62,7 @@ async function main() {
   console.log("Nettoyage des données existantes...");
   await prisma.$executeRawUnsafe(`
     TRUNCATE TABLE
-      "EmailVerificationToken",
+      "UserToken",
       "RefreshToken",
       "AdminAction",
       "Notification",

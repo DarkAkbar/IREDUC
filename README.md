@@ -42,6 +42,13 @@ npm run dev
 L'API écoute sur `http://localhost:3000` (ou le `PORT` défini).  
 Santé : `GET /health` → `{ "status": "ok" }`.
 
+### Variables e-mail (API)
+
+Dans `api/.env` : `MAIL_DRIVER` (`console` | `resend` | `smtp`), `MAIL_FROM`,
+et selon le driver `RESEND_API_KEY` ou `SMTP_*`. Voir `api/.env.example`.
+
+Documentation interactive : `http://localhost:3000/docs`
+
 ### Comptes de test (seed)
 
 | Rôle         | Email                     | Mot de passe       |

@@ -8,6 +8,14 @@ const envSchema = z.object({
   JWT_SECRET: z.string().min(1, "JWT_SECRET est requis"),
   JWT_REFRESH_SECRET: z.string().min(1, "JWT_REFRESH_SECRET est requis"),
   PORT: z.coerce.number().int().positive().default(3000),
+  APP_URL: z.string().url().default("http://localhost:3000"),
+  MAIL_DRIVER: z.enum(["console", "resend", "smtp"]).default("console"),
+  MAIL_FROM: z.string().default("IREDUC <noreply@ireduc.cd>"),
+  RESEND_API_KEY: z.string().optional(),
+  SMTP_HOST: z.string().optional(),
+  SMTP_PORT: z.coerce.number().int().positive().optional(),
+  SMTP_USER: z.string().optional(),
+  SMTP_PASS: z.string().optional(),
 });
 
 const parsed = envSchema.safeParse(process.env);
@@ -20,3 +28,10 @@ if (!parsed.success) {
 }
 
 export const env = parsed.data;
+
+export const AUTH_CONFIG = {
+  accessTokenTtl: "15m" as const,
+  refreshTokenTtlDays: 30,
+  bcryptRounds: 10,
+  userTokenTtlHours: 24,
+} as const;
