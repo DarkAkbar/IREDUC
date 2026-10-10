@@ -1,4 +1,4 @@
-import { SystemRole } from "@prisma/client";
+import { ProviderType, ReviewStatus, SystemRole } from "@prisma/client";
 
 declare global {
   namespace Express {
@@ -7,6 +7,12 @@ declare global {
         id: string;
         email: string;
         role: SystemRole;
+      };
+      providerProfile?: {
+        id: string;
+        type: ProviderType;
+        displayName: string;
+        reviewStatus: ReviewStatus;
       };
     }
   }

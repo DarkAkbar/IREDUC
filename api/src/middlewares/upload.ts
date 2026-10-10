@@ -38,4 +38,27 @@ export const documentUpload = multer({
   },
 });
 
+const listingMediaMimeTypes = new Set([
+  "image/jpeg",
+  "image/png",
+  "image/webp",
+  "video/mp4",
+]);
+
+export const listingMediaUpload = multer({
+  storage,
+  limits: { fileSize: 50 * 1024 * 1024 },
+  fileFilter: (_req, file, cb) => {
+    if (!listingMediaMimeTypes.has(file.mimetype)) {
+      cb(
+        badRequest(
+          "Format non autorisé. Photos : jpg, png, webp. Vidéo : mp4."
+        )
+      );
+      return;
+    }
+    cb(null, true);
+  },
+});
+
 export { uploadsRoot };
