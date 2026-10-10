@@ -10,7 +10,19 @@ export function validate(schema: ZodType, target: RequestTarget = "body") {
       next(parsed.error);
       return;
     }
-    req[target] = parsed.data;
+
+    if (target === "body") {
+      req.body = parsed.data;
+    } else {
+      // Express 5 : query/params sont en lecture seule
+      Object.defineProperty(req, target, {
+        value: parsed.data,
+        writable: true,
+        configurable: true,
+        enumerable: true,
+      });
+    }
+
     next();
   };
 }

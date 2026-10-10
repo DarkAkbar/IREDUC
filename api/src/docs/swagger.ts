@@ -7,7 +7,7 @@ export const swaggerSpec = swaggerJsdoc({
       title: "API IREDUC",
       version: "1.0.0",
       description:
-        "API d'authentification et de profils — plateforme immobilière et services de l'habitat (Kinshasa).",
+        "API IREDUC — authentification, biens, services et accueil (Kinshasa).",
     },
     servers: [{ url: "http://localhost:3000", description: "Développement local" }],
     components: {
@@ -277,6 +277,207 @@ export const swaggerSpec = swaggerJsdoc({
             "200": { description: "OK" },
             "403": { description: "Permissions insuffisantes" },
           },
+        },
+      },
+      "/api/v1/categories": {
+        get: {
+          tags: ["Catalog"],
+          summary: "Liste des catégories",
+          parameters: [
+            {
+              name: "kind",
+              in: "query",
+              schema: { type: "string", enum: ["REAL_ESTATE", "SERVICE"] },
+            },
+          ],
+          responses: { "200": { description: "Catégories" } },
+        },
+      },
+      "/api/v1/communes": {
+        get: {
+          tags: ["Catalog"],
+          summary: "Liste des communes de Kinshasa",
+          responses: { "200": { description: "Communes" } },
+        },
+      },
+      "/api/v1/communes/{id}/neighborhoods": {
+        get: {
+          tags: ["Catalog"],
+          summary: "Quartiers d'une commune",
+          parameters: [
+            { name: "id", in: "path", required: true, schema: { type: "string", format: "uuid" } },
+          ],
+          responses: { "200": { description: "Quartiers" } },
+        },
+      },
+      "/api/v1/properties": {
+        get: {
+          tags: ["Properties"],
+          summary: "Liste publique des biens APPROVED (filtres + pagination)",
+          parameters: [
+            { name: "offerType", in: "query", schema: { type: "string", enum: ["RENT", "SALE"] } },
+            { name: "kind", in: "query", schema: { type: "string" } },
+            { name: "communeId", in: "query", schema: { type: "string", format: "uuid" } },
+            { name: "minPrice", in: "query", schema: { type: "number" } },
+            { name: "maxPrice", in: "query", schema: { type: "number" } },
+            { name: "bedrooms", in: "query", schema: { type: "integer" } },
+            { name: "bathrooms", in: "query", schema: { type: "integer" } },
+            { name: "minArea", in: "query", schema: { type: "number" } },
+            { name: "q", in: "query", schema: { type: "string" } },
+            { name: "sort", in: "query", schema: { type: "string", enum: ["recent", "price_asc", "price_desc"] } },
+            { name: "page", in: "query", schema: { type: "integer", default: 1 } },
+            { name: "limit", in: "query", schema: { type: "integer", default: 20 } },
+          ],
+          responses: { "200": { description: "Liste paginée" } },
+        },
+        post: {
+          tags: ["Properties"],
+          summary: "Créer un bien (DRAFT) — offreur APPROVED",
+          security: [{ bearerAuth: [] }],
+          responses: { "201": { description: "Bien créé" }, "403": { description: "Offreur non approuvé" } },
+        },
+      },
+      "/api/v1/properties/mine": {
+        get: {
+          tags: ["Properties"],
+          summary: "Mes biens",
+          security: [{ bearerAuth: [] }],
+          responses: { "200": { description: "Liste de mes biens" } },
+        },
+      },
+      "/api/v1/properties/{id}": {
+        get: {
+          tags: ["Properties"],
+          summary: "Détail d'un bien APPROVED (incrémente viewsCount)",
+          parameters: [
+            { name: "id", in: "path", required: true, schema: { type: "string", format: "uuid" } },
+          ],
+          responses: { "200": { description: "Détail" } },
+        },
+        patch: {
+          tags: ["Properties"],
+          summary: "Modifier un bien DRAFT/REJECTED",
+          security: [{ bearerAuth: [] }],
+          responses: { "200": { description: "Bien mis à jour" } },
+        },
+        delete: {
+          tags: ["Properties"],
+          summary: "Archiver un bien",
+          security: [{ bearerAuth: [] }],
+          responses: { "200": { description: "Bien archivé" } },
+        },
+      },
+      "/api/v1/properties/{id}/submit": {
+        post: {
+          tags: ["Properties"],
+          summary: "Soumettre un bien (DRAFT/REJECTED → PENDING)",
+          security: [{ bearerAuth: [] }],
+          responses: { "200": { description: "Bien soumis" } },
+        },
+      },
+      "/api/v1/properties/{id}/media": {
+        post: {
+          tags: ["Properties"],
+          summary: "Ajouter un média (8 photos max + 1 vidéo)",
+          security: [{ bearerAuth: [] }],
+          responses: { "201": { description: "Média ajouté" } },
+        },
+      },
+      "/api/v1/services": {
+        get: {
+          tags: ["Services"],
+          summary: "Liste publique des services APPROVED",
+          responses: { "200": { description: "Liste paginée" } },
+        },
+        post: {
+          tags: ["Services"],
+          summary: "Créer un service (DRAFT)",
+          security: [{ bearerAuth: [] }],
+          responses: { "201": { description: "Service créé" } },
+        },
+      },
+      "/api/v1/services/mine": {
+        get: {
+          tags: ["Services"],
+          summary: "Mes services",
+          security: [{ bearerAuth: [] }],
+          responses: { "200": { description: "Liste" } },
+        },
+      },
+      "/api/v1/services/{id}": {
+        get: {
+          tags: ["Services"],
+          summary: "Détail d'un service APPROVED",
+          responses: { "200": { description: "Détail" } },
+        },
+        patch: {
+          tags: ["Services"],
+          summary: "Modifier un service DRAFT/REJECTED",
+          security: [{ bearerAuth: [] }],
+          responses: { "200": { description: "Mis à jour" } },
+        },
+      },
+      "/api/v1/services/{id}/submit": {
+        post: {
+          tags: ["Services"],
+          summary: "Soumettre un service",
+          security: [{ bearerAuth: [] }],
+          responses: { "200": { description: "Soumis" } },
+        },
+      },
+      "/api/v1/home": {
+        get: {
+          tags: ["Home"],
+          summary: "Accueil dynamique (sections aléatoires, featured prioritaires)",
+          responses: { "200": { description: "Feed d'accueil" } },
+        },
+      },
+      "/api/v1/admin/properties": {
+        get: {
+          tags: ["Admin"],
+          summary: "Liste des biens à modérer",
+          security: [{ bearerAuth: [] }],
+          responses: { "200": { description: "Liste" } },
+        },
+      },
+      "/api/v1/admin/properties/{id}/review": {
+        patch: {
+          tags: ["Admin"],
+          summary: "Approuver ou rejeter un bien",
+          security: [{ bearerAuth: [] }],
+          responses: { "200": { description: "Décision enregistrée" } },
+        },
+      },
+      "/api/v1/admin/services": {
+        get: {
+          tags: ["Admin"],
+          summary: "Liste des services à modérer",
+          security: [{ bearerAuth: [] }],
+          responses: { "200": { description: "Liste" } },
+        },
+      },
+      "/api/v1/admin/services/{id}/review": {
+        patch: {
+          tags: ["Admin"],
+          summary: "Approuver ou rejeter un service",
+          security: [{ bearerAuth: [] }],
+          responses: { "200": { description: "Décision enregistrée" } },
+        },
+      },
+      "/api/v1/admin/providers": {
+        get: {
+          tags: ["Admin"],
+          summary: "Liste des partenaires à modérer",
+          security: [{ bearerAuth: [] }],
+          responses: { "200": { description: "Liste" } },
+        },
+      },
+      "/api/v1/admin/providers/{id}/review": {
+        patch: {
+          tags: ["Admin"],
+          summary: "Approuver ou rejeter un partenaire",
+          security: [{ bearerAuth: [] }],
+          responses: { "200": { description: "Décision enregistrée" } },
         },
       },
     },
