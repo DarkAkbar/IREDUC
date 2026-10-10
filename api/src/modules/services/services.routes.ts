@@ -4,6 +4,8 @@ import { requireApprovedProvider } from "../../middlewares/requireApprovedProvid
 import { requireVerifiedEmail } from "../../middlewares/requireVerifiedEmail";
 import { listingMediaUpload } from "../../middlewares/upload";
 import { validate } from "../../middlewares/validate";
+import * as reviewsController from "../reviews/reviews.controller";
+import { listServiceReviewsQuerySchema } from "../reviews/reviews.schemas";
 import * as servicesController from "./services.controller";
 import {
   createServiceMediaBodySchema,
@@ -40,6 +42,15 @@ servicesRouter.post(
   requireApprovedProvider,
   validate(createServiceSchema),
   servicesController.create
+);
+
+servicesRouter.get(
+  "/:id/reviews",
+  authenticate,
+  requireVerifiedEmail,
+  validate(serviceIdParamsSchema, "params"),
+  validate(listServiceReviewsQuerySchema, "query"),
+  reviewsController.listForService
 );
 
 servicesRouter.get(

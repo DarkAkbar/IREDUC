@@ -480,6 +480,212 @@ export const swaggerSpec = swaggerJsdoc({
           responses: { "200": { description: "Décision enregistrée" } },
         },
       },
+      "/api/v1/requests": {
+        post: {
+          tags: ["Requests"],
+          summary: "Créer une demande (bien ou service)",
+          security: [{ bearerAuth: [] }],
+          responses: { "201": { description: "Demande créée" } },
+        },
+      },
+      "/api/v1/requests/mine": {
+        get: {
+          tags: ["Requests"],
+          summary: "Mes demandes + compteurs par statut",
+          security: [{ bearerAuth: [] }],
+          responses: { "200": { description: "Liste et compteurs" } },
+        },
+      },
+      "/api/v1/requests/received": {
+        get: {
+          tags: ["Requests"],
+          summary: "Demandes reçues (offreur)",
+          security: [{ bearerAuth: [] }],
+          responses: { "200": { description: "Liste" } },
+        },
+      },
+      "/api/v1/requests/{id}": {
+        get: {
+          tags: ["Requests"],
+          summary: "Détail d'une demande",
+          security: [{ bearerAuth: [] }],
+          responses: { "200": { description: "Détail" }, "403": { description: "Accès interdit" } },
+        },
+      },
+      "/api/v1/requests/{id}/review": {
+        patch: {
+          tags: ["Requests"],
+          summary: "Approuver ou rejeter (offreur)",
+          security: [{ bearerAuth: [] }],
+          responses: { "200": { description: "Décision" }, "409": { description: "Transition interdite" } },
+        },
+      },
+      "/api/v1/requests/{id}/cancel": {
+        patch: {
+          tags: ["Requests"],
+          summary: "Annuler (demandeur, PENDING)",
+          security: [{ bearerAuth: [] }],
+          responses: { "200": { description: "Annulée" } },
+        },
+      },
+      "/api/v1/requests/{id}/complete": {
+        patch: {
+          tags: ["Requests"],
+          summary: "Clôturer (offreur, APPROVED)",
+          security: [{ bearerAuth: [] }],
+          responses: { "200": { description: "Terminée" } },
+        },
+      },
+      "/api/v1/requests/{id}/pay": {
+        post: {
+          tags: ["Requests"],
+          summary: "Paiement simulé (APPROVED + UNPAID)",
+          security: [{ bearerAuth: [] }],
+          responses: { "200": { description: "Payée" } },
+        },
+      },
+      "/api/v1/requests/{id}/similar": {
+        get: {
+          tags: ["Requests"],
+          summary: "Biens similaires (demande REJECTED)",
+          security: [{ bearerAuth: [] }],
+          responses: { "200": { description: "Suggestions" } },
+        },
+      },
+      "/api/v1/conversations": {
+        get: {
+          tags: ["Conversations"],
+          summary: "Liste des conversations",
+          security: [{ bearerAuth: [] }],
+          responses: { "200": { description: "Liste" } },
+        },
+        post: {
+          tags: ["Conversations"],
+          summary: "Créer ou réutiliser une conversation",
+          security: [{ bearerAuth: [] }],
+          responses: { "201": { description: "Conversation" } },
+        },
+      },
+      "/api/v1/conversations/{id}/messages": {
+        get: {
+          tags: ["Conversations"],
+          summary: "Messages (pagination)",
+          security: [{ bearerAuth: [] }],
+          responses: { "200": { description: "Messages" } },
+        },
+        post: {
+          tags: ["Conversations"],
+          summary: "Envoyer un message",
+          security: [{ bearerAuth: [] }],
+          responses: { "201": { description: "Message créé" } },
+        },
+      },
+      "/api/v1/conversations/{id}/read": {
+        patch: {
+          tags: ["Conversations"],
+          summary: "Marquer les messages comme lus",
+          security: [{ bearerAuth: [] }],
+          responses: { "200": { description: "OK" } },
+        },
+      },
+      "/api/v1/conversations/{id}/whatsapp-link": {
+        get: {
+          tags: ["Conversations"],
+          summary: "Lien wa.me vers l'interlocuteur",
+          security: [{ bearerAuth: [] }],
+          responses: { "200": { description: "URL WhatsApp" } },
+        },
+      },
+      "/api/v1/favorites": {
+        get: {
+          tags: ["Favorites"],
+          summary: "Liste des favoris",
+          security: [{ bearerAuth: [] }],
+          responses: { "200": { description: "Favoris" } },
+        },
+        post: {
+          tags: ["Favorites"],
+          summary: "Ajouter un favori",
+          security: [{ bearerAuth: [] }],
+          responses: { "201": { description: "Ajouté" } },
+        },
+      },
+      "/api/v1/favorites/{id}": {
+        delete: {
+          tags: ["Favorites"],
+          summary: "Supprimer un favori",
+          security: [{ bearerAuth: [] }],
+          responses: { "200": { description: "Supprimé" } },
+        },
+      },
+      "/api/v1/alerts": {
+        get: {
+          tags: ["Alerts"],
+          summary: "Liste des alertes",
+          security: [{ bearerAuth: [] }],
+          responses: { "200": { description: "Alertes" } },
+        },
+        post: {
+          tags: ["Alerts"],
+          summary: "Créer une alerte",
+          security: [{ bearerAuth: [] }],
+          responses: { "201": { description: "Créée" } },
+        },
+      },
+      "/api/v1/alerts/{id}": {
+        patch: {
+          tags: ["Alerts"],
+          summary: "Modifier une alerte",
+          security: [{ bearerAuth: [] }],
+          responses: { "200": { description: "Mise à jour" } },
+        },
+        delete: {
+          tags: ["Alerts"],
+          summary: "Supprimer une alerte",
+          security: [{ bearerAuth: [] }],
+          responses: { "200": { description: "Supprimée" } },
+        },
+      },
+      "/api/v1/reviews": {
+        post: {
+          tags: ["Reviews"],
+          summary: "Créer un avis (demande COMPLETED)",
+          security: [{ bearerAuth: [] }],
+          responses: { "201": { description: "Avis créé" } },
+        },
+      },
+      "/api/v1/services/{id}/reviews": {
+        get: {
+          tags: ["Reviews"],
+          summary: "Avis d'un service + répartition des notes",
+          security: [{ bearerAuth: [] }],
+          responses: { "200": { description: "Avis paginés" } },
+        },
+      },
+      "/api/v1/notifications": {
+        get: {
+          tags: ["Notifications"],
+          summary: "Liste + compteur non-lus",
+          security: [{ bearerAuth: [] }],
+          responses: { "200": { description: "Notifications" } },
+        },
+      },
+      "/api/v1/notifications/read-all": {
+        patch: {
+          tags: ["Notifications"],
+          summary: "Tout marquer comme lu",
+          security: [{ bearerAuth: [] }],
+          responses: { "200": { description: "OK" } },
+        },
+      },
+      "/api/v1/notifications/{id}/read": {
+        patch: {
+          tags: ["Notifications"],
+          summary: "Marquer une notification comme lue",
+          security: [{ bearerAuth: [] }],
+          responses: { "200": { description: "OK" } },
+        },
+      },
     },
   },
   apis: [],
