@@ -7,7 +7,14 @@ import { swaggerSpec } from "./docs/swagger";
 import { errorHandler } from "./middlewares/errorHandler";
 import { adminRouter } from "./modules/admin/admin.routes";
 import { authRouter } from "./modules/auth/auth.routes";
+import {
+  categoriesRouter,
+  communesRouter,
+} from "./modules/catalog/catalog.routes";
+import { homeRouter } from "./modules/home/home.routes";
+import { propertiesRouter } from "./modules/properties/properties.routes";
 import { providersRouter } from "./modules/providers/providers.routes";
+import { servicesRouter } from "./modules/services/services.routes";
 import { usersRouter } from "./modules/users/users.routes";
 
 export function createApp() {
@@ -30,6 +37,11 @@ export function createApp() {
   app.use("/api/v1/auth", authRouter);
   app.use("/api/v1/users", usersRouter);
   app.use("/api/v1/providers", providersRouter);
+  app.use("/api/v1/categories", categoriesRouter);
+  app.use("/api/v1/communes", communesRouter);
+  app.use("/api/v1/properties", propertiesRouter);
+  app.use("/api/v1/services", servicesRouter);
+  app.use("/api/v1/home", homeRouter);
   app.use("/api/v1/admin", adminRouter);
 
   app.use(errorHandler);
