@@ -63,7 +63,28 @@ export function HomeSkeleton() {
   );
 }
 
+export function ListSkeleton() {
+  return (
+    <View style={styles.list}>
+      {[0, 1, 2].map((i) => (
+        <View key={i} style={styles.listCard}>
+          <SkeletonLoader height={180} borderRadius={radii.lg} />
+          <SkeletonLoader width="50%" height={18} style={{ marginTop: spacing.md }} />
+          <SkeletonLoader width="70%" height={14} style={{ marginTop: spacing.sm }} />
+          <SkeletonLoader width="40%" height={20} style={{ marginTop: spacing.sm }} />
+        </View>
+      ))}
+    </View>
+  );
+}
+
 const styles = StyleSheet.create({
   base: { backgroundColor: colors.skeleton },
   home: { padding: spacing.lg, gap: spacing.md },
+  list: { padding: spacing.lg, gap: spacing.lg },
+  listCard: {
+    backgroundColor: colors.white,
+    borderRadius: radii.lg,
+    padding: spacing.md,
+  },
 });
