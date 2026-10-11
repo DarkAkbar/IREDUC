@@ -40,6 +40,9 @@ export function mapPropertyListItem(property: {
   bedrooms: number | null;
   bathrooms: number | null;
   areaM2: number | null;
+  parking?: boolean | null;
+  hasPool?: boolean | null;
+  tags?: string[];
   status: string;
   isFeatured: boolean;
   viewsCount: number;
@@ -64,6 +67,9 @@ export function mapPropertyListItem(property: {
     bedrooms: property.bedrooms,
     bathrooms: property.bathrooms,
     areaM2: property.areaM2,
+    parking: property.parking ?? null,
+    hasPool: property.hasPool ?? null,
+    tags: property.tags ?? [],
     status: property.status,
     isFeatured: property.isFeatured,
     viewsCount: property.viewsCount,
@@ -72,6 +78,12 @@ export function mapPropertyListItem(property: {
     coverPhoto: cover
       ? { id: cover.id, url: cover.url, caption: cover.caption }
       : null,
+    photos: property.media.map((m) => ({
+      id: m.id,
+      url: m.url,
+      caption: m.caption,
+      type: m.type,
+    })),
     owner: {
       id: property.owner.id,
       fullName: property.owner.fullName,

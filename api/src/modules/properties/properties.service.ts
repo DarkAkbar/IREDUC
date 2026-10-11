@@ -22,7 +22,7 @@ const propertyListInclude = {
   media: {
     where: { type: MediaType.PHOTO },
     orderBy: { sortOrder: "asc" as const },
-    take: 1,
+    take: 5,
   },
   owner: {
     select: {

@@ -28,7 +28,7 @@ const serviceListInclude = {
   media: {
     where: { type: MediaType.PHOTO },
     orderBy: { sortOrder: "asc" as const },
-    take: 1,
+    take: 5,
   },
   reviews: { select: { rating: true } },
   coverageCommunes: { select: { id: true, name: true } },

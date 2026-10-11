@@ -1,4 +1,5 @@
 import { useRouter } from "expo-router";
+import { pushPath } from "../../utils/navigation";
 import { StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Button } from "../../components/ui/Button";
@@ -18,21 +19,34 @@ export default function ProfileScreen() {
           <Text style={styles.name}>{user.fullName}</Text>
           <Text style={styles.text}>{user.email}</Text>
           <Button
+            label="Mes favoris"
+            style={{ marginTop: spacing.xl }}
+            onPress={() => router.push("/favorites")}
+          />
+          <Button
             label="Se déconnecter"
             variant="outline"
-            style={{ marginTop: spacing.xl }}
-            onPress={() => void logout()}
+            style={{ marginTop: spacing.md }}
+            onPress={() => {
+              void logout();
+            }}
           />
         </>
       ) : (
         <>
           <Text style={styles.text}>
-            Connectez-vous pour gérer votre compte et vos annonces.
+            Connectez-vous pour gérer votre compte, vos favoris et vos annonces.
           </Text>
           <Button
             label="Se connecter"
             style={{ marginTop: spacing.lg }}
             onPress={() => router.push("/auth/login")}
+          />
+          <Button
+            label="Mes favoris"
+            variant="outline"
+            style={{ marginTop: spacing.md }}
+            onPress={() => router.push("/favorites")}
           />
         </>
       )}
