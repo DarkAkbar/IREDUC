@@ -224,19 +224,28 @@ export default function HomeScreen() {
             ))}
 
             <View style={styles.ctaBanner}>
-              <Text style={styles.ctaTitle}>Voulez-vous proposer un service ?</Text>
+              <Text style={styles.ctaTitle}>Voulez-vous proposer un bien ou un service ?</Text>
               <Text style={styles.ctaText}>
-                Devenez partenaire IREDUC et touchez des clients à Kinshasa.
+                Devenez partenaire IREDUC et publiez vos annonces à Kinshasa.
               </Text>
               <Button
-                label="Devenir partenaire"
+                label="Publier"
                 variant="navy"
-                onPress={() =>
-                  router.push({
-                    pathname: "/auth/login",
-                    params: { returnTo: "/(tabs)/profile" },
-                  })
-                }
+                onPress={() => {
+                  if (requireAuth("/publish")) {
+                    router.push("/publish" as never);
+                  }
+                }}
+              />
+              <Button
+                label="Devenir partenaire"
+                variant="outline"
+                style={{ marginTop: spacing.sm }}
+                onPress={() => {
+                  if (requireAuth("/partner")) {
+                    router.push("/partner" as never);
+                  }
+                }}
               />
             </View>
           </>
