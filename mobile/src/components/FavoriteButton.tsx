@@ -2,6 +2,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { Pressable, StyleSheet } from "react-native";
 import { RequestTarget } from "../api/types";
 import { useFavoriteToggle } from "../hooks/useFavoriteToggle";
+import { favoriteKey, useFavoritesStore } from "../store/favoritesStore";
 import { colors } from "../theme";
 
 type Props = {
@@ -17,8 +18,11 @@ export function FavoriteButton({
   returnTo,
   size = 22,
 }: Props) {
-  const { isFavorite, onToggle } = useFavoriteToggle(returnTo);
-  const active = isFavorite(targetType, targetId);
+  const { onToggle } = useFavoriteToggle(returnTo);
+  // S'abonner à byKey pour re-rendre après hydrate / toggle
+  const active = useFavoritesStore((s) =>
+    Boolean(s.byKey[favoriteKey(targetType, targetId)])
+  );
 
   return (
     <Pressable

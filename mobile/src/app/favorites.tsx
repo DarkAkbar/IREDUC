@@ -1,7 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { Image } from "expo-image";
 import { useRouter } from "expo-router";
-import { pushPath } from "../utils/navigation";
 import { useEffect } from "react";
 import {
   FlatList,
@@ -14,6 +13,7 @@ import {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { mediaUrl } from "../api/client";
 import { fetchFavorites } from "../api/favorites";
+import { Favorite } from "../api/types";
 import { EmptyState } from "../components/list/EmptyState";
 import { ErrorState } from "../components/list/ErrorState";
 import { ListScreenHeader } from "../components/list/ListScreenHeader";
@@ -27,6 +27,7 @@ export default function FavoritesScreen() {
   const router = useRouter();
   const { isAuthenticated, requireAuth } = useRequireAuth();
   const hydrate = useFavoritesStore((s) => s.hydrate);
+  const storeItems = useFavoritesStore((s) => s.items);
 
   useEffect(() => {
     if (isAuthenticated) {
@@ -37,8 +38,14 @@ export default function FavoritesScreen() {
   const query = useQuery({
     queryKey: ["favorites"],
     enabled: isAuthenticated,
-    queryFn: () => fetchFavorites(),
+    queryFn: async () => {
+      const data = await fetchFavorites();
+      return Array.isArray(data) ? data : [];
+    },
   });
+
+  const items: Favorite[] =
+    query.data && query.data.length > 0 ? query.data : storeItems;
 
   return (
     <View style={[styles.screen, { paddingTop: insets.top }]}>
@@ -56,19 +63,29 @@ export default function FavoritesScreen() {
         />
       ) : null}
 
-      {isAuthenticated && query.isLoading ? <ListSkeleton /> : null}
-      {isAuthenticated && query.isError ? (
-        <ErrorState onRetry={() => void query.refetch()} />
+      {isAuthenticated && query.isLoading && items.length === 0 ? (
+        <ListSkeleton />
+      ) : null}
+      {isAuthenticated && query.isError && items.length === 0 ? (
+        <ErrorState
+          onRetry={() => {
+            void query.refetch();
+            void hydrate();
+          }}
+        />
       ) : null}
 
-      {isAuthenticated && !query.isLoading && !query.isError ? (
+      {isAuthenticated && !(query.isLoading && items.length === 0) ? (
         <FlatList
-          data={query.data ?? []}
+          data={items}
           keyExtractor={(item) => item.id}
           refreshControl={
             <RefreshControl
               refreshing={query.isRefetching}
-              onRefresh={() => void query.refetch()}
+              onRefresh={() => {
+                void query.refetch();
+                void hydrate();
+              }}
               tintColor={colors.primary}
             />
           }
@@ -81,7 +98,7 @@ export default function FavoritesScreen() {
           }
           renderItem={({ item }) => {
             if (item.targetType === "PROPERTY" && item.property) {
-              const cover = item.property.media[0];
+              const cover = item.property.media?.[0];
               return (
                 <Pressable
                   style={styles.card}
@@ -89,7 +106,7 @@ export default function FavoritesScreen() {
                     router.push({
                       pathname: "/property/[id]",
                       params: { id: item.property!.id },
-                    })
+                    } as never)
                   }
                 >
                   {cover ? (
@@ -103,13 +120,15 @@ export default function FavoritesScreen() {
                   <View style={styles.info}>
                     <Text style={styles.badge}>Bien</Text>
                     <Text style={styles.name}>{item.property.title}</Text>
-                    <Text style={styles.meta}>{item.property.commune.name}</Text>
+                    <Text style={styles.meta}>
+                      {item.property.commune?.name ?? "Kinshasa"}
+                    </Text>
                   </View>
                 </Pressable>
               );
             }
             if (item.targetType === "SERVICE" && item.service) {
-              const cover = item.service.media[0];
+              const cover = item.service.media?.[0];
               return (
                 <Pressable
                   style={styles.card}
@@ -117,7 +136,7 @@ export default function FavoritesScreen() {
                     router.push({
                       pathname: "/service/[id]",
                       params: { id: item.service!.id },
-                    })
+                    } as never)
                   }
                 >
                   {cover ? (
@@ -131,7 +150,9 @@ export default function FavoritesScreen() {
                   <View style={styles.info}>
                     <Text style={styles.badge}>Service</Text>
                     <Text style={styles.name}>{item.service.title}</Text>
-                    <Text style={styles.meta}>{item.service.category.name}</Text>
+                    <Text style={styles.meta}>
+                      {item.service.category?.name ?? "Service"}
+                    </Text>
                   </View>
                 </Pressable>
               );

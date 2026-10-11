@@ -1,20 +1,19 @@
+import { useQueryClient } from "@tanstack/react-query";
 import { Alert } from "react-native";
 import { RequestTarget } from "../api/types";
 import { useFavoritesStore } from "../store/favoritesStore";
 import { useRequireAuth } from "./useRequireAuth";
 
 export function useFavoriteToggle(returnTo?: string) {
+  const queryClient = useQueryClient();
   const { requireAuth, isAuthenticated } = useRequireAuth();
-  const isFavorite = useFavoritesStore((s) => s.isFavorite);
   const toggle = useFavoritesStore((s) => s.toggle);
 
   async function onToggle(targetType: RequestTarget, targetId: string) {
     if (!requireAuth(returnTo)) return;
     try {
-      const active = await toggle(targetType, targetId);
-      if (!active) {
-        /* retiré */
-      }
+      await toggle(targetType, targetId);
+      await queryClient.invalidateQueries({ queryKey: ["favorites"] });
     } catch (error) {
       const message =
         typeof error === "object" &&
@@ -28,5 +27,5 @@ export function useFavoriteToggle(returnTo?: string) {
     }
   }
 
-  return { isFavorite, onToggle, isAuthenticated };
+  return { onToggle, isAuthenticated };
 }
