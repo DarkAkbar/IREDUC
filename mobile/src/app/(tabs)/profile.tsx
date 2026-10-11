@@ -4,14 +4,12 @@ import { StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Button } from "../../components/ui/Button";
 import { useAuthStore } from "../../store/authStore";
-import { useFavoritesStore } from "../../store/favoritesStore";
 import { colors, spacing, typography } from "../../theme";
 
 export default function ProfileScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const { user, isAuthenticated, logout } = useAuthStore();
-  const clearFavorites = useFavoritesStore((s) => s.clear);
 
   return (
     <View style={[styles.screen, { paddingTop: insets.top + spacing.xl }]}>
@@ -31,7 +29,6 @@ export default function ProfileScreen() {
             style={{ marginTop: spacing.md }}
             onPress={() => {
               void logout();
-              clearFavorites();
             }}
           />
         </>

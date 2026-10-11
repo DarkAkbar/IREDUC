@@ -1,6 +1,6 @@
 import { create } from "zustand";
 import * as favoritesApi from "../api/favorites";
-import { RequestTarget } from "../api/types";
+import type { RequestTarget } from "../api/types";
 
 type FavoritesState = {
   byKey: Record<string, string>;
@@ -27,7 +27,9 @@ export const useFavoritesStore = create<FavoritesState>((set, get) => ({
       for (const fav of favorites) {
         const targetId =
           fav.targetType === "PROPERTY" ? fav.propertyId : fav.serviceId;
-        if (targetId) byKey[keyOf(fav.targetType, targetId)] = fav.id;
+        if (targetId) {
+          byKey[keyOf(fav.targetType, targetId)] = fav.id;
+        }
       }
       set({ byKey, hydrated: true });
     } catch {
