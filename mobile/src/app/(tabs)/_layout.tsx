@@ -1,8 +1,42 @@
 import { Ionicons } from "@expo/vector-icons";
+import { useQuery } from "@tanstack/react-query";
 import { Tabs } from "expo-router";
+import { StyleSheet, Text, View } from "react-native";
+import { fetchMyRequests } from "../../api/requests";
+import { useAuthStore } from "../../store/authStore";
 import { colors } from "../../theme";
 
+function RequestsTabIcon({
+  color,
+  size,
+  badge,
+}: {
+  color: string;
+  size: number;
+  badge?: number;
+}) {
+  return (
+    <View>
+      <Ionicons name="document-text-outline" size={size} color={color} />
+      {badge && badge > 0 ? (
+        <View style={styles.badge}>
+          <Text style={styles.badgeText}>{badge > 99 ? "99+" : badge}</Text>
+        </View>
+      ) : null}
+    </View>
+  );
+}
+
 export default function TabsLayout() {
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
+  const countQuery = useQuery({
+    queryKey: ["my-requests", "ALL", "badge"],
+    enabled: isAuthenticated,
+    queryFn: () => fetchMyRequests({ page: 1, limit: 1 }),
+    staleTime: 20_000,
+  });
+  const badge = countQuery.data?.counters.all ?? 0;
+
   return (
     <Tabs
       screenOptions={{
@@ -42,7 +76,7 @@ export default function TabsLayout() {
         options={{
           title: "Mes demandes",
           tabBarIcon: ({ color, size }) => (
-            <Ionicons name="document-text-outline" size={size} color={color} />
+            <RequestsTabIcon color={String(color)} size={size} badge={badge} />
           ),
         }}
       />
@@ -67,3 +101,19 @@ export default function TabsLayout() {
     </Tabs>
   );
 }
+
+const styles = StyleSheet.create({
+  badge: {
+    position: "absolute",
+    right: -8,
+    top: -4,
+    minWidth: 16,
+    height: 16,
+    borderRadius: 8,
+    backgroundColor: colors.primary,
+    alignItems: "center",
+    justifyContent: "center",
+    paddingHorizontal: 3,
+  },
+  badgeText: { color: colors.white, fontSize: 9, fontWeight: "800" },
+});

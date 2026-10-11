@@ -64,6 +64,8 @@ export default function RootLayout() {
             <Stack.Screen name="favorites" />
             <Stack.Screen name="reserve" />
             <Stack.Screen name="discuss" />
+            <Stack.Screen name="request/[id]" />
+            <Stack.Screen name="request/similar" />
           </Stack>
         </QueryClientProvider>
       </SafeAreaProvider>
