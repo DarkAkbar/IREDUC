@@ -78,7 +78,8 @@ export default function ServiceDetailScreen() {
   }
 
   function discuss() {
-    if (!requireAuth(`/service/${id}`)) return;
+    const returnTo = `/discuss?type=SERVICE&id=${id}`;
+    if (!requireAuth(returnTo)) return;
     router.push({
       pathname: "/discuss",
       params: { type: "SERVICE", id: id!, title: service?.title },

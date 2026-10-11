@@ -333,7 +333,10 @@ export function RequestCard({ item, rejectionReason }: Props) {
               onPress={() =>
                 router.push({
                   pathname: "/discuss",
-                  params: { type: item.targetType, id: item.target?.id, title: item.target?.title },
+                  params: {
+                    requestId: item.id,
+                    title: item.target?.title,
+                  },
                 } as never)
               }
             />
@@ -347,7 +350,10 @@ export function RequestCard({ item, rejectionReason }: Props) {
             onPress={() =>
               router.push({
                 pathname: "/discuss",
-                params: { type: item.targetType, id: item.target?.id, title: item.target?.title },
+                params: {
+                  requestId: item.id,
+                  title: item.target?.title,
+                },
               } as never)
             }
           />

@@ -64,6 +64,13 @@ export default function RootLayout() {
             <Stack.Screen name="favorites" />
             <Stack.Screen name="reserve" />
             <Stack.Screen name="discuss" />
+            <Stack.Screen name="conversation/[id]" />
+            <Stack.Screen name="notifications" />
+            <Stack.Screen name="partner" />
+            <Stack.Screen name="profile/edit" />
+            <Stack.Screen name="profile/password" />
+            <Stack.Screen name="profile/alerts" />
+            <Stack.Screen name="profile/about" />
             <Stack.Screen name="request/[id]" />
             <Stack.Screen name="request/similar" />
           </Stack>
