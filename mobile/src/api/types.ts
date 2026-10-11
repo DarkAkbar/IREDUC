@@ -82,11 +82,49 @@ export type PropertyDetail = PropertyListItem & {
   tags: string[];
   category: { id: string; name: string; slug: string };
   media: MediaItem[];
+  rejectionReason?: string | null;
   contacts: {
     phoneMasked: string | null;
     whatsapp: string | null;
   };
   updatedAt: string;
+};
+
+export type ListingStatus =
+  | "DRAFT"
+  | "PENDING"
+  | "APPROVED"
+  | "REJECTED"
+  | "ARCHIVED";
+
+export type CreatePropertyInput = {
+  categoryId: string;
+  offerType: OfferType;
+  kind: PropertyKind;
+  title: string;
+  description: string;
+  price: number;
+  currency?: string;
+  communeId: string;
+  neighborhoodId?: string | null;
+  address?: string | null;
+  latitude?: number | null;
+  longitude?: number | null;
+  bedrooms?: number | null;
+  bathrooms?: number | null;
+  areaM2?: number | null;
+  parking?: boolean | null;
+  hasPool?: boolean | null;
+  hasTitleDeed?: boolean | null;
+  tags?: string[];
+};
+
+export type CreateServiceInput = {
+  categoryId: string;
+  title: string;
+  description: string;
+  subServices: string[];
+  coverageCommuneIds: string[];
 };
 
 export type ServiceListItem = {
@@ -116,6 +154,7 @@ export type ServiceListItem = {
 export type ServiceDetail = ServiceListItem & {
   subServices: string[];
   media: MediaItem[];
+  rejectionReason?: string | null;
   provider: ServiceListItem["provider"] & {
     yearsOfExperience: number | null;
     contactEmail: string | null;
@@ -130,6 +169,12 @@ export type ServiceDetail = ServiceListItem & {
     author: { id: string; fullName: string };
   }>;
   updatedAt: string;
+};
+
+export type Neighborhood = {
+  id: string;
+  name: string;
+  communeId?: string;
 };
 
 export type PaginatedMeta = {
@@ -438,20 +483,58 @@ export type AlertItem = {
   updatedAt: string;
 };
 
+export type ProviderType = "INDIVIDUAL" | "AGENCY" | "SERVICE_PROVIDER";
+
+export type ProviderDocument = {
+  id: string;
+  docType: "ID" | "RCCM" | "PATENTE" | "PORTFOLIO" | "REFERENCE";
+  fileUrl: string;
+  reviewStatus: string;
+  createdAt: string;
+};
+
 export type ProviderProfile = {
   id: string;
   userId: string;
-  type: string;
+  type: ProviderType | string;
   displayName: string;
   logoUrl: string | null;
   description: string | null;
   contactEmail: string | null;
   phone: string | null;
   whatsapp: string | null;
+  website?: string | null;
+  address?: string | null;
   reviewStatus: "PENDING" | "APPROVED" | "REJECTED" | string;
   rejectionReason: string | null;
   isRegistered: boolean;
   yearsOfExperience: number | null;
+  documents?: ProviderDocument[];
   createdAt: string;
   updatedAt: string;
+};
+
+export type CreateProviderInput = {
+  type: ProviderType;
+  displayName?: string;
+  description?: string;
+  contactEmail?: string;
+  phone?: string;
+  whatsapp: string;
+  website?: string;
+  address?: string;
+  isRegistered: boolean;
+  yearsOfExperience?: number;
+};
+
+export type UpdateProviderInput = {
+  displayName?: string;
+  description?: string | null;
+  contactEmail?: string | null;
+  phone?: string | null;
+  whatsapp?: string | null;
+  website?: string | null;
+  address?: string | null;
+  isRegistered?: boolean;
+  yearsOfExperience?: number | null;
 };

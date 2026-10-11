@@ -52,3 +52,37 @@ export async function fetchSimilarRequests(id: string) {
   );
   return Array.isArray(data.data) ? data.data : [];
 }
+
+export async function fetchReceivedRequests(params?: {
+  page?: number;
+  limit?: number;
+  status?: RequestStatus;
+}) {
+  const { data } = await api.get<
+    Paginated<RequestListItem> & { counters?: RequestCounters }
+  >("/requests/received", {
+    params: {
+      page: params?.page ?? 1,
+      limit: params?.limit ?? 20,
+      status: params?.status,
+    },
+  });
+  return data;
+}
+
+export async function reviewRequest(
+  id: string,
+  decision: "APPROVED" | "REJECTED",
+  reason?: string
+) {
+  const { data } = await api.patch<RequestListItem>(`/requests/${id}/review`, {
+    decision,
+    reason,
+  });
+  return data;
+}
+
+export async function completeRequest(id: string) {
+  const { data } = await api.patch<RequestListItem>(`/requests/${id}/complete`);
+  return data;
+}
