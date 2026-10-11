@@ -191,10 +191,24 @@ export default function ProfileScreen() {
                 </Text>
               ) : null}
               {reviewStatus === "APPROVED" ? (
-                <Text style={styles.statusReason}>
-                  Votre profil partenaire est approuvé. La publication d'annonces
-                  arrive bientôt.
-                </Text>
+                <>
+                  <Text style={styles.statusReason}>
+                    Votre profil partenaire est approuvé. Vous pouvez publier.
+                  </Text>
+                  <Button
+                    label="Publier"
+                    onPress={() => router.push("/publish" as never)}
+                    style={{ marginTop: spacing.sm }}
+                  />
+                </>
+              ) : null}
+              {reviewStatus === "PENDING" || reviewStatus === "REJECTED" ? (
+                <Button
+                  label="Voir mon dossier"
+                  variant="outline"
+                  onPress={() => router.push("/partner" as never)}
+                  style={{ marginTop: spacing.sm }}
+                />
               ) : null}
             </View>
           ) : (
@@ -207,6 +221,13 @@ export default function ProfileScreen() {
         </View>
 
         <View style={styles.menu}>
+          {reviewStatus === "APPROVED" ? (
+            <MenuRow
+              icon="home-outline"
+              label="Mes annonces"
+              onPress={() => router.push("/listings" as never)}
+            />
+          ) : null}
           <MenuRow
             icon="create-outline"
             label="Modifier mon profil"
