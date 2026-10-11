@@ -37,6 +37,16 @@ export async function updateMe(
   return toPublicUser(user);
 }
 
+export async function updateAvatar(userId: string, filename: string) {
+  const avatarUrl = `/uploads/${filename}`;
+  const user = await prisma.user.update({
+    where: { id: userId },
+    data: { avatarUrl },
+    include: { providerProfile: true },
+  });
+  return toPublicUser(user);
+}
+
 export async function changePassword(
   userId: string,
   currentPassword: string,

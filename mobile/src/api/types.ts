@@ -342,3 +342,116 @@ export type CreateRequestInput = {
   whatsapp?: string;
   message?: string;
 };
+
+export type ConversationParticipant = {
+  id: string;
+  fullName: string;
+  avatarUrl: string | null;
+  whatsapp?: string | null;
+};
+
+export type ConversationTargetProperty = {
+  id: string;
+  title: string;
+  price?: number;
+  currency?: string;
+  offerType?: OfferType;
+  photo?: string | null;
+};
+
+export type ConversationTargetService = {
+  id: string;
+  title: string;
+  photo?: string | null;
+};
+
+export type Message = {
+  id: string;
+  conversationId?: string;
+  senderId: string;
+  content: string;
+  readAt: string | null;
+  createdAt: string;
+  sender: {
+    id: string;
+    fullName: string;
+    avatarUrl: string | null;
+  };
+};
+
+export type ConversationListItem = {
+  id: string;
+  request: { id: string; number: string } | null;
+  property: ConversationTargetProperty | null;
+  service: ConversationTargetService | null;
+  otherParticipant: ConversationParticipant | null;
+  lastMessage: Message | null;
+  unreadCount: number;
+  updatedAt: string;
+};
+
+export type ConversationDetail = {
+  id: string;
+  requestId?: string | null;
+  propertyId?: string | null;
+  serviceId?: string | null;
+  participants?: Array<{ userId: string }>;
+  createdAt?: string;
+  updatedAt?: string;
+};
+
+export type CreateConversationInput = {
+  requestId?: string;
+  propertyId?: string;
+  serviceId?: string;
+};
+
+export type NotificationItem = {
+  id: string;
+  type: string;
+  title: string;
+  body: string;
+  data: {
+    requestId?: string;
+    conversationId?: string;
+    messageId?: string;
+    number?: string;
+    decision?: string;
+  } | null;
+  readAt: string | null;
+  createdAt: string;
+};
+
+export type AlertCriteria = {
+  offerType?: OfferType;
+  communeId?: string;
+  minPrice?: number;
+  maxPrice?: number;
+  bedrooms?: number;
+};
+
+export type AlertItem = {
+  id: string;
+  criteria: AlertCriteria;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type ProviderProfile = {
+  id: string;
+  userId: string;
+  type: string;
+  displayName: string;
+  logoUrl: string | null;
+  description: string | null;
+  contactEmail: string | null;
+  phone: string | null;
+  whatsapp: string | null;
+  reviewStatus: "PENDING" | "APPROVED" | "REJECTED" | string;
+  rejectionReason: string | null;
+  isRegistered: boolean;
+  yearsOfExperience: number | null;
+  createdAt: string;
+  updatedAt: string;
+};

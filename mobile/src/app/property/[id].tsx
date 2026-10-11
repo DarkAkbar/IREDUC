@@ -78,7 +78,8 @@ export default function PropertyDetailScreen() {
   }
 
   function discuss() {
-    if (!requireAuth(`/property/${id}`)) return;
+    const returnTo = `/discuss?type=PROPERTY&id=${id}`;
+    if (!requireAuth(returnTo)) return;
     router.push({
       pathname: "/discuss",
       params: { type: "PROPERTY", id: id!, title: property?.title },
