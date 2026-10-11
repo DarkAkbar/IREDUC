@@ -60,7 +60,11 @@ export const useAuthStore = create<AuthState>((set) => {
     },
 
     logout: async () => {
-      await clearStoredTokens();
+      try {
+        await authApi.logout();
+      } catch {
+        await clearStoredTokens();
+      }
       set({ user: null, isAuthenticated: false });
     },
 
