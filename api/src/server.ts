@@ -3,6 +3,6 @@ import { env } from "./config/env";
 
 const app = createApp();
 
-app.listen(env.PORT, () => {
-  console.log(`API IREDUC démarrée sur le port ${env.PORT}`);
+app.listen(env.PORT, "0.0.0.0", () => {
+  console.log(`API IREDUC démarrée sur http://0.0.0.0:${env.PORT}`);
 });

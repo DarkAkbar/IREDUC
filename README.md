@@ -39,7 +39,7 @@ npx prisma db seed
 npm run dev
 ```
 
-L'API écoute sur `http://localhost:3000` (ou le `PORT` défini).  
+L'API écoute sur `0.0.0.0:3000` (accessible depuis le réseau local).  
 Santé : `GET /health` → `{ "status": "ok" }`.
 
 ### Variables e-mail (API)
@@ -80,9 +80,30 @@ npm run prisma:studio  # ouvre Prisma Studio
 
 ```bash
 cd mobile
+cp .env.example .env
+# Ajuster EXPO_PUBLIC_API_URL selon l'appareil (voir ci-dessous)
 npm install
 npx expo start
 ```
+
+### URL de l'API en développement
+
+L'API écoute sur `0.0.0.0` pour être joignable depuis un téléphone ou l'émulateur.
+
+| Cible | `EXPO_PUBLIC_API_URL` |
+|-------|------------------------|
+| Émulateur Android | `http://10.0.2.2:3000/api/v1` |
+| Simulateur iOS | `http://localhost:3000/api/v1` |
+| Téléphone physique (même Wi-Fi) | `http://<IP_LOCALE_DU_PC>:3000/api/v1` |
+
+Trouver l'IP locale du PC :
+
+- **Windows (PowerShell)** : `ipconfig` → adresse IPv4 du Wi-Fi (ex. `192.168.1.42`)
+- **macOS / Linux** : `ipconfig getifaddr en0` ou `hostname -I`
+
+Exemple : `EXPO_PUBLIC_API_URL=http://192.168.1.42:3000/api/v1`
+
+Redémarrer Expo après modification de `.env` (`npx expo start -c` si besoin).
 
 ## Admin
 
