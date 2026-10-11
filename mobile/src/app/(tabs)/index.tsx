@@ -2,6 +2,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { useQuery } from "@tanstack/react-query";
 import { Image } from "expo-image";
 import { useRouter } from "expo-router";
+import { pushPath } from "../../utils/navigation";
 import {
   Pressable,
   RefreshControl,
@@ -100,7 +101,7 @@ export default function HomeScreen() {
               <View style={styles.searchWrap}>
                 <SearchBar
                   onPress={() => router.push("/(tabs)/search")}
-                  onFilterPress={() => router.push("/(tabs)/search")}
+                  onFilterPress={() => router.push("/filters")}
                 />
               </View>
             </View>
@@ -110,7 +111,12 @@ export default function HomeScreen() {
                 title="Maison"
                 subtitle="Appartements, villas, terrains et plus encore"
                 icon="home"
-                onSeeAll={() => router.push("/(tabs)/search")}
+                onSeeAll={() =>
+                  router.push({
+                    pathname: "/properties",
+                    params: { kind: "HOUSE", offerType: "RENT" },
+                  })
+                }
               />
               {properties.length === 0 ? (
                 <Text style={styles.empty}>Aucun bien à afficher pour le moment.</Text>
@@ -128,7 +134,7 @@ export default function HomeScreen() {
                       onPress={() =>
                         router.push({
                           pathname: "/property/[id]",
-                          params: { id: item.id, title: item.title },
+                          params: { id: item.id },
                         })
                       }
                     />
@@ -164,7 +170,15 @@ export default function HomeScreen() {
                   title={section.title}
                   subtitle="Prestataires vérifiés à Kinshasa"
                   icon="construct-outline"
-                  onSeeAll={() => router.push("/(tabs)/search")}
+                  onSeeAll={() =>
+                    router.push({
+                      pathname: "/services",
+                      params: {
+                        categoryId: section.category.id,
+                        categorySlug: section.category.slug,
+                      },
+                    })
+                  }
                 />
                 {section.items.length === 0 ? (
                   <Text style={styles.empty}>Aucun service dans cette catégorie.</Text>
@@ -181,7 +195,7 @@ export default function HomeScreen() {
                         onPress={() =>
                           router.push({
                             pathname: "/service/[id]",
-                            params: { id: item.id, title: item.title },
+                            params: { id: item.id },
                           })
                         }
                       />
