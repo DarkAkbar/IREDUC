@@ -1,5 +1,6 @@
 import { Router } from "express";
 import { authenticate } from "../../middlewares/authenticate";
+import { documentUpload } from "../../middlewares/upload";
 import { validate } from "../../middlewares/validate";
 import * as usersController from "./users.controller";
 import { changePasswordSchema, updateProfileSchema } from "./users.schemas";
@@ -10,6 +11,11 @@ usersRouter.use(authenticate);
 
 usersRouter.get("/me", usersController.getMe);
 usersRouter.patch("/me", validate(updateProfileSchema), usersController.updateMe);
+usersRouter.post(
+  "/me/avatar",
+  documentUpload.single("file"),
+  usersController.uploadAvatar
+);
 usersRouter.patch(
   "/me/password",
   validate(changePasswordSchema),

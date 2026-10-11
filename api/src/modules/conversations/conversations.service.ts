@@ -1,4 +1,4 @@
-import { ListingStatus } from "@prisma/client";
+import { ListingStatus, MediaType } from "@prisma/client";
 import { prisma } from "../../config/prisma";
 import { createNotification } from "../../services/notification.service";
 import {
@@ -163,8 +163,33 @@ export async function listConversations(userId: string) {
           sender: { select: { id: true, fullName: true } },
         },
       },
-      property: { select: { id: true, title: true } },
-      service: { select: { id: true, title: true } },
+      property: {
+        select: {
+          id: true,
+          title: true,
+          price: true,
+          currency: true,
+          offerType: true,
+          media: {
+            where: { type: MediaType.PHOTO },
+            orderBy: { sortOrder: "asc" as const },
+            take: 1,
+            select: { url: true },
+          },
+        },
+      },
+      service: {
+        select: {
+          id: true,
+          title: true,
+          media: {
+            where: { type: MediaType.PHOTO },
+            orderBy: { sortOrder: "asc" as const },
+            take: 1,
+            select: { url: true },
+          },
+        },
+      },
       request: { select: { id: true, number: true } },
     },
     orderBy: { updatedAt: "desc" },
@@ -181,12 +206,29 @@ export async function listConversations(userId: string) {
       });
 
       const other = conversation.participants.find((p) => p.userId !== userId);
+      const property = conversation.property
+        ? {
+            id: conversation.property.id,
+            title: conversation.property.title,
+            price: Number(conversation.property.price),
+            currency: conversation.property.currency,
+            offerType: conversation.property.offerType,
+            photo: conversation.property.media[0]?.url ?? null,
+          }
+        : null;
+      const service = conversation.service
+        ? {
+            id: conversation.service.id,
+            title: conversation.service.title,
+            photo: conversation.service.media[0]?.url ?? null,
+          }
+        : null;
 
       return {
         id: conversation.id,
         request: conversation.request,
-        property: conversation.property,
-        service: conversation.service,
+        property,
+        service,
         otherParticipant: other?.user ?? null,
         lastMessage: conversation.messages[0] ?? null,
         unreadCount,
