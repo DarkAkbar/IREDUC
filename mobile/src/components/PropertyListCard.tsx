@@ -30,7 +30,8 @@ export function PropertyListCard({ item }: Props) {
   }
 
   function onReserve() {
-    if (!requireAuth(`/property/${item.id}`)) return;
+    const returnTo = `/reserve?type=PROPERTY&id=${item.id}`;
+    if (!requireAuth(returnTo)) return;
     router.push({
       pathname: "/reserve",
       params: { type: "PROPERTY", id: item.id, title: item.title },

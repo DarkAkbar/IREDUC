@@ -69,7 +69,8 @@ export default function PropertyDetailScreen() {
   }
 
   function reserve() {
-    if (!requireAuth(`/property/${id}`)) return;
+    const returnTo = `/reserve?type=PROPERTY&id=${id}`;
+    if (!requireAuth(returnTo)) return;
     router.push({
       pathname: "/reserve",
       params: { type: "PROPERTY", id: id!, title: property?.title },

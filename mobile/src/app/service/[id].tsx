@@ -69,7 +69,8 @@ export default function ServiceDetailScreen() {
   }
 
   function plan() {
-    if (!requireAuth(`/service/${id}`)) return;
+    const returnTo = `/reserve?type=SERVICE&id=${id}`;
+    if (!requireAuth(returnTo)) return;
     router.push({
       pathname: "/reserve",
       params: { type: "SERVICE", id: id!, title: service?.title },
