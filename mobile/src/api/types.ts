@@ -246,3 +246,99 @@ export type ServiceFilters = {
   sort?: ServiceSort;
   subService?: string;
 };
+
+export type ProjectType = "RENT" | "BUY" | "OTHER";
+export type VisitMode = "PHYSICAL" | "VIRTUAL";
+export type RequestStatus =
+  | "PENDING"
+  | "APPROVED"
+  | "REJECTED"
+  | "CANCELLED"
+  | "COMPLETED";
+export type PaymentStatus = "UNPAID" | "PAID";
+
+export type RequestTargetOwner = {
+  fullName: string;
+  logoUrl: string | null;
+  verified: boolean;
+  isAgency: boolean;
+};
+
+export type RequestTargetSummary = {
+  type: RequestTarget;
+  id: string;
+  title: string;
+  photo: string | null;
+  location: string | null;
+  price: number | null;
+  currency: string | null;
+  offerType?: string | null;
+  kind?: string | null;
+  bedrooms?: number | null;
+  bathrooms?: number | null;
+  areaM2?: number | null;
+  category?: string;
+  owner?: RequestTargetOwner | null;
+};
+
+export type RequestListItem = {
+  id: string;
+  number: string;
+  targetType: RequestTarget;
+  projectType: ProjectType;
+  status: RequestStatus;
+  paymentStatus: PaymentStatus;
+  visitDate: string | null;
+  visitSlot: string | null;
+  rejectionReason?: string | null;
+  target: RequestTargetSummary | null;
+  createdAt: string;
+};
+
+export type RequestDetail = RequestListItem & {
+  desiredDate: string | null;
+  durationMonths: number | null;
+  occupants: number | null;
+  visitMode: VisitMode | null;
+  fullName: string;
+  phone: string;
+  email: string;
+  whatsapp: string | null;
+  message: string | null;
+  rejectionReason: string | null;
+  requester: {
+    id: string;
+    fullName: string;
+    email: string;
+    phone: string | null;
+  };
+  accessRole: "requester" | "owner";
+  updatedAt: string;
+};
+
+export type RequestCounters = {
+  all: number;
+  pending: number;
+  approved: number;
+  rejected: number;
+  cancelled: number;
+  completed: number;
+};
+
+export type CreateRequestInput = {
+  targetType: RequestTarget;
+  propertyId?: string;
+  serviceId?: string;
+  projectType: ProjectType;
+  desiredDate?: string;
+  durationMonths?: number;
+  occupants?: number;
+  visitMode?: VisitMode;
+  visitDate?: string;
+  visitSlot?: string;
+  fullName: string;
+  phone: string;
+  email: string;
+  whatsapp?: string;
+  message?: string;
+};
