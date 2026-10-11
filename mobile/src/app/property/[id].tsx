@@ -4,7 +4,6 @@ import { Image } from "expo-image";
 import { Stack, useLocalSearchParams, useRouter } from "expo-router";
 import { useState } from "react";
 import {
-  Dimensions,
   Linking,
   Pressable,
   ScrollView,
@@ -16,6 +15,7 @@ import {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { mediaUrl } from "../../api/client";
 import { fetchProperty } from "../../api/properties";
+import { DetailGallery } from "../../components/detail/DetailGallery";
 import { FavoriteButton } from "../../components/FavoriteButton";
 import { ErrorState } from "../../components/list/ErrorState";
 import { ListScreenHeader } from "../../components/list/ListScreenHeader";
@@ -24,18 +24,17 @@ import { Button } from "../../components/ui/Button";
 import { SkeletonLoader } from "../../components/ui/SkeletonLoader";
 import { useRequireAuth } from "../../hooks/useRequireAuth";
 import { colors, radii, spacing, typography } from "../../theme";
-import { formatPrice, offerBadge, propertyLocation } from "../../utils/format";
-
-const WIDTH = Dimensions.get("window").width;
+import { formatPrice, kindLabel, offerBadge, propertyLocation } from "../../utils/format";
 
 export default function PropertyDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const { requireAuth } = useRequireAuth();
-  const [tab, setTab] = useState<"photos" | "video">("photos");
+  const [tab, setTab] = useState<"photos" | "video" | "about">("photos");
   const [expanded, setExpanded] = useState(false);
   const [photoIndex, setPhotoIndex] = useState(0);
+  const [charsOpen, setCharsOpen] = useState(true);
 
   const query = useQuery({
     queryKey: ["property", id],
@@ -45,33 +44,28 @@ export default function PropertyDetailScreen() {
 
   const property = query.data;
   const photos =
-    property?.media.filter((m) => m.type !== "VIDEO") ??
+    property?.media.filter((m) => (m.type ?? "PHOTO") !== "VIDEO") ??
     property?.photos ??
     [];
   const videos = property?.media.filter((m) => m.type === "VIDEO") ?? [];
-  const gallery = tab === "photos" ? photos : videos;
-  const current = gallery[photoIndex] ?? gallery[0];
 
   async function openMap() {
-    if (!property?.latitude || !property?.longitude) {
-      const q = encodeURIComponent(
-        property?.address || propertyLocation(property!)
+    if (!property) return;
+    if (property.latitude != null && property.longitude != null) {
+      await Linking.openURL(
+        `https://www.google.com/maps/search/?api=1&query=${property.latitude},${property.longitude}`
       );
-      await Linking.openURL(`https://www.google.com/maps/search/?api=1&query=${q}`);
       return;
     }
-    await Linking.openURL(
-      `https://www.google.com/maps/search/?api=1&query=${property.latitude},${property.longitude}`
-    );
+    const q = encodeURIComponent(property.address || propertyLocation(property));
+    await Linking.openURL(`https://www.google.com/maps/search/?api=1&query=${q}`);
   }
 
   async function shareWhatsApp() {
     if (!property) return;
-    const message = `${property.title} — ${formatPrice(
-      property.price,
-      property.offerType
-    )}\n${propertyLocation(property)}\nhttps://ireduc.cd/properties/${property.id}`;
-    await Share.share({ message });
+    await Share.share({
+      message: `${property.title} — ${formatPrice(property.price, property.offerType)}\n${propertyLocation(property)}\nhttps://ireduc.cd/properties/${property.id}`,
+    });
   }
 
   function reserve() {
@@ -79,7 +73,7 @@ export default function PropertyDetailScreen() {
     router.push({
       pathname: "/reserve",
       params: { type: "PROPERTY", id: id!, title: property?.title },
-    });
+    } as never);
   }
 
   function discuss() {
@@ -87,7 +81,7 @@ export default function PropertyDetailScreen() {
     router.push({
       pathname: "/discuss",
       params: { type: "PROPERTY", id: id!, title: property?.title },
-    });
+    } as never);
   }
 
   return (
@@ -97,9 +91,9 @@ export default function PropertyDetailScreen() {
 
       {query.isLoading ? (
         <View style={{ padding: spacing.lg, gap: spacing.md }}>
-          <SkeletonLoader height={240} borderRadius={radii.lg} />
+          <SkeletonLoader height={220} borderRadius={radii.lg} />
           <SkeletonLoader width="60%" height={24} />
-          <SkeletonLoader height={80} />
+          <SkeletonLoader height={120} />
         </View>
       ) : null}
 
@@ -107,178 +101,161 @@ export default function PropertyDetailScreen() {
 
       {property ? (
         <ScrollView contentContainerStyle={{ paddingBottom: spacing.xxl }}>
-          <View style={styles.tabs}>
-            <Pressable onPress={() => { setTab("photos"); setPhotoIndex(0); }}>
-              <Text style={[styles.tab, tab === "photos" && styles.tabActive]}>
-                Photos ({photos.length})
-              </Text>
-            </Pressable>
-            <Pressable onPress={() => { setTab("video"); setPhotoIndex(0); }}>
-              <Text style={[styles.tab, tab === "video" && styles.tabActive]}>
-                Vidéo ({videos.length})
-              </Text>
-            </Pressable>
-          </View>
-
-          <View style={styles.gallery}>
-            {current ? (
-              <Image
-                source={{ uri: mediaUrl(current.url) ?? undefined }}
-                style={styles.mainImage}
-                contentFit="cover"
-              />
-            ) : (
-              <View style={[styles.mainImage, styles.placeholder]}>
-                <Ionicons name="image-outline" size={40} color={colors.textMuted} />
-              </View>
-            )}
-            <View style={styles.counter}>
-              <Ionicons name="camera-outline" size={14} color={colors.white} />
-              <Text style={styles.counterText}>
-                {gallery.length ? `${photoIndex + 1}/${gallery.length}` : "0/0"}
-              </Text>
-            </View>
-            {gallery.length > 1 ? (
-              <>
-                <Pressable
-                  style={[styles.nav, styles.navLeft]}
-                  onPress={() =>
-                    setPhotoIndex((i) => (i - 1 + gallery.length) % gallery.length)
-                  }
-                >
-                  <Ionicons name="chevron-back" size={18} color={colors.navy} />
-                </Pressable>
-                <Pressable
-                  style={[styles.nav, styles.navRight]}
-                  onPress={() => setPhotoIndex((i) => (i + 1) % gallery.length)}
-                >
-                  <Ionicons name="chevron-forward" size={18} color={colors.navy} />
-                </Pressable>
-              </>
-            ) : null}
-            <ScrollView
-              horizontal
-              style={styles.thumbs}
-              showsHorizontalScrollIndicator={false}
-            >
-              {gallery.slice(0, 4).map((m, i) => (
-                <Pressable key={m.id} onPress={() => setPhotoIndex(i)}>
-                  <Image
-                    source={{ uri: mediaUrl(m.url) ?? undefined }}
-                    style={[styles.thumb, i === photoIndex && styles.thumbActive]}
-                  />
-                </Pressable>
-              ))}
-              {gallery.length > 4 ? (
-                <View style={[styles.thumb, styles.moreThumb]}>
-                  <Text style={styles.moreText}>+{gallery.length - 4}</Text>
-                </View>
-              ) : null}
-            </ScrollView>
-          </View>
+          <DetailGallery
+            photos={photos}
+            videos={videos}
+            tab={tab}
+            onTabChange={setTab}
+            index={photoIndex}
+            onIndexChange={setPhotoIndex}
+          />
 
           <View style={styles.content}>
             <View style={styles.locRow}>
               <Ionicons name="location" size={16} color={colors.primary} />
-              <Text style={styles.loc}>
+              <Text style={styles.loc} numberOfLines={2}>
                 {property.address
                   ? `${property.address}, ${propertyLocation(property)}`
                   : propertyLocation(property)}
               </Text>
-              <Ionicons name="eye-outline" size={14} color={colors.textMuted} />
-              <Text style={styles.views}>{property.viewsCount} vues</Text>
-            </View>
-
-            <View style={styles.titleRow}>
-              <Text style={styles.title}>{property.title}</Text>
-              <Badge label={offerBadge(property.offerType)} />
-            </View>
-
-            <View style={styles.meta}>
-              {property.bedrooms != null ? (
-                <Text style={styles.metaText}>{property.bedrooms} chambres</Text>
-              ) : null}
-              {property.bathrooms != null ? (
-                <Text style={styles.metaText}>{property.bathrooms} sdb</Text>
-              ) : null}
-              {property.areaM2 != null ? (
-                <Text style={styles.metaText}>{Math.round(property.areaM2)} m²</Text>
-              ) : null}
-            </View>
-
-            <View style={styles.priceBox}>
-              <Text style={styles.price}>
-                {formatPrice(property.price, property.offerType)}
-              </Text>
-              <Text style={styles.priceHint}>Frais de service IREDUC inclus</Text>
-            </View>
-
-            <Text style={styles.sectionTitle}>Description</Text>
-            <Text style={styles.description} numberOfLines={expanded ? undefined : 4}>
-              {property.description}
-            </Text>
-            <Pressable onPress={() => setExpanded((v) => !v)}>
-              <Text style={styles.more}>
-                {expanded ? "Voir moins" : "Voir plus"}
-              </Text>
-            </Pressable>
-
-            <Text style={styles.sectionTitle}>Localisation</Text>
-            <Button
-              label="Voir sur la carte"
-              variant="outline"
-              onPress={() => void openMap()}
-            />
-
-            <Text style={styles.sectionTitle}>Caractéristiques</Text>
-            <View style={styles.chips}>
-              {property.parking ? <Tag label="Parking" /> : null}
-              {property.hasPool ? <Tag label="Piscine" /> : null}
-              {property.hasTitleDeed ? <Tag label="Titre foncier" /> : null}
-              {property.tags.map((t) => (
-                <Tag key={t} label={t} />
-              ))}
-            </View>
-
-            <View style={styles.actions}>
-              <Button label="Réserver une visite" onPress={reserve} />
-              <Button
-                label="Discuter avec le propriétaire"
-                variant="navy"
-                onPress={discuss}
-                style={{ marginTop: spacing.sm }}
-              />
-              <View style={styles.secondaryActions}>
-                <View style={styles.secondaryBtn}>
-                  <FavoriteButton
-                    targetType="PROPERTY"
-                    targetId={property.id}
-                    returnTo={`/property/${property.id}`}
-                  />
-                  <Text style={styles.secondaryLabel}>Favoris</Text>
-                </View>
-                <Pressable style={styles.whatsapp} onPress={() => void shareWhatsApp()}>
-                  <Ionicons name="logo-whatsapp" size={18} color={colors.whatsapp} />
-                  <Text style={styles.whatsappText}>Partager sur WhatsApp</Text>
-                </Pressable>
+              <View style={styles.views}>
+                <Ionicons name="eye-outline" size={14} color={colors.textMuted} />
+                <Text style={styles.viewsText}>{property.viewsCount} vues</Text>
               </View>
             </View>
 
-            <Text style={styles.sectionTitle}>
-              {property.owner.agency
-                ? "Agence de cette offre"
-                : "Propriétaire de cette offre"}
-            </Text>
-            <View style={styles.ownerCard}>
+            <Text style={styles.title}>{kindLabel(String(property.kind))}</Text>
+            <Text style={styles.subtitleTitle}>{property.title}</Text>
+            <Badge label={offerBadge(property.offerType)} />
+
+            <View style={styles.metaRow}>
+              {property.bedrooms != null ? (
+                <Meta icon="bed-outline" label={`${property.bedrooms} chambres`} />
+              ) : null}
+              {property.bathrooms != null ? (
+                <Meta icon="water-outline" label={`${property.bathrooms} sdb`} />
+              ) : null}
+              {property.areaM2 != null ? (
+                <Meta icon="resize-outline" label={`${Math.round(property.areaM2)} m²`} />
+              ) : null}
+            </View>
+
+            <View style={styles.card}>
+              <View style={styles.sectionHead}>
+                <Ionicons name="document-text-outline" size={18} color={colors.navy} />
+                <Text style={styles.section}>Description</Text>
+              </View>
+              <Text style={styles.body} numberOfLines={expanded ? undefined : 4}>
+                {property.description}
+              </Text>
+              <Pressable style={styles.moreRow} onPress={() => setExpanded((v) => !v)}>
+                <Text style={styles.more}>{expanded ? "Voir moins" : "Voir plus"}</Text>
+                <Ionicons
+                  name={expanded ? "chevron-up" : "chevron-down"}
+                  size={16}
+                  color={colors.navy}
+                />
+              </Pressable>
+            </View>
+
+            <View style={styles.card}>
+              <View style={styles.sectionHead}>
+                <Ionicons name="map-outline" size={18} color={colors.navy} />
+                <Text style={styles.section}>Localisation</Text>
+              </View>
+              <Pressable style={styles.mapBox} onPress={() => void openMap()}>
+                <Ionicons name="location" size={36} color={colors.primary} />
+                <Text style={styles.mapHint}>Aperçu Kinshasa</Text>
+                <View style={styles.mapBtn}>
+                  <Ionicons name="navigate-outline" size={16} color={colors.navy} />
+                  <Text style={styles.mapBtnText}>Voir sur la carte</Text>
+                </View>
+              </Pressable>
+              <Text style={styles.addressLine}>
+                {property.address || propertyLocation(property)}
+              </Text>
+            </View>
+
+            <Pressable style={styles.card} onPress={() => setCharsOpen((v) => !v)}>
+              <View style={styles.sectionHead}>
+                <Ionicons name="list-outline" size={18} color={colors.navy} />
+                <Text style={[styles.section, { flex: 1 }]}>Caractéristiques</Text>
+                <Ionicons
+                  name={charsOpen ? "chevron-up" : "chevron-down"}
+                  size={18}
+                  color={colors.navy}
+                />
+              </View>
+              {charsOpen ? (
+                <View style={styles.chips}>
+                  {property.parking ? <Tag label="Parking" /> : null}
+                  {property.hasPool ? <Tag label="Piscine" /> : null}
+                  {property.hasTitleDeed ? <Tag label="Titre foncier" /> : null}
+                  {property.tags.map((t) => (
+                    <Tag key={t} label={t} />
+                  ))}
+                </View>
+              ) : null}
+            </Pressable>
+
+            <View style={styles.priceCard}>
+              <Text style={styles.price}>
+                {formatPrice(property.price, property.offerType).replace(" $", " USD")}
+              </Text>
+              <View style={styles.priceHintRow}>
+                <Ionicons name="information-circle-outline" size={14} color={colors.textMuted} />
+                <Text style={styles.priceHint}>Frais de service IREDUC inclus</Text>
+              </View>
+            </View>
+
+            <Button label="Réserver une visite" onPress={reserve} />
+            <Button
+              label="Discuter avec le propriétaire"
+              variant="navy"
+              onPress={discuss}
+              style={{ marginTop: spacing.sm }}
+            />
+
+            <View style={styles.secondaryRow}>
+              <Pressable style={styles.secondaryBtn} onPress={() => undefined}>
+                <FavoriteButton
+                  targetType="PROPERTY"
+                  targetId={property.id}
+                  returnTo={`/property/${property.id}`}
+                />
+                <Text style={styles.secondaryLabel}>Ajouter aux favoris</Text>
+              </Pressable>
+              <Pressable style={styles.secondaryBtn}>
+                <Ionicons name="notifications-outline" size={20} color={colors.navy} />
+                <Text style={styles.secondaryLabel}>Créer une alerte</Text>
+              </Pressable>
+            </View>
+
+            <Pressable style={styles.whatsapp} onPress={() => void shareWhatsApp()}>
+              <Ionicons name="logo-whatsapp" size={18} color={colors.whatsapp} />
+              <Text style={styles.whatsappText}>Partager sur WhatsApp</Text>
+            </Pressable>
+
+            <View style={styles.card}>
+              <View style={styles.sectionHead}>
+                <Ionicons name="person-outline" size={18} color={colors.navy} />
+                <Text style={styles.section}>
+                  {property.owner.agency
+                    ? "Agence de cette offre"
+                    : "Propriétaire de cette offre"}
+                </Text>
+              </View>
               <View style={styles.ownerTop}>
                 {property.owner.agency?.logoUrl ? (
                   <Image
-                    source={{ uri: mediaUrl(property.owner.agency.logoUrl) ?? undefined }}
+                    source={{
+                      uri: mediaUrl(property.owner.agency.logoUrl) ?? undefined,
+                    }}
                     style={styles.ownerLogo}
                   />
                 ) : (
                   <View style={[styles.ownerLogo, styles.logoFallback]}>
-                    <Ionicons name="person" size={20} color={colors.navy} />
+                    <Ionicons name="business" size={20} color={colors.navy} />
                   </View>
                 )}
                 <View style={{ flex: 1 }}>
@@ -295,16 +272,36 @@ export default function PropertyDetailScreen() {
                   ) : null}
                 </View>
               </View>
-              <Text style={styles.contact}>
-                {property.contacts.phoneMasked ?? "Téléphone masqué"}
-              </Text>
+              <ContactRow
+                icon="location-outline"
+                text={propertyLocation(property)}
+              />
+              <ContactRow
+                icon="call-outline"
+                text={property.contacts.phoneMasked ?? "Téléphone masqué"}
+              />
               {property.contacts.whatsapp ? (
-                <Text style={styles.contact}>WhatsApp : {property.contacts.whatsapp}</Text>
+                <ContactRow icon="logo-whatsapp" text={property.contacts.whatsapp} />
               ) : null}
             </View>
           </View>
         </ScrollView>
       ) : null}
+    </View>
+  );
+}
+
+function Meta({
+  icon,
+  label,
+}: {
+  icon: keyof typeof Ionicons.glyphMap;
+  label: string;
+}) {
+  return (
+    <View style={styles.metaItem}>
+      <Ionicons name={icon} size={16} color={colors.navy} />
+      <Text style={styles.metaText}>{label}</Text>
     </View>
   );
 }
@@ -317,83 +314,74 @@ function Tag({ label }: { label: string }) {
   );
 }
 
+function ContactRow({
+  icon,
+  text,
+}: {
+  icon: keyof typeof Ionicons.glyphMap;
+  text: string;
+}) {
+  return (
+    <View style={styles.contactRow}>
+      <Ionicons name={icon} size={14} color={colors.textMuted} />
+      <Text style={styles.contactText}>{text}</Text>
+    </View>
+  );
+}
+
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.background },
-  tabs: {
-    flexDirection: "row",
-    gap: spacing.lg,
-    paddingHorizontal: spacing.lg,
-    marginBottom: spacing.sm,
-  },
-  tab: { color: colors.textMuted, fontWeight: "700", paddingBottom: 6 },
-  tabActive: {
-    color: colors.primary,
-    borderBottomWidth: 2,
-    borderBottomColor: colors.primary,
-  },
-  gallery: { width: WIDTH, height: 260, backgroundColor: colors.skeleton },
-  mainImage: { width: "100%", height: "100%" },
-  placeholder: { alignItems: "center", justifyContent: "center" },
-  counter: {
-    position: "absolute",
-    top: spacing.md,
-    left: spacing.md,
-    flexDirection: "row",
-    gap: 4,
-    backgroundColor: "rgba(0,0,0,0.55)",
-    paddingHorizontal: spacing.sm,
-    paddingVertical: 4,
-    borderRadius: radii.sm,
-    alignItems: "center",
-  },
-  counterText: { color: colors.white, fontSize: 12, fontWeight: "700" },
-  nav: {
-    position: "absolute",
-    top: "40%",
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    backgroundColor: colors.white,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  navLeft: { left: spacing.md },
-  navRight: { right: spacing.md },
-  thumbs: { position: "absolute", right: spacing.sm, top: spacing.sm, maxHeight: 200 },
-  thumb: {
-    width: 56,
-    height: 56,
-    borderRadius: radii.sm,
-    marginBottom: spacing.sm,
-    borderWidth: 2,
-    borderColor: "transparent",
-  },
-  thumbActive: { borderColor: colors.primary },
-  moreThumb: {
-    backgroundColor: "rgba(0,0,0,0.55)",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  moreText: { color: colors.white, fontWeight: "700", fontSize: 12 },
   content: { padding: spacing.lg, gap: spacing.sm },
-  locRow: { flexDirection: "row", alignItems: "center", gap: 4, flexWrap: "wrap" },
-  loc: { color: colors.textMuted, flex: 1, fontSize: 13 },
-  views: { color: colors.textMuted, fontSize: 12 },
-  titleRow: { flexDirection: "row", alignItems: "center", gap: spacing.sm },
-  title: { ...typography.title, flex: 1 },
-  meta: { flexDirection: "row", gap: spacing.md },
-  metaText: { color: colors.navy, fontWeight: "600" },
-  priceBox: {
-    backgroundColor: "#E8EEF9",
-    borderRadius: radii.md,
+  locRow: { flexDirection: "row", alignItems: "flex-start", gap: 6 },
+  loc: { flex: 1, color: colors.textMuted, fontSize: 13 },
+  views: { flexDirection: "row", alignItems: "center", gap: 4 },
+  viewsText: { color: colors.textMuted, fontSize: 12 },
+  title: { ...typography.title, marginTop: spacing.sm },
+  subtitleTitle: { color: colors.textMuted, marginBottom: spacing.sm },
+  metaRow: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: spacing.lg,
+    marginVertical: spacing.md,
+  },
+  metaItem: { flexDirection: "row", alignItems: "center", gap: 6 },
+  metaText: { color: colors.navy, fontWeight: "700", fontSize: 13 },
+  card: {
+    backgroundColor: colors.white,
+    borderRadius: radii.lg,
+    borderWidth: 1,
+    borderColor: colors.border,
     padding: spacing.md,
     marginTop: spacing.sm,
+    gap: spacing.sm,
   },
-  price: { color: colors.navy, fontSize: 22, fontWeight: "800" },
-  priceHint: { color: colors.textMuted, fontSize: 12, marginTop: 2 },
-  sectionTitle: { ...typography.section, marginTop: spacing.md },
-  description: { ...typography.body, lineHeight: 22 },
-  more: { color: colors.navy, fontWeight: "700", marginTop: 4 },
+  sectionHead: { flexDirection: "row", alignItems: "center", gap: 8 },
+  section: { color: colors.navy, fontWeight: "800", fontSize: 16 },
+  body: { ...typography.body, lineHeight: 22 },
+  moreRow: { flexDirection: "row", alignItems: "center", gap: 4 },
+  more: { color: colors.navy, fontWeight: "700" },
+  mapBox: {
+    height: 140,
+    borderRadius: radii.md,
+    backgroundColor: "#DCE7F8",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: spacing.sm,
+  },
+  mapHint: { color: colors.navy, fontWeight: "600" },
+  mapBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    backgroundColor: colors.white,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    borderRadius: radii.pill,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  mapBtnText: { color: colors.navy, fontWeight: "700", fontSize: 13 },
+  addressLine: { color: colors.textMuted, fontSize: 12 },
   chips: { flexDirection: "row", flexWrap: "wrap", gap: spacing.sm },
   tag: {
     backgroundColor: "#E8EEF9",
@@ -402,21 +390,36 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.xs,
   },
   tagText: { color: colors.navy, fontSize: 12, fontWeight: "600" },
-  actions: { marginTop: spacing.md },
-  secondaryActions: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.md,
+  priceCard: {
+    backgroundColor: "#E8EEF9",
+    borderRadius: radii.lg,
+    padding: spacing.lg,
     marginTop: spacing.md,
   },
-  secondaryBtn: { alignItems: "center", gap: 4 },
-  secondaryLabel: { fontSize: 11, color: colors.navy, fontWeight: "600" },
-  whatsapp: {
+  price: { color: colors.navy, fontSize: 26, fontWeight: "800" },
+  priceHintRow: { flexDirection: "row", alignItems: "center", gap: 4, marginTop: 4 },
+  priceHint: { color: colors.textMuted, fontSize: 12 },
+  secondaryRow: { flexDirection: "row", gap: spacing.sm, marginTop: spacing.md },
+  secondaryBtn: {
     flex: 1,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
     gap: 6,
+    backgroundColor: colors.white,
+    borderWidth: 1.5,
+    borderColor: colors.navy,
+    borderRadius: radii.md,
+    paddingVertical: spacing.md,
+    paddingHorizontal: spacing.sm,
+  },
+  secondaryLabel: { color: colors.navy, fontWeight: "700", fontSize: 12, flexShrink: 1 },
+  whatsapp: {
+    marginTop: spacing.sm,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
     borderWidth: 1.5,
     borderColor: colors.whatsapp,
     borderRadius: radii.md,
@@ -424,16 +427,8 @@ const styles = StyleSheet.create({
     backgroundColor: colors.white,
   },
   whatsappText: { color: colors.whatsapp, fontWeight: "700" },
-  ownerCard: {
-    backgroundColor: colors.white,
-    borderRadius: radii.lg,
-    padding: spacing.md,
-    borderWidth: 1,
-    borderColor: colors.border,
-    gap: spacing.sm,
-  },
   ownerTop: { flexDirection: "row", gap: spacing.md, alignItems: "center" },
-  ownerLogo: { width: 48, height: 48, borderRadius: 24 },
+  ownerLogo: { width: 52, height: 52, borderRadius: 26 },
   logoFallback: {
     backgroundColor: colors.skeleton,
     alignItems: "center",
@@ -453,5 +448,6 @@ const styles = StyleSheet.create({
     fontSize: 11,
     fontWeight: "700",
   },
-  contact: { color: colors.textMuted, fontSize: 13 },
+  contactRow: { flexDirection: "row", alignItems: "center", gap: 8 },
+  contactText: { color: colors.textMuted, fontSize: 13 },
 });

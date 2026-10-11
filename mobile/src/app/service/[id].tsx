@@ -14,6 +14,7 @@ import {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { mediaUrl } from "../../api/client";
 import { fetchService, fetchServiceReviews } from "../../api/services";
+import { DetailGallery } from "../../components/detail/DetailGallery";
 import { FavoriteButton } from "../../components/FavoriteButton";
 import { ErrorState } from "../../components/list/ErrorState";
 import { ListScreenHeader } from "../../components/list/ListScreenHeader";
@@ -35,6 +36,7 @@ export default function ServiceDetailScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const { requireAuth } = useRequireAuth();
+  const [tab, setTab] = useState<"photos" | "video" | "about">("photos");
   const [expanded, setExpanded] = useState(false);
   const [photoIndex, setPhotoIndex] = useState(0);
 
@@ -54,8 +56,8 @@ export default function ServiceDetailScreen() {
   });
 
   const service = query.data;
-  const photos = service?.media.filter((m) => m.type !== "VIDEO") ?? [];
-  const current = photos[photoIndex] ?? photos[0];
+  const photos = service?.media.filter((m) => (m.type ?? "PHOTO") !== "VIDEO") ?? [];
+  const videos = service?.media.filter((m) => m.type === "VIDEO") ?? [];
   const summary = reviewsQuery.data?.pages[0]?.summary;
   const reviews = reviewsQuery.data?.pages.flatMap((p) => p.data) ?? [];
 
@@ -71,7 +73,7 @@ export default function ServiceDetailScreen() {
     router.push({
       pathname: "/reserve",
       params: { type: "SERVICE", id: id!, title: service?.title },
-    });
+    } as never);
   }
 
   function discuss() {
@@ -79,7 +81,7 @@ export default function ServiceDetailScreen() {
     router.push({
       pathname: "/discuss",
       params: { type: "SERVICE", id: id!, title: service?.title },
-    });
+    } as never);
   }
 
   return (
@@ -97,47 +99,24 @@ export default function ServiceDetailScreen() {
 
       {service ? (
         <ScrollView contentContainerStyle={{ paddingBottom: spacing.xxl }}>
-          <View style={styles.gallery}>
-            {current ? (
-              <Image
-                source={{ uri: mediaUrl(current.url) ?? undefined }}
-                style={styles.image}
-                contentFit="cover"
-              />
-            ) : (
-              <View style={[styles.image, styles.placeholder]}>
-                <Ionicons name="image-outline" size={40} color={colors.textMuted} />
-              </View>
-            )}
-            <View style={styles.counter}>
-              <Text style={styles.counterText}>
-                {photos.length ? `${photoIndex + 1}/${photos.length}` : "0/0"}
-              </Text>
-            </View>
-            {current?.caption ? (
-              <Text style={styles.caption}>{current.caption}</Text>
-            ) : null}
-            {photos.length > 1 ? (
-              <>
-                <Pressable
-                  style={[styles.nav, styles.navLeft]}
-                  onPress={() =>
-                    setPhotoIndex((i) => (i - 1 + photos.length) % photos.length)
-                  }
-                >
-                  <Ionicons name="chevron-back" size={18} color={colors.navy} />
-                </Pressable>
-                <Pressable
-                  style={[styles.nav, styles.navRight]}
-                  onPress={() => setPhotoIndex((i) => (i + 1) % photos.length)}
-                >
-                  <Ionicons name="chevron-forward" size={18} color={colors.navy} />
-                </Pressable>
-              </>
-            ) : null}
-          </View>
+          <DetailGallery
+            photos={photos}
+            videos={videos}
+            tab={tab}
+            onTabChange={setTab}
+            index={photoIndex}
+            onIndexChange={setPhotoIndex}
+            showAboutTab
+          />
 
           <View style={styles.content}>
+            {tab === "about" ? (
+              <View style={styles.card}>
+                <Text style={styles.section}>À propos du service</Text>
+                <Text style={styles.body}>{service.description}</Text>
+              </View>
+            ) : null}
+
             <Text style={styles.breadcrumb}>
               {service.category.name}
               {service.subServices[0] ? ` > ${service.subServices[0]}` : ""}
@@ -151,31 +130,51 @@ export default function ServiceDetailScreen() {
                 <Ionicons name="checkmark-circle" size={16} color="#2F80ED" />
               ) : null}
             </View>
-            <Text style={styles.ratingLine}>
-              {service.averageRating?.toFixed(1) ?? "—"} ({service.reviewsCount} avis)
-              {"  |  "}
-              {service.viewsCount} projets réalisés
-            </Text>
+            <View style={styles.ratingRow}>
+              <Ionicons name="star" size={16} color="#F2C94C" />
+              <Text style={styles.ratingLine}>
+                {service.averageRating?.toFixed(1) ?? "—"} ({service.reviewsCount} avis)
+                {"  |  "}
+                {service.viewsCount} projets réalisés
+              </Text>
+            </View>
 
             <View style={styles.tags}>
               {service.subServices.slice(0, 3).map((s) => (
-                <Chip key={s} label={s} tone="muted" />
+                <View key={s} style={styles.featureTag}>
+                  <Ionicons name="flash-outline" size={14} color={colors.navy} />
+                  <Text style={styles.featureText}>{s}</Text>
+                </View>
               ))}
             </View>
 
-            <Text style={styles.section}>Description du service</Text>
-            <Text style={styles.body} numberOfLines={expanded ? undefined : 4}>
-              {service.description}
-            </Text>
-            <Pressable onPress={() => setExpanded((v) => !v)}>
-              <Text style={styles.more}>{expanded ? "Voir moins" : "Voir plus"}</Text>
-            </Pressable>
+            <View style={styles.card}>
+              <Text style={styles.section}>Description du service</Text>
+              <Text style={styles.body} numberOfLines={expanded ? undefined : 4}>
+                {service.description}
+              </Text>
+              <Pressable style={styles.moreRow} onPress={() => setExpanded((v) => !v)}>
+                <Text style={styles.more}>{expanded ? "Voir moins" : "Voir plus"}</Text>
+                <Ionicons
+                  name={expanded ? "chevron-up" : "chevron-down"}
+                  size={16}
+                  color={colors.navy}
+                />
+              </Pressable>
+            </View>
 
-            <Text style={styles.section}>Zone d'intervention</Text>
-            <View style={styles.tags}>
-              {service.coverageCommunes.map((c) => (
-                <Chip key={c.id} label={c.name} tone="muted" />
-              ))}
+            <View style={styles.card}>
+              <Text style={styles.section}>Zone d'intervention</Text>
+              <View style={styles.mapBox}>
+                <Ionicons name="location" size={32} color={colors.primary} />
+                <Text style={styles.mapHint}>Kinshasa et environs</Text>
+              </View>
+              <Text style={styles.zoneLabel}>Nous intervenons à :</Text>
+              <View style={styles.tags}>
+                {service.coverageCommunes.map((c) => (
+                  <Chip key={c.id} label={c.name} tone="muted" />
+                ))}
+              </View>
             </View>
 
             <View style={styles.ctaBox}>
@@ -188,105 +187,130 @@ export default function ServiceDetailScreen() {
                 onPress={discuss}
                 style={{ marginTop: spacing.sm }}
               />
-              <View style={styles.secondary}>
-                <FavoriteButton
-                  targetType="SERVICE"
-                  targetId={service.id}
-                  returnTo={`/service/${service.id}`}
-                />
-                <Pressable style={styles.whatsapp} onPress={() => void shareWhatsApp()}>
-                  <Ionicons name="logo-whatsapp" size={18} color={colors.whatsapp} />
-                  <Text style={styles.whatsappText}>Partager sur WhatsApp</Text>
+              <View style={styles.secondaryRow}>
+                <View style={styles.secondaryBtn}>
+                  <FavoriteButton
+                    targetType="SERVICE"
+                    targetId={service.id}
+                    returnTo={`/service/${service.id}`}
+                  />
+                  <Text style={styles.secondaryLabel}>Favori</Text>
+                </View>
+                <Pressable style={styles.secondaryBtn}>
+                  <Ionicons name="notifications-outline" size={20} color={colors.navy} />
+                  <Text style={styles.secondaryLabel}>Créer une alerte</Text>
                 </Pressable>
               </View>
+              <Pressable style={styles.whatsapp} onPress={() => void shareWhatsApp()}>
+                <Ionicons name="logo-whatsapp" size={18} color={colors.whatsapp} />
+                <Text style={styles.whatsappText}>Partager sur WhatsApp</Text>
+              </Pressable>
             </View>
 
-            <Text style={styles.section}>À propos du prestataire</Text>
-            <View style={styles.providerCard}>
-              {service.provider.logoUrl ? (
-                <Image
-                  source={{ uri: mediaUrl(service.provider.logoUrl) ?? undefined }}
-                  style={styles.logo}
-                />
-              ) : (
-                <View style={[styles.logo, styles.logoFallback]}>
-                  <Ionicons name="business" size={20} color={colors.navy} />
-                </View>
-              )}
-              <View style={{ flex: 1 }}>
-                <View style={styles.providerRow}>
-                  <Text style={styles.providerName}>{service.provider.displayName}</Text>
+            <View style={styles.card}>
+              <Text style={styles.section}>À propos du prestataire</Text>
+              <View style={styles.providerCard}>
+                {service.provider.logoUrl ? (
+                  <Image
+                    source={{ uri: mediaUrl(service.provider.logoUrl) ?? undefined }}
+                    style={styles.logo}
+                  />
+                ) : (
+                  <View style={[styles.logo, styles.logoFallback]}>
+                    <Ionicons name="business" size={20} color={colors.navy} />
+                  </View>
+                )}
+                <View style={{ flex: 1 }}>
+                  <View style={styles.providerRow}>
+                    <Text style={styles.providerName}>{service.provider.displayName}</Text>
+                    {service.provider.verified ? (
+                      <Ionicons name="checkmark-circle" size={16} color="#2F80ED" />
+                    ) : null}
+                  </View>
                   {service.provider.verified ? (
                     <Text style={styles.verified}>Prestataire vérifié</Text>
                   ) : null}
                 </View>
-                <Text style={styles.stat}>
-                  {service.viewsCount} projets · note {service.averageRating ?? "—"}
-                  {service.provider.yearsOfExperience != null
-                    ? ` · ${service.provider.yearsOfExperience} ans d'expérience`
-                    : ""}
-                </Text>
-                {service.provider.phone ? (
-                  <Text style={styles.stat}>{service.provider.phone}</Text>
-                ) : null}
-                {service.provider.contactEmail ? (
-                  <Text style={styles.stat}>{service.provider.contactEmail}</Text>
-                ) : null}
               </View>
+              <View style={styles.statsRow}>
+                <Stat value={String(service.viewsCount)} label="Projets réalisés" />
+                <Stat
+                  value={service.averageRating?.toFixed(1) ?? "—"}
+                  label="Note moyenne"
+                />
+                <Stat
+                  value={
+                    service.provider.yearsOfExperience != null
+                      ? `${service.provider.yearsOfExperience} ans`
+                      : "—"
+                  }
+                  label="Expérience"
+                />
+              </View>
+              {service.provider.phone ? (
+                <ContactRow icon="call-outline" text={service.provider.phone} />
+              ) : null}
+              {service.provider.contactEmail ? (
+                <ContactRow icon="mail-outline" text={service.provider.contactEmail} />
+              ) : null}
+              <ContactRow icon="location-outline" text="Kinshasa, RDC" />
             </View>
 
-            <Text style={styles.section}>Nos engagements</Text>
-            {ENGAGEMENTS.map((e) => (
-              <View key={e} style={styles.engage}>
-                <Ionicons name="checkmark-circle" size={16} color={colors.navy} />
-                <Text style={styles.engageText}>{e}</Text>
-              </View>
-            ))}
+            <View style={styles.card}>
+              <Text style={styles.section}>Nos engagements</Text>
+              {ENGAGEMENTS.map((e) => (
+                <View key={e} style={styles.engage}>
+                  <Ionicons name="checkmark-circle" size={16} color={colors.navy} />
+                  <Text style={styles.engageText}>{e}</Text>
+                </View>
+              ))}
+            </View>
 
-            <Text style={styles.section}>Avis des clients</Text>
-            {summary ? (
-              <View style={styles.reviewSummary}>
-                <Text style={styles.avg}>
-                  {summary.averageRating?.toFixed(1) ?? "—"} sur 5
-                </Text>
-                <Text style={styles.stat}>{summary.totalRatings} avis</Text>
-                {[5, 4, 3, 2, 1].map((star) => {
-                  const pct =
-                    summary.percentage[star as 1 | 2 | 3 | 4 | 5] ?? 0;
-                  return (
-                    <View key={star} style={styles.barRow}>
-                      <Text style={styles.barLabel}>{star}★</Text>
-                      <View style={styles.barTrack}>
-                        <View style={[styles.barFill, { width: `${pct}%` }]} />
+            <View style={styles.card}>
+              <Text style={styles.section}>Avis des clients</Text>
+              {summary ? (
+                <>
+                  <Text style={styles.avg}>
+                    {summary.averageRating?.toFixed(1) ?? "—"} sur 5
+                  </Text>
+                  <Text style={styles.statLine}>{summary.totalRatings} avis</Text>
+                  {[5, 4, 3, 2, 1].map((star) => {
+                    const pct = summary.percentage[star as 1 | 2 | 3 | 4 | 5] ?? 0;
+                    return (
+                      <View key={star} style={styles.barRow}>
+                        <Text style={styles.barLabel}>{star}★</Text>
+                        <View style={styles.barTrack}>
+                          <View style={[styles.barFill, { width: `${pct}%` }]} />
+                        </View>
+                        <Text style={styles.barPct}>{pct}%</Text>
                       </View>
-                      <Text style={styles.barPct}>{pct}%</Text>
-                    </View>
-                  );
-                })}
-              </View>
-            ) : null}
+                    );
+                  })}
+                </>
+              ) : null}
 
-            {reviews.map((review) => (
-              <View key={review.id} style={styles.reviewCard}>
-                <Text style={styles.reviewAuthor}>{review.author.fullName}</Text>
-                <Text style={styles.reviewStars}>
-                  {"★".repeat(review.rating)}
-                  {"☆".repeat(5 - review.rating)}
-                </Text>
-                {review.comment ? (
-                  <Text style={styles.body}>{review.comment}</Text>
-                ) : null}
-              </View>
-            ))}
+              {reviews.map((review) => (
+                <View key={review.id} style={styles.reviewCard}>
+                  <Text style={styles.reviewAuthor}>{review.author.fullName}</Text>
+                  <Text style={styles.reviewStars}>
+                    {"★".repeat(review.rating)}
+                    {"☆".repeat(5 - review.rating)}
+                  </Text>
+                  {review.comment ? (
+                    <Text style={styles.body}>{review.comment}</Text>
+                  ) : null}
+                </View>
+              ))}
 
-            {reviewsQuery.hasNextPage ? (
-              <Button
-                label="Voir plus d'avis"
-                variant="outline"
-                onPress={() => void reviewsQuery.fetchNextPage()}
-                loading={reviewsQuery.isFetchingNextPage}
-              />
-            ) : null}
+              {reviewsQuery.hasNextPage ? (
+                <Button
+                  label="Voir tous les avis"
+                  variant="outline"
+                  onPress={() => void reviewsQuery.fetchNextPage()}
+                  loading={reviewsQuery.isFetchingNextPage}
+                />
+              ) : null}
+            </View>
           </View>
         </ScrollView>
       ) : null}
@@ -294,54 +318,73 @@ export default function ServiceDetailScreen() {
   );
 }
 
+function Stat({ value, label }: { value: string; label: string }) {
+  return (
+    <View style={styles.statBox}>
+      <Text style={styles.statValue}>{value}</Text>
+      <Text style={styles.statLabel}>{label}</Text>
+    </View>
+  );
+}
+
+function ContactRow({
+  icon,
+  text,
+}: {
+  icon: keyof typeof Ionicons.glyphMap;
+  text: string;
+}) {
+  return (
+    <View style={styles.contactRow}>
+      <Ionicons name={icon} size={14} color={colors.textMuted} />
+      <Text style={styles.contactText}>{text}</Text>
+    </View>
+  );
+}
+
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.background },
-  gallery: { height: 240, backgroundColor: colors.skeleton },
-  image: { width: "100%", height: "100%" },
-  placeholder: { alignItems: "center", justifyContent: "center" },
-  counter: {
-    position: "absolute",
-    top: spacing.md,
-    left: spacing.md,
-    backgroundColor: "rgba(0,0,0,0.55)",
-    paddingHorizontal: spacing.sm,
-    paddingVertical: 4,
-    borderRadius: radii.sm,
-  },
-  counterText: { color: colors.white, fontWeight: "700", fontSize: 12 },
-  caption: {
-    position: "absolute",
-    bottom: spacing.md,
-    left: spacing.md,
-    color: colors.white,
-    backgroundColor: "rgba(0,0,0,0.45)",
-    paddingHorizontal: spacing.sm,
-    paddingVertical: 4,
-    borderRadius: radii.sm,
-    overflow: "hidden",
-  },
-  nav: {
-    position: "absolute",
-    top: "42%",
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    backgroundColor: colors.white,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  navLeft: { left: spacing.md },
-  navRight: { right: spacing.md },
   content: { padding: spacing.lg, gap: spacing.sm },
   breadcrumb: { color: colors.textMuted, fontSize: 12, fontWeight: "600" },
   providerRow: { flexDirection: "row", alignItems: "center", gap: 6, flexWrap: "wrap" },
   by: { color: colors.textMuted },
   byBold: { color: colors.navy, fontWeight: "800" },
+  ratingRow: { flexDirection: "row", alignItems: "center", gap: 6 },
   ratingLine: { color: colors.textMuted, fontSize: 13 },
   tags: { flexDirection: "row", flexWrap: "wrap", gap: spacing.sm, marginTop: 4 },
-  section: { ...typography.section, marginTop: spacing.md },
+  featureTag: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    backgroundColor: "#E8EEF9",
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.xs,
+    borderRadius: radii.pill,
+  },
+  featureText: { color: colors.navy, fontWeight: "700", fontSize: 12 },
+  card: {
+    backgroundColor: colors.white,
+    borderRadius: radii.lg,
+    borderWidth: 1,
+    borderColor: colors.border,
+    padding: spacing.md,
+    marginTop: spacing.sm,
+    gap: spacing.sm,
+  },
+  section: { color: colors.navy, fontWeight: "800", fontSize: 16 },
   body: { ...typography.body, lineHeight: 22 },
+  moreRow: { flexDirection: "row", alignItems: "center", gap: 4 },
   more: { color: colors.navy, fontWeight: "700" },
+  mapBox: {
+    height: 110,
+    borderRadius: radii.md,
+    backgroundColor: "#DCE7F8",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 4,
+  },
+  mapHint: { color: colors.navy, fontWeight: "600" },
+  zoneLabel: { color: colors.navy, fontWeight: "700", fontSize: 13 },
   ctaBox: {
     backgroundColor: colors.white,
     borderRadius: radii.lg,
@@ -352,33 +395,37 @@ const styles = StyleSheet.create({
   },
   ctaTitle: { color: colors.navy, fontWeight: "800", fontSize: 16 },
   ctaHint: { color: colors.textMuted, marginBottom: spacing.md, marginTop: 2 },
-  secondary: {
+  secondaryRow: {
     flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.md,
+    gap: spacing.sm,
     marginTop: spacing.md,
   },
-  whatsapp: {
+  secondaryBtn: {
     flex: 1,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
     gap: 6,
     borderWidth: 1.5,
+    borderColor: colors.navy,
+    borderRadius: radii.md,
+    paddingVertical: spacing.md,
+    backgroundColor: colors.white,
+  },
+  secondaryLabel: { color: colors.navy, fontWeight: "700", fontSize: 12 },
+  whatsapp: {
+    marginTop: spacing.sm,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+    borderWidth: 1.5,
     borderColor: colors.whatsapp,
     borderRadius: radii.md,
     paddingVertical: spacing.md,
   },
   whatsappText: { color: colors.whatsapp, fontWeight: "700" },
-  providerCard: {
-    flexDirection: "row",
-    gap: spacing.md,
-    backgroundColor: colors.white,
-    borderRadius: radii.lg,
-    padding: spacing.md,
-    borderWidth: 1,
-    borderColor: colors.border,
-  },
+  providerCard: { flexDirection: "row", gap: spacing.md, alignItems: "center" },
   logo: { width: 52, height: 52, borderRadius: 26 },
   logoFallback: {
     backgroundColor: colors.skeleton,
@@ -387,6 +434,8 @@ const styles = StyleSheet.create({
   },
   providerName: { color: colors.navy, fontWeight: "800" },
   verified: {
+    marginTop: 4,
+    alignSelf: "flex-start",
     backgroundColor: "#D6E8FF",
     color: colors.navy,
     fontSize: 11,
@@ -396,18 +445,22 @@ const styles = StyleSheet.create({
     borderRadius: 4,
     overflow: "hidden",
   },
-  stat: { color: colors.textMuted, fontSize: 12, marginTop: 2 },
+  statsRow: { flexDirection: "row", gap: spacing.sm },
+  statBox: {
+    flex: 1,
+    backgroundColor: "#E8EEF9",
+    borderRadius: radii.md,
+    padding: spacing.sm,
+    alignItems: "center",
+  },
+  statValue: { color: colors.navy, fontWeight: "800" },
+  statLabel: { color: colors.textMuted, fontSize: 10, textAlign: "center", marginTop: 2 },
+  contactRow: { flexDirection: "row", alignItems: "center", gap: 8 },
+  contactText: { color: colors.textMuted, fontSize: 13 },
   engage: { flexDirection: "row", alignItems: "center", gap: 8 },
   engageText: { color: colors.navy, fontWeight: "600" },
-  reviewSummary: {
-    backgroundColor: colors.white,
-    borderRadius: radii.lg,
-    padding: spacing.md,
-    borderWidth: 1,
-    borderColor: colors.border,
-    gap: spacing.sm,
-  },
   avg: { color: colors.navy, fontWeight: "800", fontSize: 20 },
+  statLine: { color: colors.textMuted, fontSize: 12 },
   barRow: { flexDirection: "row", alignItems: "center", gap: spacing.sm },
   barLabel: { width: 28, color: colors.textMuted, fontSize: 12 },
   barTrack: {
@@ -420,11 +473,9 @@ const styles = StyleSheet.create({
   barFill: { height: "100%", backgroundColor: colors.primary },
   barPct: { width: 36, textAlign: "right", color: colors.textMuted, fontSize: 12 },
   reviewCard: {
-    backgroundColor: colors.white,
+    backgroundColor: colors.background,
     borderRadius: radii.md,
     padding: spacing.md,
-    borderWidth: 1,
-    borderColor: colors.border,
     gap: 4,
   },
   reviewAuthor: { color: colors.navy, fontWeight: "800" },

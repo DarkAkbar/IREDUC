@@ -1,11 +1,9 @@
 import { Ionicons } from "@expo/vector-icons";
 import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { pushPath } from "../../utils/navigation";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   FlatList,
-  Pressable,
   RefreshControl,
   StyleSheet,
   Text,
@@ -14,6 +12,7 @@ import {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { fetchCategories } from "../../api/catalog";
 import { fetchServices } from "../../api/services";
+import { Category } from "../../api/types";
 import { CategoryTabs } from "../../components/list/CategoryTabs";
 import { EmptyState } from "../../components/list/EmptyState";
 import { ErrorState } from "../../components/list/ErrorState";
@@ -44,6 +43,10 @@ const CATEGORY_ICONS: Record<string, keyof typeof Ionicons.glyphMap> = {
   mecanique: "cog-outline",
 };
 
+function asCategoryList(value: unknown): Category[] {
+  return Array.isArray(value) ? (value as Category[]) : [];
+}
+
 export default function ServicesListScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
@@ -58,25 +61,20 @@ export default function ServicesListScreen() {
     queryFn: () => fetchCategories("SERVICE"),
   });
 
-  const categories = categoriesQuery.data ?? [];
-  const initialCategoryId =
-    params.categoryId ??
-    categories.find((c) => c.slug === params.categorySlug)?.id ??
-    categories[0]?.id ??
-    "";
+  const categories = asCategoryList(categoriesQuery.data);
 
-  const [categoryId, setCategoryId] = useState(initialCategoryId);
+  const [categoryId, setCategoryId] = useState(params.categoryId ?? "");
   const [sub, setSub] = useState("");
   const [q, setQ] = useState(params.q ?? "");
   const debouncedQ = useDebouncedValue(q);
 
-  // Sync when categories load
-  const resolvedCategoryId =
-    categoryId ||
-    params.categoryId ||
-    categories.find((c) => c.slug === params.categorySlug)?.id ||
-    categories[0]?.id;
+  useEffect(() => {
+    if (categoryId || categories.length === 0) return;
+    const fromSlug = categories.find((c) => c.slug === params.categorySlug)?.id;
+    setCategoryId(params.categoryId || fromSlug || categories[0].id);
+  }, [categories, categoryId, params.categoryId, params.categorySlug]);
 
+  const resolvedCategoryId = categoryId || categories[0]?.id;
   const activeCategory = categories.find((c) => c.id === resolvedCategoryId);
 
   const categoryTabs = useMemo(
@@ -109,14 +107,14 @@ export default function ServicesListScreen() {
 
   return (
     <View style={[styles.screen, { paddingTop: insets.top }]}>
-      <ListScreenHeader onFilterPress={() => router.push("/filters")} />
+      <ListScreenHeader onFilterPress={() => router.push("/filters" as never)} />
       <SearchInput
         value={q}
         onChangeText={setQ}
         placeholder={`Rechercher un service${
           activeCategory ? ` (${activeCategory.name.toLowerCase()})` : ""
         }...`}
-        onFilterPress={() => router.push("/filters")}
+        onFilterPress={() => router.push("/filters" as never)}
       />
 
       <View style={{ marginTop: spacing.md }}>
@@ -157,10 +155,14 @@ export default function ServicesListScreen() {
         </View>
       </View>
 
+      {categoriesQuery.isError ? (
+        <ErrorState onRetry={() => void categoriesQuery.refetch()} />
+      ) : null}
+
       {query.isLoading || categoriesQuery.isLoading ? <ListSkeleton /> : null}
       {query.isError ? <ErrorState onRetry={() => void query.refetch()} /> : null}
 
-      {!query.isLoading && !query.isError ? (
+      {!query.isLoading && !query.isError && !categoriesQuery.isError ? (
         <FlatList
           data={items}
           keyExtractor={(item) => item.id}
@@ -186,7 +188,7 @@ export default function ServicesListScreen() {
             />
           }
           ListFooterComponent={
-            <InfoBanner text='Cliquez sur une image ou sur le bouton « Réserver » pour voir tous les détails du service, le profil du prestataire et effectuer votre réservation.' />
+            <InfoBanner text="Cliquez sur une image ou sur le bouton « Réserver » pour voir tous les détails du service, le profil du prestataire et effectuer votre réservation." />
           }
         />
       ) : null}

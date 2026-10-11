@@ -21,7 +21,7 @@ export function ListScreenHeader({ onFilterPress, showBack = true }: Props) {
       ) : (
         <View style={styles.iconBtn} />
       )}
-      <IreducLogo compact tagline={undefined} />
+      <IreducLogo compact tagline="Trouvez. Comparez. Réalisez." />
       <View style={styles.right}>
         <View style={styles.city}>
           <Ionicons name="location" size={14} color={colors.primary} />
