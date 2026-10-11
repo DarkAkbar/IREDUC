@@ -7,6 +7,7 @@ import {
 } from "../api/client";
 import * as authApi from "../api/auth";
 import { AuthUser } from "../api/types";
+import { useFavoritesStore } from "./favoritesStore";
 
 type AuthState = {
   user: AuthUser | null;
@@ -22,6 +23,7 @@ type AuthState = {
 export const useAuthStore = create<AuthState>((set) => {
   setAuthFailureHandler(() => {
     set({ user: null, isAuthenticated: false });
+    useFavoritesStore.getState().clear();
   });
 
   return {
@@ -48,6 +50,7 @@ export const useAuthStore = create<AuthState>((set) => {
       const data = await authApi.login(email.trim().toLowerCase(), password);
       await setStoredTokens(data.accessToken, data.refreshToken);
       set({ user: data.user, isAuthenticated: true });
+      await useFavoritesStore.getState().hydrate();
     },
 
     register: async (fullName, email, password) => {
@@ -61,6 +64,7 @@ export const useAuthStore = create<AuthState>((set) => {
 
     logout: async () => {
       await clearStoredTokens();
+      useFavoritesStore.getState().clear();
       set({ user: null, isAuthenticated: false });
     },
 
