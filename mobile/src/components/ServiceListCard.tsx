@@ -37,7 +37,8 @@ export function ServiceListCard({ item }: Props) {
   }
 
   function onReserve() {
-    if (!requireAuth(`/service/${item.id}`)) return;
+    const returnTo = `/reserve?type=SERVICE&id=${item.id}`;
+    if (!requireAuth(returnTo)) return;
     router.push({
       pathname: "/reserve",
       params: { type: "SERVICE", id: item.id, title: item.title },

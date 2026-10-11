@@ -34,13 +34,32 @@ const targetInclude = {
         take: 1,
         select: { url: true },
       },
+      owner: {
+        select: {
+          fullName: true,
+          providerProfile: {
+            select: {
+              displayName: true,
+              logoUrl: true,
+              reviewStatus: true,
+            },
+          },
+        },
+      },
     },
   },
   service: {
     include: {
       category: { select: { name: true } },
       coverageCommunes: { select: { name: true } },
-      providerProfile: { select: { userId: true } },
+      providerProfile: {
+        select: {
+          userId: true,
+          displayName: true,
+          logoUrl: true,
+          reviewStatus: true,
+        },
+      },
       media: {
         where: { type: MediaType.PHOTO },
         orderBy: { sortOrder: "asc" as const },
