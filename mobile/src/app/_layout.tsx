@@ -4,8 +4,9 @@ import { StatusBar } from "expo-status-bar";
 import { useEffect } from "react";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { SafeAreaProvider } from "react-native-safe-area-context";
-import { colors } from "../theme";
 import { useAuthStore } from "../store/authStore";
+import { useFavoritesStore } from "../store/favoritesStore";
+import { colors } from "../theme";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -18,10 +19,23 @@ const queryClient = new QueryClient({
 
 export default function RootLayout() {
   const hydrate = useAuthStore((s) => s.hydrate);
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
+  const isHydrated = useAuthStore((s) => s.isHydrated);
+  const hydrateFavorites = useFavoritesStore((s) => s.hydrate);
+  const clearFavorites = useFavoritesStore((s) => s.clear);
 
   useEffect(() => {
     void hydrate();
   }, [hydrate]);
+
+  useEffect(() => {
+    if (!isHydrated) return;
+    if (isAuthenticated) {
+      void hydrateFavorites();
+    } else {
+      clearFavorites();
+    }
+  }, [isAuthenticated, isHydrated, hydrateFavorites, clearFavorites]);
 
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
@@ -39,8 +53,26 @@ export default function RootLayout() {
               name="auth/login"
               options={{ presentation: "modal", headerShown: false }}
             />
-            <Stack.Screen name="property/[id]" options={{ headerShown: true, title: "Bien" }} />
-            <Stack.Screen name="service/[id]" options={{ headerShown: true, title: "Service" }} />
+            <Stack.Screen
+              name="filters"
+              options={{ presentation: "modal", headerShown: false }}
+            />
+            <Stack.Screen name="properties/index" />
+            <Stack.Screen name="services/index" />
+            <Stack.Screen name="property/[id]" />
+            <Stack.Screen name="service/[id]" />
+            <Stack.Screen name="favorites" />
+            <Stack.Screen name="reserve" />
+            <Stack.Screen name="discuss" />
+            <Stack.Screen name="conversation/[id]" />
+            <Stack.Screen name="notifications" />
+            <Stack.Screen name="partner" />
+            <Stack.Screen name="profile/edit" />
+            <Stack.Screen name="profile/password" />
+            <Stack.Screen name="profile/alerts" />
+            <Stack.Screen name="profile/about" />
+            <Stack.Screen name="request/[id]" />
+            <Stack.Screen name="request/similar" />
           </Stack>
         </QueryClientProvider>
       </SafeAreaProvider>

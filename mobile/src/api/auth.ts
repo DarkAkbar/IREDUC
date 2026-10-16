@@ -1,4 +1,4 @@
-import { api } from "./client";
+import { api, clearStoredTokens, getStoredTokens } from "./client";
 import { AuthUser, LoginResponse } from "./types";
 
 export async function login(email: string, password: string) {
@@ -22,6 +22,25 @@ export async function forgotPassword(email: string) {
     email,
   });
   return data;
+}
+
+export async function resendVerification(email: string) {
+  const { data } = await api.post<{ message: string }>(
+    "/auth/resend-verification",
+    { email }
+  );
+  return data;
+}
+
+export async function logout() {
+  const { refreshToken } = await getStoredTokens();
+  try {
+    if (refreshToken) {
+      await api.post("/auth/logout", { refreshToken });
+    }
+  } finally {
+    await clearStoredTokens();
+  }
 }
 
 export async function getMe() {

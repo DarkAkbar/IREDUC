@@ -2,6 +2,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { useQuery } from "@tanstack/react-query";
 import { Image } from "expo-image";
 import { useRouter } from "expo-router";
+import { pushPath } from "../../utils/navigation";
 import {
   Pressable,
   RefreshControl,
@@ -12,6 +13,7 @@ import {
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { fetchHome } from "../../api/home";
+import { fetchNotifications } from "../../api/notifications";
 import { IreducLogo } from "../../components/IreducLogo";
 import { PropertyCard } from "../../components/PropertyCard";
 import { ServiceCard } from "../../components/ServiceCard";
@@ -20,6 +22,7 @@ import { SearchBar } from "../../components/ui/SearchBar";
 import { SectionHeader } from "../../components/ui/SectionHeader";
 import { HomeSkeleton } from "../../components/ui/SkeletonLoader";
 import { useRequireAuth } from "../../hooks/useRequireAuth";
+import { useAuthStore } from "../../store/authStore";
 import { colors, radii, spacing, typography } from "../../theme";
 
 const HERO_IMAGE =
@@ -29,11 +32,21 @@ export default function HomeScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const { requireAuth } = useRequireAuth();
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
 
   const { data, isLoading, isError, refetch, isFetching } = useQuery({
     queryKey: ["home"],
     queryFn: fetchHome,
   });
+
+  const notifQuery = useQuery({
+    queryKey: ["notifications", "badge"],
+    enabled: isAuthenticated,
+    queryFn: () => fetchNotifications({ page: 1, limit: 1 }),
+    staleTime: 20_000,
+    refetchInterval: 30_000,
+  });
+  const unreadNotifs = notifQuery.data?.unreadCount ?? 0;
 
   const properties =
     data?.sections.featuredProperties.items?.length
@@ -64,13 +77,19 @@ export default function HomeScreen() {
             <Pressable
               style={styles.bell}
               onPress={() => {
-                if (requireAuth("/(tabs)")) {
-                  /* notifications à l'étape suivante */
+                if (requireAuth("/notifications")) {
+                  router.push("/notifications" as never);
                 }
               }}
             >
               <Ionicons name="notifications-outline" size={22} color={colors.navy} />
-              <View style={styles.bellDot} />
+              {unreadNotifs > 0 ? (
+                <View style={styles.bellBadge}>
+                  <Text style={styles.bellBadgeText}>
+                    {unreadNotifs > 99 ? "99+" : unreadNotifs}
+                  </Text>
+                </View>
+              ) : null}
             </Pressable>
           </View>
         </View>
@@ -100,7 +119,7 @@ export default function HomeScreen() {
               <View style={styles.searchWrap}>
                 <SearchBar
                   onPress={() => router.push("/(tabs)/search")}
-                  onFilterPress={() => router.push("/(tabs)/search")}
+                  onFilterPress={() => router.push("/filters")}
                 />
               </View>
             </View>
@@ -110,7 +129,12 @@ export default function HomeScreen() {
                 title="Maison"
                 subtitle="Appartements, villas, terrains et plus encore"
                 icon="home"
-                onSeeAll={() => router.push("/(tabs)/search")}
+                onSeeAll={() =>
+                  router.push({
+                    pathname: "/properties",
+                    params: { kind: "HOUSE", offerType: "RENT" },
+                  })
+                }
               />
               {properties.length === 0 ? (
                 <Text style={styles.empty}>Aucun bien à afficher pour le moment.</Text>
@@ -128,7 +152,7 @@ export default function HomeScreen() {
                       onPress={() =>
                         router.push({
                           pathname: "/property/[id]",
-                          params: { id: item.id, title: item.title },
+                          params: { id: item.id },
                         })
                       }
                     />
@@ -164,7 +188,15 @@ export default function HomeScreen() {
                   title={section.title}
                   subtitle="Prestataires vérifiés à Kinshasa"
                   icon="construct-outline"
-                  onSeeAll={() => router.push("/(tabs)/search")}
+                  onSeeAll={() =>
+                    router.push({
+                      pathname: "/services",
+                      params: {
+                        categoryId: section.category.id,
+                        categorySlug: section.category.slug,
+                      },
+                    })
+                  }
                 />
                 {section.items.length === 0 ? (
                   <Text style={styles.empty}>Aucun service dans cette catégorie.</Text>
@@ -181,7 +213,7 @@ export default function HomeScreen() {
                         onPress={() =>
                           router.push({
                             pathname: "/service/[id]",
-                            params: { id: item.id, title: item.title },
+                            params: { id: item.id },
                           })
                         }
                       />
@@ -238,15 +270,19 @@ const styles = StyleSheet.create({
   },
   cityText: { color: colors.navy, fontWeight: "700", fontSize: 13 },
   bell: { padding: spacing.sm, position: "relative" },
-  bellDot: {
+  bellBadge: {
     position: "absolute",
-    top: 8,
-    right: 8,
-    width: 8,
-    height: 8,
-    borderRadius: 4,
+    top: 4,
+    right: 2,
+    minWidth: 16,
+    height: 16,
+    borderRadius: 8,
     backgroundColor: colors.primary,
+    alignItems: "center",
+    justifyContent: "center",
+    paddingHorizontal: 3,
   },
+  bellBadgeText: { color: colors.white, fontSize: 9, fontWeight: "800" },
   hero: { marginBottom: spacing.xl },
   heroImage: { width: "100%", height: 220 },
   heroOverlay: {

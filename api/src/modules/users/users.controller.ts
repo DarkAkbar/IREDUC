@@ -1,5 +1,5 @@
 import { NextFunction, Request, Response } from "express";
-import { unauthorized } from "../../utils/errors";
+import { badRequest, unauthorized } from "../../utils/errors";
 import * as usersService from "./users.service";
 
 function requireUserId(req: Request): string {
@@ -33,6 +33,21 @@ export async function changePassword(req: Request, res: Response, next: NextFunc
       requireUserId(req),
       req.body.currentPassword,
       req.body.newPassword
+    );
+    res.status(200).json(result);
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function uploadAvatar(req: Request, res: Response, next: NextFunction) {
+  try {
+    if (!req.file) {
+      throw badRequest("Fichier avatar requis");
+    }
+    const result = await usersService.updateAvatar(
+      requireUserId(req),
+      req.file.filename
     );
     res.status(200).json(result);
   } catch (error) {

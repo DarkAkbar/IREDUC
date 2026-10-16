@@ -1,8 +1,58 @@
 import { Ionicons } from "@expo/vector-icons";
+import { useQuery } from "@tanstack/react-query";
 import { Tabs } from "expo-router";
+import { StyleSheet, Text, View } from "react-native";
+import { fetchConversations } from "../../api/conversations";
+import { fetchMyRequests } from "../../api/requests";
+import { useAuthStore } from "../../store/authStore";
 import { colors } from "../../theme";
 
+function TabIconWithBadge({
+  name,
+  color,
+  size,
+  badge,
+}: {
+  name: keyof typeof Ionicons.glyphMap;
+  color: string;
+  size: number;
+  badge?: number;
+}) {
+  return (
+    <View>
+      <Ionicons name={name} size={size} color={color} />
+      {badge && badge > 0 ? (
+        <View style={styles.badge}>
+          <Text style={styles.badgeText}>{badge > 99 ? "99+" : badge}</Text>
+        </View>
+      ) : null}
+    </View>
+  );
+}
+
 export default function TabsLayout() {
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
+
+  const requestsQuery = useQuery({
+    queryKey: ["my-requests", "ALL", "badge"],
+    enabled: isAuthenticated,
+    queryFn: () => fetchMyRequests({ page: 1, limit: 1 }),
+    staleTime: 20_000,
+  });
+
+  const conversationsQuery = useQuery({
+    queryKey: ["conversations", "badge"],
+    enabled: isAuthenticated,
+    queryFn: fetchConversations,
+    staleTime: 15_000,
+    refetchInterval: 20_000,
+  });
+
+  const requestsBadge = requestsQuery.data?.counters.all ?? 0;
+  const messagesBadge =
+    conversationsQuery.data?.reduce((sum, c) => sum + (c.unreadCount || 0), 0) ??
+    0;
+
   return (
     <Tabs
       screenOptions={{
@@ -42,7 +92,12 @@ export default function TabsLayout() {
         options={{
           title: "Mes demandes",
           tabBarIcon: ({ color, size }) => (
-            <Ionicons name="document-text-outline" size={size} color={color} />
+            <TabIconWithBadge
+              name="document-text-outline"
+              color={String(color)}
+              size={size}
+              badge={requestsBadge}
+            />
           ),
         }}
       />
@@ -51,7 +106,12 @@ export default function TabsLayout() {
         options={{
           title: "Messages",
           tabBarIcon: ({ color, size }) => (
-            <Ionicons name="chatbubble-ellipses-outline" size={size} color={color} />
+            <TabIconWithBadge
+              name="chatbubble-ellipses-outline"
+              color={String(color)}
+              size={size}
+              badge={messagesBadge}
+            />
           ),
         }}
       />
@@ -67,3 +127,19 @@ export default function TabsLayout() {
     </Tabs>
   );
 }
+
+const styles = StyleSheet.create({
+  badge: {
+    position: "absolute",
+    right: -8,
+    top: -4,
+    minWidth: 16,
+    height: 16,
+    borderRadius: 8,
+    backgroundColor: colors.primary,
+    alignItems: "center",
+    justifyContent: "center",
+    paddingHorizontal: 3,
+  },
+  badgeText: { color: colors.white, fontSize: 9, fontWeight: "800" },
+});

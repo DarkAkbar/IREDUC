@@ -30,6 +30,7 @@ export function mapServiceListItem(service: {
   id: string;
   title: string;
   description: string;
+  subServices?: string[];
   status: string;
   isFeatured: boolean;
   viewsCount: number;
@@ -50,6 +51,7 @@ export function mapServiceListItem(service: {
     id: service.id,
     title: service.title,
     description: service.description,
+    subServices: service.subServices ?? [],
     status: service.status,
     isFeatured: service.isFeatured,
     viewsCount: service.viewsCount,
@@ -61,6 +63,12 @@ export function mapServiceListItem(service: {
           caption: service.media[0].caption,
         }
       : null,
+    photos: service.media.map((m) => ({
+      id: m.id,
+      url: m.url,
+      caption: m.caption,
+      type: m.type,
+    })),
     provider: {
       id: service.providerProfile.id,
       displayName: service.providerProfile.displayName,
