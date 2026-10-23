@@ -287,6 +287,9 @@ model Property {
   @@index([status])
   @@index([price])
   @@index([isFeatured])
+  @@index([status, offerType, communeId])
+  @@index([status, categoryId, price])
+  @@index([status, kind, offerType])
 }
 
 model PropertyMedia {
@@ -333,6 +336,8 @@ model Service {
   @@index([title])
   @@index([status])
   @@index([isFeatured])
+  @@index([status, categoryId])
+  @@index([status, isFeatured])
 }
 
 model ServiceMedia {
