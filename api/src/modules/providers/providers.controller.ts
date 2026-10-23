@@ -53,3 +53,21 @@ export async function uploadDocument(req: Request, res: Response, next: NextFunc
     next(error);
   }
 }
+
+export async function uploadLogo(req: Request, res: Response, next: NextFunction) {
+  try {
+    if (!req.file) {
+      throw badRequest("Un fichier logo est requis");
+    }
+    if (req.file.mimetype === "application/pdf") {
+      throw badRequest("Le logo doit être une image (jpg ou png)");
+    }
+    const result = await providersService.updateLogo(
+      requireUserId(req),
+      req.file.filename
+    );
+    res.status(200).json(result);
+  } catch (error) {
+    next(error);
+  }
+}

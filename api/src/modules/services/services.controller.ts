@@ -78,6 +78,19 @@ export async function submit(req: Request, res: Response, next: NextFunction) {
   }
 }
 
+export async function archive(req: Request, res: Response, next: NextFunction) {
+  try {
+    const provider = requireProvider(req);
+    const result = await servicesService.archiveService(
+      provider.id,
+      getParam(req, "id")
+    );
+    res.status(200).json(result);
+  } catch (error) {
+    next(error);
+  }
+}
+
 export async function addMedia(req: Request, res: Response, next: NextFunction) {
   try {
     const provider = requireProvider(req);

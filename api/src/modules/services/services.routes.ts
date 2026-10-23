@@ -78,6 +78,15 @@ servicesRouter.post(
   servicesController.submit
 );
 
+servicesRouter.delete(
+  "/:id",
+  authenticate,
+  requireVerifiedEmail,
+  requireApprovedProvider,
+  validate(serviceIdParamsSchema, "params"),
+  servicesController.archive
+);
+
 servicesRouter.post(
   "/:id/media",
   authenticate,

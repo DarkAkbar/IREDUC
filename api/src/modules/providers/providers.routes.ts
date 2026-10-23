@@ -22,6 +22,12 @@ providersRouter.patch(
   providersController.updateMyProvider
 );
 providersRouter.post(
+  "/me/logo",
+  documentUpload.single("file"),
+  providersController.uploadLogo
+);
+
+providersRouter.post(
   "/me/documents",
   documentUpload.single("file"),
   validate(uploadDocumentSchema),

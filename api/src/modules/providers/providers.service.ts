@@ -127,12 +127,40 @@ export async function updateMyProvider(
     throw notFound("Profil partenaire introuvable");
   }
 
+  const resubmit = existing.reviewStatus === ReviewStatus.REJECTED;
+
   const profile = await prisma.providerProfile.update({
     where: { userId },
     data: {
       ...data,
       ...(data.displayName !== undefined
         ? { displayName: data.displayName.trim() }
+        : {}),
+      ...(resubmit
+        ? { reviewStatus: ReviewStatus.PENDING, rejectionReason: null }
+        : {}),
+    },
+    include: { documents: { orderBy: { createdAt: "desc" } } },
+  });
+
+  return toProvider(profile);
+}
+
+export async function updateLogo(userId: string, filename: string) {
+  const existing = await prisma.providerProfile.findUnique({ where: { userId } });
+  if (!existing) {
+    throw notFound("Profil partenaire introuvable");
+  }
+
+  const logoUrl = `/uploads/${filename}`;
+  const resubmit = existing.reviewStatus === ReviewStatus.REJECTED;
+
+  const profile = await prisma.providerProfile.update({
+    where: { userId },
+    data: {
+      logoUrl,
+      ...(resubmit
+        ? { reviewStatus: ReviewStatus.PENDING, rejectionReason: null }
         : {}),
     },
     include: { documents: { orderBy: { createdAt: "desc" } } },

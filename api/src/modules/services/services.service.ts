@@ -270,6 +270,19 @@ export async function submitService(providerProfileId: string, serviceId: string
   return mapServiceDetail(service);
 }
 
+export async function archiveService(
+  providerProfileId: string,
+  serviceId: string
+) {
+  await getOwnedService(serviceId, providerProfileId);
+  const service = await prisma.service.update({
+    where: { id: serviceId },
+    data: { status: ListingStatus.ARCHIVED },
+    include: serviceDetailInclude,
+  });
+  return mapServiceDetail(service);
+}
+
 export async function addMedia(
   providerProfileId: string,
   serviceId: string,
