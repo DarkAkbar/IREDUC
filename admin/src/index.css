@@ -3,11 +3,16 @@
 @theme {
   --color-ireduc-navy: #0b1f3a;
   --color-ireduc-navy-light: #14325c;
+  --color-ireduc-navy-soft: #e8eef6;
   --color-ireduc-red: #c8102e;
   --color-ireduc-red-dark: #9e0c24;
-  --color-ireduc-slate: #f4f6f9;
-  --color-ireduc-border: #d8dee8;
-  --font-sans: "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+  --color-ireduc-red-soft: #fce8ec;
+  --color-ireduc-slate: #f3f5f9;
+  --color-ireduc-border: #e2e8f0;
+  --color-ireduc-muted: #64748b;
+  --font-sans: "Plus Jakarta Sans", "Segoe UI", sans-serif;
+  --shadow-card: 0 1px 2px rgb(15 23 42 / 0.04), 0 8px 24px rgb(15 23 42 / 0.06);
+  --shadow-card-hover: 0 2px 4px rgb(15 23 42 / 0.05), 0 12px 28px rgb(15 23 42 / 0.1);
 }
 
 html,
@@ -19,7 +24,28 @@ body,
 body {
   margin: 0;
   font-family: var(--font-sans);
-  background: var(--color-ireduc-slate);
-  color: #1a2332;
+  background:
+    radial-gradient(ellipse 80% 50% at 100% -10%, rgb(200 16 46 / 0.06), transparent),
+    radial-gradient(ellipse 60% 40% at 0% 0%, rgb(11 31 58 / 0.06), transparent),
+    var(--color-ireduc-slate);
+  color: #0f172a;
   -webkit-font-smoothing: antialiased;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
 }

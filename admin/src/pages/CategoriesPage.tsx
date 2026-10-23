@@ -77,12 +77,9 @@ export function CategoriesPage() {
 
   return (
     <div className="space-y-4">
-      <div>
-        <h1 className="text-2xl font-bold text-ireduc-navy">Catégories</h1>
-        <p className="text-sm text-slate-600">
-          Création, ordre et activation (super administrateur).
-        </p>
-      </div>
+      <p className="text-sm text-ireduc-muted">
+        Création, ordre et activation (super administrateur).
+      </p>
 
       {message ? <Alert tone="success">{message}</Alert> : null}
       {createMutation.error || updateMutation.error ? (

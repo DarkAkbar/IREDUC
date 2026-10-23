@@ -1,10 +1,18 @@
 import { useQuery } from "@tanstack/react-query";
+import {
+  Building2,
+  ClipboardList,
+  Store,
+  Users,
+  Wrench,
+  ArrowUpRight,
+} from "lucide-react";
 import { Link } from "react-router-dom";
 import {
+  Area,
+  AreaChart,
   CartesianGrid,
   Legend,
-  Line,
-  LineChart,
   ResponsiveContainer,
   Tooltip,
   XAxis,
@@ -14,6 +22,7 @@ import { Alert } from "@/components/ui/alert";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Spinner } from "@/components/ui/spinner";
 import { api, getErrorMessage } from "@/lib/api";
+import { cn } from "@/lib/utils";
 
 type AdminStats = {
   users: { total: number };
@@ -32,6 +41,39 @@ type AdminStats = {
     requestsLast30Days: Array<{ date: string; count: number }>;
   };
 };
+
+const kpiStyles = [
+  {
+    icon: Users,
+    tint: "bg-ireduc-navy-soft text-ireduc-navy",
+    ring: "from-ireduc-navy/10 to-transparent",
+  },
+  {
+    icon: Store,
+    tint: "bg-emerald-50 text-emerald-700",
+    ring: "from-emerald-500/10 to-transparent",
+  },
+  {
+    icon: Store,
+    tint: "bg-amber-50 text-amber-700",
+    ring: "from-amber-500/10 to-transparent",
+  },
+  {
+    icon: Building2,
+    tint: "bg-sky-50 text-sky-700",
+    ring: "from-sky-500/10 to-transparent",
+  },
+  {
+    icon: Wrench,
+    tint: "bg-teal-50 text-teal-700",
+    ring: "from-teal-500/10 to-transparent",
+  },
+  {
+    icon: ClipboardList,
+    tint: "bg-ireduc-red-soft text-ireduc-red",
+    ring: "from-ireduc-red/10 to-transparent",
+  },
+];
 
 export function DashboardPage() {
   const { data, isLoading, error } = useQuery({
@@ -53,93 +95,259 @@ export function DashboardPage() {
   }));
 
   const cards = [
-    { label: "Utilisateurs", value: data.users.total },
-    { label: "Partenaires approuvés", value: data.providers.approved },
-    { label: "Partenaires en attente", value: data.providers.pending },
+    { label: "Utilisateurs", value: data.users.total, hint: "Comptes inscrits" },
+    {
+      label: "Partenaires approuvés",
+      value: data.providers.approved,
+      hint: "Profils validés",
+    },
+    {
+      label: "Partenaires en attente",
+      value: data.providers.pending,
+      hint: "À modérer",
+    },
     {
       label: "Annonces en attente",
       value: data.properties.pending,
+      hint: "Publications",
     },
-    { label: "Services en attente", value: data.services.pending },
+    {
+      label: "Services en attente",
+      value: data.services.pending,
+      hint: "Prestations",
+    },
     {
       label: "Demandes ouvertes",
       value:
         (data.requests.byStatus.OPEN ?? 0) +
         (data.requests.byStatus.IN_PROGRESS ?? 0),
+      hint: "Ouvertes / en cours",
+    },
+  ];
+
+  const queue = [
+    {
+      label: "Partenaires",
+      count: data.pendingQueue.providers,
+      to: "/partners?status=PENDING",
+      icon: Store,
+    },
+    {
+      label: "Annonces",
+      count: data.pendingQueue.properties,
+      to: "/properties?status=PENDING",
+      icon: Building2,
+    },
+    {
+      label: "Services",
+      count: data.pendingQueue.services,
+      to: "/services?status=PENDING",
+      icon: Wrench,
     },
   ];
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold text-ireduc-navy">Tableau de bord</h1>
-        <p className="text-sm text-slate-600">
-          Vue d&apos;ensemble de la plateforme IREDUC.
-        </p>
+      <div className="flex flex-wrap items-end justify-between gap-3">
+        <div>
+          <p className="text-sm text-ireduc-muted">
+            Bienvenue — synthèse d&apos;activité de la plateforme.
+          </p>
+        </div>
+        {data.pendingQueue.total > 0 ? (
+          <span className="inline-flex items-center gap-2 rounded-full bg-ireduc-red-soft px-3 py-1 text-xs font-semibold text-ireduc-red">
+            <span className="h-1.5 w-1.5 rounded-full bg-ireduc-red" />
+            {data.pendingQueue.total} élément(s) à valider
+          </span>
+        ) : null}
       </div>
 
       {data.pendingQueue.total > 0 ? (
-        <Card className="border-ireduc-red/30 bg-red-50/60">
-          <CardHeader>
-            <CardTitle>En attente de validation ({data.pendingQueue.total})</CardTitle>
-          </CardHeader>
-          <CardContent className="flex flex-wrap gap-3 text-sm">
-            <Link className="rounded-md bg-white px-3 py-2 shadow-sm hover:bg-slate-50" to="/partners?status=PENDING">
-              Partenaires : {data.pendingQueue.providers}
+        <div className="grid gap-3 md:grid-cols-3">
+          {queue.map((item) => (
+            <Link
+              key={item.to}
+              to={item.to}
+              className="group flex items-center justify-between rounded-2xl border border-ireduc-red/15 bg-white p-4 shadow-[var(--shadow-card)] transition hover:-translate-y-0.5 hover:shadow-[var(--shadow-card-hover)]"
+            >
+              <div className="flex items-center gap-3">
+                <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-ireduc-red-soft text-ireduc-red">
+                  <item.icon size={20} />
+                </span>
+                <div>
+                  <p className="text-sm font-semibold text-ireduc-navy">{item.label}</p>
+                  <p className="text-xs text-ireduc-muted">En attente de validation</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="text-2xl font-extrabold text-ireduc-red">{item.count}</span>
+                <ArrowUpRight
+                  size={16}
+                  className="text-ireduc-muted transition group-hover:text-ireduc-navy"
+                />
+              </div>
             </Link>
-            <Link className="rounded-md bg-white px-3 py-2 shadow-sm hover:bg-slate-50" to="/properties?status=PENDING">
-              Annonces : {data.pendingQueue.properties}
-            </Link>
-            <Link className="rounded-md bg-white px-3 py-2 shadow-sm hover:bg-slate-50" to="/services?status=PENDING">
-              Services : {data.pendingQueue.services}
-            </Link>
-          </CardContent>
-        </Card>
+          ))}
+        </div>
       ) : null}
 
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-        {cards.map((card) => (
-          <Card key={card.label}>
-            <CardContent className="pt-5">
-              <p className="text-sm text-slate-500">{card.label}</p>
-              <p className="mt-2 text-3xl font-bold text-ireduc-navy">{card.value}</p>
-            </CardContent>
-          </Card>
-        ))}
+        {cards.map((card, index) => {
+          const style = kpiStyles[index]!;
+          const Icon = style.icon;
+          return (
+            <Card
+              key={card.label}
+              className={cn(
+                "relative overflow-hidden transition hover:-translate-y-0.5 hover:shadow-[var(--shadow-card-hover)]"
+              )}
+            >
+              <div
+                className={cn(
+                  "pointer-events-none absolute inset-0 bg-gradient-to-br",
+                  style.ring
+                )}
+              />
+              <CardContent className="relative pt-5">
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <p className="text-sm font-medium text-ireduc-muted">{card.label}</p>
+                    <p className="mt-2 text-3xl font-extrabold tracking-tight text-ireduc-navy">
+                      {card.value}
+                    </p>
+                    <p className="mt-1 text-xs text-slate-400">{card.hint}</p>
+                  </div>
+                  <span
+                    className={cn(
+                      "flex h-11 w-11 items-center justify-center rounded-xl",
+                      style.tint
+                    )}
+                  >
+                    <Icon size={20} />
+                  </span>
+                </div>
+              </CardContent>
+            </Card>
+          );
+        })}
       </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Inscriptions et demandes (30 jours)</CardTitle>
-        </CardHeader>
-        <CardContent className="h-80">
-          <ResponsiveContainer width="100%" height="100%">
-            <LineChart data={chartData}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#d8dee8" />
-              <XAxis dataKey="date" tick={{ fontSize: 12 }} />
-              <YAxis allowDecimals={false} tick={{ fontSize: 12 }} />
-              <Tooltip />
-              <Legend />
-              <Line
-                type="monotone"
-                dataKey="inscriptions"
-                name="Inscriptions"
-                stroke="#0b1f3a"
-                strokeWidth={2}
-                dot={false}
-              />
-              <Line
-                type="monotone"
-                dataKey="demandes"
-                name="Demandes"
-                stroke="#c8102e"
-                strokeWidth={2}
-                dot={false}
-              />
-            </LineChart>
-          </ResponsiveContainer>
-        </CardContent>
-      </Card>
+      <div className="grid gap-4 xl:grid-cols-3">
+        <Card className="xl:col-span-2">
+          <CardHeader>
+            <div>
+              <CardTitle>Inscriptions et demandes</CardTitle>
+              <p className="mt-1 text-xs text-ireduc-muted">30 derniers jours</p>
+            </div>
+          </CardHeader>
+          <CardContent className="h-80 pt-4">
+            <ResponsiveContainer width="100%" height="100%">
+              <AreaChart data={chartData}>
+                <defs>
+                  <linearGradient id="fillInscriptions" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor="#0b1f3a" stopOpacity={0.28} />
+                    <stop offset="100%" stopColor="#0b1f3a" stopOpacity={0.02} />
+                  </linearGradient>
+                  <linearGradient id="fillDemandes" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor="#c8102e" stopOpacity={0.25} />
+                    <stop offset="100%" stopColor="#c8102e" stopOpacity={0.02} />
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" vertical={false} />
+                <XAxis
+                  dataKey="date"
+                  tick={{ fontSize: 12, fill: "#64748b" }}
+                  axisLine={false}
+                  tickLine={false}
+                />
+                <YAxis
+                  allowDecimals={false}
+                  tick={{ fontSize: 12, fill: "#64748b" }}
+                  axisLine={false}
+                  tickLine={false}
+                />
+                <Tooltip
+                  contentStyle={{
+                    borderRadius: 12,
+                    border: "1px solid #e2e8f0",
+                    boxShadow: "0 8px 24px rgb(15 23 42 / 0.08)",
+                  }}
+                />
+                <Legend />
+                <Area
+                  type="monotone"
+                  dataKey="inscriptions"
+                  name="Inscriptions"
+                  stroke="#0b1f3a"
+                  fill="url(#fillInscriptions)"
+                  strokeWidth={2.5}
+                />
+                <Area
+                  type="monotone"
+                  dataKey="demandes"
+                  name="Demandes"
+                  stroke="#c8102e"
+                  fill="url(#fillDemandes)"
+                  strokeWidth={2.5}
+                />
+              </AreaChart>
+            </ResponsiveContainer>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <div>
+              <CardTitle>Répartition partenaires</CardTitle>
+              <p className="mt-1 text-xs text-ireduc-muted">Statuts de revue</p>
+            </div>
+          </CardHeader>
+          <CardContent className="space-y-4 pt-4">
+            {[
+              {
+                label: "Approuvés",
+                value: data.providers.approved,
+                color: "bg-emerald-500",
+              },
+              {
+                label: "En attente",
+                value: data.providers.pending,
+                color: "bg-amber-500",
+              },
+              {
+                label: "Rejetés",
+                value: data.providers.rejected,
+                color: "bg-ireduc-red",
+              },
+            ].map((row) => {
+              const total =
+                data.providers.approved +
+                data.providers.pending +
+                data.providers.rejected || 1;
+              const pct = Math.round((row.value / total) * 100);
+              return (
+                <div key={row.label}>
+                  <div className="mb-1.5 flex items-center justify-between text-sm">
+                    <span className="font-medium text-slate-600">{row.label}</span>
+                    <span className="font-bold text-ireduc-navy">
+                      {row.value}{" "}
+                      <span className="text-xs font-medium text-ireduc-muted">
+                        ({pct}%)
+                      </span>
+                    </span>
+                  </div>
+                  <div className="h-2 overflow-hidden rounded-full bg-slate-100">
+                    <div
+                      className={cn("h-full rounded-full", row.color)}
+                      style={{ width: `${pct}%` }}
+                    />
+                  </div>
+                </div>
+              );
+            })}
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 }

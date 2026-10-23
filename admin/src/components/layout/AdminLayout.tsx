@@ -12,7 +12,7 @@ import {
   X,
 } from "lucide-react";
 import { useState } from "react";
-import { Link, NavLink, Outlet } from "react-router-dom";
+import { Link, NavLink, Outlet, useLocation } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
 import { isSuperAdmin } from "@/lib/auth-storage";
 import { Button } from "@/components/ui/button";
@@ -64,35 +64,74 @@ const navItems = [
   },
 ];
 
+const pageTitles: Record<string, string> = {
+  "/": "Tableau de bord",
+  "/partners": "Partenaires",
+  "/properties": "Annonces",
+  "/services": "Services",
+  "/users": "Utilisateurs",
+  "/categories": "Catégories",
+  "/audit": "Journal d'audit",
+  "/admins": "Administrateurs",
+};
+
+function resolveTitle(pathname: string) {
+  if (pageTitles[pathname]) return pageTitles[pathname];
+  const base = Object.keys(pageTitles)
+    .filter((k) => k !== "/")
+    .find((k) => pathname.startsWith(k));
+  return base ? pageTitles[base] : "Administration";
+}
+
 export function AdminLayout() {
   const { user, logout } = useAuth();
   const [open, setOpen] = useState(false);
+  const location = useLocation();
   const role = user?.systemRole ?? "";
-
   const items = navItems.filter((item) => item.roles.includes(role));
+  const initials = (user?.fullName ?? "A")
+    .split(" ")
+    .map((p) => p[0])
+    .join("")
+    .slice(0, 2)
+    .toUpperCase();
 
   return (
-    <div className="flex min-h-full bg-ireduc-slate">
+    <div className="flex min-h-full">
       <aside
         className={cn(
-          "fixed inset-y-0 left-0 z-40 w-64 transform bg-ireduc-navy text-white transition-transform lg:static lg:translate-x-0",
+          "fixed inset-y-0 left-0 z-40 flex w-[260px] transform flex-col border-r border-ireduc-border bg-white transition-transform lg:static lg:translate-x-0",
           open ? "translate-x-0" : "-translate-x-full"
         )}
       >
-        <div className="flex h-16 items-center justify-between border-b border-white/10 px-5">
-          <Link to="/" className="text-lg font-bold tracking-wide">
-            IREDUC Admin
+        <div className="flex h-[72px] items-center justify-between px-5">
+          <Link to="/" className="flex items-center gap-3">
+            <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-ireduc-navy text-sm font-extrabold tracking-tight text-white shadow-md">
+              IR
+            </span>
+            <span>
+              <span className="block text-sm font-extrabold tracking-wide text-ireduc-navy">
+                IREDUC
+              </span>
+              <span className="block text-[11px] font-medium text-ireduc-muted">
+                Administration
+              </span>
+            </span>
           </Link>
           <button
             type="button"
-            className="lg:hidden"
+            className="rounded-lg p-1.5 text-slate-500 hover:bg-slate-100 lg:hidden"
             onClick={() => setOpen(false)}
             aria-label="Fermer le menu"
           >
-            <X size={20} />
+            <X size={18} />
           </button>
         </div>
-        <nav className="space-y-1 p-3">
+
+        <nav className="flex-1 space-y-1 overflow-y-auto px-3 pb-4">
+          <p className="mb-2 px-3 text-[11px] font-semibold uppercase tracking-[0.14em] text-ireduc-muted">
+            Navigation
+          </p>
           {items.map((item) => (
             <NavLink
               key={item.to}
@@ -101,55 +140,89 @@ export function AdminLayout() {
               onClick={() => setOpen(false)}
               className={({ isActive }) =>
                 cn(
-                  "flex items-center gap-3 rounded-md px-3 py-2.5 text-sm transition-colors",
+                  "group relative flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all",
                   isActive
-                    ? "bg-white/15 text-white"
-                    : "text-white/75 hover:bg-white/10 hover:text-white"
+                    ? "bg-ireduc-navy text-white shadow-sm"
+                    : "text-slate-600 hover:bg-ireduc-navy-soft hover:text-ireduc-navy"
                 )
               }
             >
-              <item.icon size={18} />
-              {item.label}
+              {({ isActive }) => (
+                <>
+                  <item.icon
+                    size={18}
+                    className={isActive ? "text-white" : "text-slate-400 group-hover:text-ireduc-navy"}
+                  />
+                  {item.label}
+                </>
+              )}
             </NavLink>
           ))}
         </nav>
+
+        <div className="border-t border-ireduc-border p-4">
+          <div className="rounded-2xl bg-gradient-to-br from-ireduc-navy to-ireduc-navy-light p-4 text-white">
+            <p className="text-xs font-medium text-white/70">Connecté en tant que</p>
+            <p className="mt-1 truncate text-sm font-semibold">{user?.fullName}</p>
+            <p className="truncate text-xs text-white/60">
+              {isSuperAdmin(role) ? "Super administrateur" : "Administrateur"}
+            </p>
+          </div>
+        </div>
       </aside>
 
       {open ? (
         <button
           type="button"
-          className="fixed inset-0 z-30 bg-black/40 lg:hidden"
+          className="fixed inset-0 z-30 bg-ireduc-navy/40 backdrop-blur-[2px] lg:hidden"
           aria-label="Fermer"
           onClick={() => setOpen(false)}
         />
       ) : null}
 
       <div className="flex min-w-0 flex-1 flex-col">
-        <header className="sticky top-0 z-20 flex h-16 items-center justify-between border-b border-ireduc-border bg-white px-4 lg:px-6">
-          <div className="flex items-center gap-3">
+        <header className="sticky top-0 z-20 flex h-[72px] items-center justify-between gap-4 border-b border-ireduc-border/80 bg-white/80 px-4 backdrop-blur-md lg:px-8">
+          <div className="flex min-w-0 items-center gap-3">
             <button
               type="button"
-              className="rounded-md p-2 text-ireduc-navy hover:bg-slate-100 lg:hidden"
+              className="rounded-xl p-2 text-ireduc-navy hover:bg-ireduc-navy-soft lg:hidden"
               onClick={() => setOpen(true)}
               aria-label="Ouvrir le menu"
             >
               <Menu size={20} />
             </button>
-            <div>
-              <p className="text-sm font-medium text-ireduc-navy">
-                {user?.fullName}
+            <div className="min-w-0">
+              <p className="truncate text-lg font-bold tracking-tight text-ireduc-navy">
+                {resolveTitle(location.pathname)}
               </p>
-              <p className="text-xs text-slate-500">
-                {isSuperAdmin(role) ? "Super administrateur" : "Administrateur"}
+              <p className="hidden text-xs text-ireduc-muted sm:block">
+                Plateforme immobilière & habitat — Kinshasa
               </p>
             </div>
           </div>
-          <Button type="button" variant="outline" size="sm" onClick={() => void logout()}>
-            <LogOut size={16} />
-            Déconnexion
-          </Button>
+
+          <div className="flex items-center gap-2 sm:gap-3">
+            <div className="hidden items-center gap-2 rounded-full border border-ireduc-border bg-white px-2 py-1.5 sm:flex">
+              <span className="flex h-8 w-8 items-center justify-center rounded-full bg-ireduc-navy text-xs font-bold text-white">
+                {initials}
+              </span>
+              <div className="pr-2">
+                <p className="max-w-[140px] truncate text-xs font-semibold text-ireduc-navy">
+                  {user?.fullName}
+                </p>
+                <p className="text-[10px] text-ireduc-muted">
+                  {isSuperAdmin(role) ? "SUPER_ADMIN" : "ADMIN"}
+                </p>
+              </div>
+            </div>
+            <Button type="button" variant="outline" size="sm" onClick={() => void logout()}>
+              <LogOut size={15} />
+              <span className="hidden sm:inline">Déconnexion</span>
+            </Button>
+          </div>
         </header>
-        <main className="flex-1 p-4 lg:p-6">
+
+        <main className="flex-1 p-4 lg:p-8">
           <Outlet />
         </main>
       </div>

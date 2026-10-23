@@ -62,12 +62,9 @@ export function PartnersPage() {
 
   return (
     <div className="space-y-4">
-      <div>
-        <h1 className="text-2xl font-bold text-ireduc-navy">Partenaires</h1>
-        <p className="text-sm text-slate-600">
-          Validation des dossiers partenaires.
-        </p>
-      </div>
+      <p className="text-sm text-ireduc-muted">
+        Validation des dossiers partenaires.
+      </p>
 
       <Card>
         <CardHeader>
@@ -112,18 +109,18 @@ export function PartnersPage() {
         <Card>
           <CardContent className="overflow-x-auto p-0">
             <table className="min-w-full text-left text-sm">
-              <thead className="border-b border-ireduc-border bg-slate-50 text-slate-600">
+              <thead className="border-b border-ireduc-border bg-slate-50/80 text-xs uppercase tracking-wide text-ireduc-muted">
                 <tr>
-                  <th className="px-4 py-3 font-medium">Partenaire</th>
-                  <th className="px-4 py-3 font-medium">Contact</th>
-                  <th className="px-4 py-3 font-medium">Type</th>
-                  <th className="px-4 py-3 font-medium">Statut</th>
-                  <th className="px-4 py-3 font-medium">Créé le</th>
+                  <th className="px-4 py-3 font-semibold">Partenaire</th>
+                  <th className="px-4 py-3 font-semibold">Contact</th>
+                  <th className="px-4 py-3 font-semibold">Type</th>
+                  <th className="px-4 py-3 font-semibold">Statut</th>
+                  <th className="px-4 py-3 font-semibold">Créé le</th>
                 </tr>
               </thead>
               <tbody>
                 {data.data.map((row) => (
-                  <tr key={row.id} className="border-b border-ireduc-border last:border-0">
+                  <tr key={row.id} className="border-b border-ireduc-border/70 transition hover:bg-slate-50/70 last:border-0">
                     <td className="px-4 py-3">
                       <Link
                         to={`/partners/${row.id}`}

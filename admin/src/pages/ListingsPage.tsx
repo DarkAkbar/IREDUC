@@ -39,7 +39,7 @@ export function ListingsPage({
   const status = params.get("status") ?? "PENDING";
   const page = Number(params.get("page") ?? "1");
   const [q, setQ] = useState(params.get("q") ?? "");
-  const title = kind === "properties" ? "Annonces" : "Services";
+  const label = kind === "properties" ? "annonces" : "services";
   const basePath = `/${kind}`;
 
   const { data, isLoading, error } = useQuery({
@@ -68,10 +68,7 @@ export function ListingsPage({
 
   return (
     <div className="space-y-4">
-      <div>
-        <h1 className="text-2xl font-bold text-ireduc-navy">{title}</h1>
-        <p className="text-sm text-slate-600">Modération et mise à la une.</p>
-      </div>
+      <p className="text-sm text-ireduc-muted">Modération et mise à la une.</p>
 
       <Card>
         <CardHeader>
@@ -97,7 +94,7 @@ export function ListingsPage({
             }}
           >
             <Input
-              placeholder={`Rechercher dans les ${title.toLowerCase()}…`}
+              placeholder={`Rechercher dans les ${label}…`}
               value={q}
               onChange={(e) => setQ(e.target.value)}
             />
@@ -118,18 +115,18 @@ export function ListingsPage({
         <Card>
           <CardContent className="overflow-x-auto p-0">
             <table className="min-w-full text-left text-sm">
-              <thead className="border-b border-ireduc-border bg-slate-50 text-slate-600">
+              <thead className="border-b border-ireduc-border bg-slate-50/80 text-xs uppercase tracking-wide text-ireduc-muted">
                 <tr>
-                  <th className="px-4 py-3 font-medium">Titre</th>
-                  <th className="px-4 py-3 font-medium">Catégorie</th>
-                  <th className="px-4 py-3 font-medium">Prix</th>
-                  <th className="px-4 py-3 font-medium">Statut</th>
-                  <th className="px-4 py-3 font-medium">Créé le</th>
+                  <th className="px-4 py-3 font-semibold">Titre</th>
+                  <th className="px-4 py-3 font-semibold">Catégorie</th>
+                  <th className="px-4 py-3 font-semibold">Prix</th>
+                  <th className="px-4 py-3 font-semibold">Statut</th>
+                  <th className="px-4 py-3 font-semibold">Créé le</th>
                 </tr>
               </thead>
               <tbody>
                 {data.data.map((row) => (
-                  <tr key={row.id} className="border-b border-ireduc-border last:border-0">
+                  <tr key={row.id} className="border-b border-ireduc-border/70 transition hover:bg-slate-50/70 last:border-0">
                     <td className="px-4 py-3">
                       <Link
                         to={`${basePath}/${row.id}`}

@@ -81,12 +81,9 @@ export function AdminsPage() {
 
   return (
     <div className="space-y-4">
-      <div>
-        <h1 className="text-2xl font-bold text-ireduc-navy">Administrateurs</h1>
-        <p className="text-sm text-slate-600">
-          Création de comptes admin et changement de rôle.
-        </p>
-      </div>
+      <p className="text-sm text-ireduc-muted">
+        Création de comptes admin et changement de rôle.
+      </p>
 
       {message ? <Alert tone="success">{message}</Alert> : null}
       {createMutation.error || roleMutation.error ? (

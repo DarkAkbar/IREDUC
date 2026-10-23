@@ -66,12 +66,9 @@ export function UsersPage() {
 
   return (
     <div className="space-y-4">
-      <div>
-        <h1 className="text-2xl font-bold text-ireduc-navy">Utilisateurs</h1>
-        <p className="text-sm text-slate-600">
-          Recherche, consultation et suspension des comptes.
-        </p>
-      </div>
+      <p className="text-sm text-ireduc-muted">
+        Recherche, consultation et suspension des comptes.
+      </p>
 
       <Card>
         <CardHeader>
@@ -126,17 +123,17 @@ export function UsersPage() {
         <Card>
           <CardContent className="overflow-x-auto p-0">
             <table className="min-w-full text-left text-sm">
-              <thead className="border-b border-ireduc-border bg-slate-50 text-slate-600">
+              <thead className="border-b border-ireduc-border bg-slate-50/80 text-xs uppercase tracking-wide text-ireduc-muted">
                 <tr>
-                  <th className="px-4 py-3 font-medium">Utilisateur</th>
-                  <th className="px-4 py-3 font-medium">Rôle</th>
-                  <th className="px-4 py-3 font-medium">Statut</th>
-                  <th className="px-4 py-3 font-medium">Inscrit le</th>
+                  <th className="px-4 py-3 font-semibold">Utilisateur</th>
+                  <th className="px-4 py-3 font-semibold">Rôle</th>
+                  <th className="px-4 py-3 font-semibold">Statut</th>
+                  <th className="px-4 py-3 font-semibold">Inscrit le</th>
                 </tr>
               </thead>
               <tbody>
                 {data.data.map((row) => (
-                  <tr key={row.id} className="border-b border-ireduc-border last:border-0">
+                  <tr key={row.id} className="border-b border-ireduc-border/70 transition hover:bg-slate-50/70 last:border-0">
                     <td className="px-4 py-3">
                       <Link
                         to={`/users/${row.id}`}

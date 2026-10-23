@@ -64,12 +64,9 @@ export function AuditPage() {
 
   return (
     <div className="space-y-4">
-      <div>
-        <h1 className="text-2xl font-bold text-ireduc-navy">Journal d&apos;audit</h1>
-        <p className="text-sm text-slate-600">
-          Historique des actions administrateur.
-        </p>
-      </div>
+      <p className="text-sm text-ireduc-muted">
+        Historique des actions administrateur.
+      </p>
 
       <Card>
         <CardHeader>
