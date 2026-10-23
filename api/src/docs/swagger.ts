@@ -432,12 +432,28 @@ export const swaggerSpec = swaggerJsdoc({
           responses: { "200": { description: "Feed d'accueil" } },
         },
       },
+      "/api/v1/admin/stats": {
+        get: {
+          tags: ["Admin"],
+          summary: "Statistiques du tableau de bord",
+          security: [{ bearerAuth: [] }],
+          responses: { "200": { description: "Indicateurs et séries" } },
+        },
+      },
       "/api/v1/admin/properties": {
         get: {
           tags: ["Admin"],
-          summary: "Liste des biens à modérer",
+          summary: "Liste des biens à modérer (filtre statut, recherche)",
           security: [{ bearerAuth: [] }],
           responses: { "200": { description: "Liste" } },
+        },
+      },
+      "/api/v1/admin/properties/{id}": {
+        get: {
+          tags: ["Admin"],
+          summary: "Détail admin d'un bien (tous statuts)",
+          security: [{ bearerAuth: [] }],
+          responses: { "200": { description: "Détail" } },
         },
       },
       "/api/v1/admin/properties/{id}/review": {
@@ -448,12 +464,28 @@ export const swaggerSpec = swaggerJsdoc({
           responses: { "200": { description: "Décision enregistrée" } },
         },
       },
+      "/api/v1/admin/properties/{id}/feature": {
+        patch: {
+          tags: ["Admin"],
+          summary: "Mettre un bien à la une",
+          security: [{ bearerAuth: [] }],
+          responses: { "200": { description: "Mis à jour" } },
+        },
+      },
       "/api/v1/admin/services": {
         get: {
           tags: ["Admin"],
           summary: "Liste des services à modérer",
           security: [{ bearerAuth: [] }],
           responses: { "200": { description: "Liste" } },
+        },
+      },
+      "/api/v1/admin/services/{id}": {
+        get: {
+          tags: ["Admin"],
+          summary: "Détail admin d'un service",
+          security: [{ bearerAuth: [] }],
+          responses: { "200": { description: "Détail" } },
         },
       },
       "/api/v1/admin/services/{id}/review": {
@@ -464,6 +496,14 @@ export const swaggerSpec = swaggerJsdoc({
           responses: { "200": { description: "Décision enregistrée" } },
         },
       },
+      "/api/v1/admin/services/{id}/feature": {
+        patch: {
+          tags: ["Admin"],
+          summary: "Mettre un service à la une",
+          security: [{ bearerAuth: [] }],
+          responses: { "200": { description: "Mis à jour" } },
+        },
+      },
       "/api/v1/admin/providers": {
         get: {
           tags: ["Admin"],
@@ -472,12 +512,104 @@ export const swaggerSpec = swaggerJsdoc({
           responses: { "200": { description: "Liste" } },
         },
       },
+      "/api/v1/admin/providers/{id}": {
+        get: {
+          tags: ["Admin"],
+          summary: "Détail partenaire (documents, historique)",
+          security: [{ bearerAuth: [] }],
+          responses: { "200": { description: "Détail" } },
+        },
+      },
       "/api/v1/admin/providers/{id}/review": {
         patch: {
           tags: ["Admin"],
           summary: "Approuver ou rejeter un partenaire",
           security: [{ bearerAuth: [] }],
           responses: { "200": { description: "Décision enregistrée" } },
+        },
+      },
+      "/api/v1/admin/providers/{id}/request-complement": {
+        patch: {
+          tags: ["Admin"],
+          summary: "Demander un complément de dossier",
+          security: [{ bearerAuth: [] }],
+          responses: { "200": { description: "Notification envoyée" } },
+        },
+      },
+      "/api/v1/admin/users": {
+        get: {
+          tags: ["Admin"],
+          summary: "Liste des utilisateurs",
+          security: [{ bearerAuth: [] }],
+          responses: { "200": { description: "Liste paginée" } },
+        },
+      },
+      "/api/v1/admin/users/{id}": {
+        get: {
+          tags: ["Admin"],
+          summary: "Détail utilisateur",
+          security: [{ bearerAuth: [] }],
+          responses: { "200": { description: "Détail" } },
+        },
+      },
+      "/api/v1/admin/users/{id}/status": {
+        patch: {
+          tags: ["Admin"],
+          summary: "Suspendre ou réactiver un utilisateur",
+          security: [{ bearerAuth: [] }],
+          responses: { "200": { description: "Statut mis à jour" } },
+        },
+      },
+      "/api/v1/admin/admins": {
+        get: {
+          tags: ["Admin"],
+          summary: "Liste des administrateurs (SUPER_ADMIN)",
+          security: [{ bearerAuth: [] }],
+          responses: { "200": { description: "Liste" } },
+        },
+        post: {
+          tags: ["Admin"],
+          summary: "Créer un compte admin (SUPER_ADMIN)",
+          security: [{ bearerAuth: [] }],
+          responses: { "201": { description: "Admin créé" } },
+        },
+      },
+      "/api/v1/admin/admins/{id}/role": {
+        patch: {
+          tags: ["Admin"],
+          summary: "Changer le rôle ADMIN ↔ USER (SUPER_ADMIN)",
+          security: [{ bearerAuth: [] }],
+          responses: { "200": { description: "Rôle mis à jour" } },
+        },
+      },
+      "/api/v1/admin/audit-log": {
+        get: {
+          tags: ["Admin"],
+          summary: "Journal d'audit (SUPER_ADMIN)",
+          security: [{ bearerAuth: [] }],
+          responses: { "200": { description: "Liste paginée" } },
+        },
+      },
+      "/api/v1/admin/categories": {
+        get: {
+          tags: ["Admin"],
+          summary: "Liste des catégories (SUPER_ADMIN)",
+          security: [{ bearerAuth: [] }],
+          responses: { "200": { description: "Liste" } },
+        },
+        post: {
+          tags: ["Admin"],
+          summary: "Créer une catégorie (SUPER_ADMIN)",
+          security: [{ bearerAuth: [] }],
+          responses: { "201": { description: "Créée" } },
+        },
+      },
+      "/api/v1/admin/categories/{id}": {
+        patch: {
+          tags: ["Admin"],
+          summary: "Modifier une catégorie (SUPER_ADMIN)",
+          security: [{ bearerAuth: [] }],
+          responses: { "200": { description: "Mise à jour" } },
         },
       },
       "/api/v1/requests": {
