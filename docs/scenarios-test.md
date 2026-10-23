@@ -32,8 +32,8 @@ Comptes de référence :
 | 1 | `POST /api/v1/auth/login` avec Jean | `200` + `accessToken`, `refreshToken`, `user` |
 | 2 | Login avec mauvais mot de passe | `401` message français |
 | 3 | Ajouter un bien en favori | `201` / favori listé |
-| 4 | Créer une demande de visite sur un bien | `201` + numéro de demande |
-| 5 | Lister « Mes demandes » | La demande apparaît en statut `SUBMITTED` ou équivalent |
+| 4 | Créer une demande de visite (`email` obligatoire) | `201` + numéro, statut `PENDING` |
+| 5 | Lister « Mes demandes » (`GET /requests/mine`) | La demande apparaît |
 | 6 | Rafraîchir le jeton (`POST /auth/refresh`) | Nouveaux jetons, ancien refresh invalidé |
 
 ### 1.3 Messagerie et profil
