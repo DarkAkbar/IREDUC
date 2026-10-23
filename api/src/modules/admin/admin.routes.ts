@@ -3,13 +3,24 @@ import { Router } from "express";
 import { authenticate } from "../../middlewares/authenticate";
 import { requireRole } from "../../middlewares/requireRole";
 import { validate } from "../../middlewares/validate";
+import * as adminController from "./admin.controller";
 import * as moderationController from "./admin.moderation.controller";
 import {
   adminIdParamsSchema,
   adminListQuerySchema,
   adminProvidersQuerySchema,
+  adminUsersQuerySchema,
+  auditLogQuerySchema,
+  complementSchema,
+  createAdminSchema,
+  createCategorySchema,
+  featureSchema,
   reviewDecisionSchema,
+  updateAdminRoleSchema,
+  updateCategorySchema,
+  updateUserStatusSchema,
 } from "./admin.schemas";
+import { paginationQuerySchema } from "../../utils/pagination";
 
 export const adminRouter = Router();
 
@@ -22,10 +33,29 @@ adminRouter.get("/ping", (_req, res) => {
   res.status(200).json({ message: "ok" });
 });
 
+adminRouter.get("/stats", adminController.stats);
+
 adminRouter.get(
   "/properties",
   validate(adminListQuerySchema, "query"),
   moderationController.listProperties
+);
+adminRouter.get(
+  "/properties/:id",
+  validate(adminIdParamsSchema, "params"),
+  adminController.getProperty
+);
+adminRouter.patch(
+  "/properties/:id/review",
+  validate(adminIdParamsSchema, "params"),
+  validate(reviewDecisionSchema),
+  adminController.reviewProperty
+);
+adminRouter.patch(
+  "/properties/:id/feature",
+  validate(adminIdParamsSchema, "params"),
+  validate(featureSchema),
+  adminController.featureProperty
 );
 
 adminRouter.get(
@@ -33,30 +63,96 @@ adminRouter.get(
   validate(adminListQuerySchema, "query"),
   moderationController.listServices
 );
+adminRouter.get(
+  "/services/:id",
+  validate(adminIdParamsSchema, "params"),
+  adminController.getService
+);
+adminRouter.patch(
+  "/services/:id/review",
+  validate(adminIdParamsSchema, "params"),
+  validate(reviewDecisionSchema),
+  adminController.reviewService
+);
+adminRouter.patch(
+  "/services/:id/feature",
+  validate(adminIdParamsSchema, "params"),
+  validate(featureSchema),
+  adminController.featureService
+);
 
 adminRouter.get(
   "/providers",
   validate(adminProvidersQuerySchema, "query"),
   moderationController.listProviders
 );
-
-adminRouter.patch(
-  "/properties/:id/review",
+adminRouter.get(
+  "/providers/:id",
   validate(adminIdParamsSchema, "params"),
-  validate(reviewDecisionSchema),
-  moderationController.reviewProperty
+  adminController.getProvider
 );
-
-adminRouter.patch(
-  "/services/:id/review",
-  validate(adminIdParamsSchema, "params"),
-  validate(reviewDecisionSchema),
-  moderationController.reviewService
-);
-
 adminRouter.patch(
   "/providers/:id/review",
   validate(adminIdParamsSchema, "params"),
   validate(reviewDecisionSchema),
   moderationController.reviewProvider
+);
+adminRouter.patch(
+  "/providers/:id/request-complement",
+  validate(adminIdParamsSchema, "params"),
+  validate(complementSchema),
+  adminController.requestComplement
+);
+
+adminRouter.get(
+  "/users",
+  validate(adminUsersQuerySchema, "query"),
+  adminController.listUsers
+);
+adminRouter.get(
+  "/users/:id",
+  validate(adminIdParamsSchema, "params"),
+  adminController.getUser
+);
+adminRouter.patch(
+  "/users/:id/status",
+  validate(adminIdParamsSchema, "params"),
+  validate(updateUserStatusSchema),
+  adminController.updateUserStatus
+);
+
+adminRouter.get(
+  "/admins",
+  validate(paginationQuerySchema, "query"),
+  adminController.listAdmins
+);
+adminRouter.post(
+  "/admins",
+  validate(createAdminSchema),
+  adminController.createAdmin
+);
+adminRouter.patch(
+  "/admins/:id/role",
+  validate(adminIdParamsSchema, "params"),
+  validate(updateAdminRoleSchema),
+  adminController.updateAdminRole
+);
+
+adminRouter.get(
+  "/audit-log",
+  validate(auditLogQuerySchema, "query"),
+  adminController.listAuditLog
+);
+
+adminRouter.get("/categories", adminController.listCategories);
+adminRouter.post(
+  "/categories",
+  validate(createCategorySchema),
+  adminController.createCategory
+);
+adminRouter.patch(
+  "/categories/:id",
+  validate(adminIdParamsSchema, "params"),
+  validate(updateCategorySchema),
+  adminController.updateCategory
 );

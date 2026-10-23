@@ -4,7 +4,10 @@ import { notFound } from "../../utils/errors";
 
 export async function listCategories(kind?: CategoryKind) {
   return prisma.category.findMany({
-    where: kind ? { kind } : undefined,
+    where: {
+      isActive: true,
+      ...(kind ? { kind } : {}),
+    },
     orderBy: [{ kind: "asc" }, { sortOrder: "asc" }, { name: "asc" }],
     select: {
       id: true,
@@ -14,6 +17,7 @@ export async function listCategories(kind?: CategoryKind) {
       icon: true,
       parentId: true,
       sortOrder: true,
+      isActive: true,
     },
   });
 }
