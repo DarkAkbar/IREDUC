@@ -8,7 +8,7 @@ Plateforme immobilière et services de l'habitat — Kinshasa.
 |-----------|--------------------------------------------------|
 | `api/`    | API Node.js + Express + TypeScript + Prisma      |
 | `mobile/` | Application mobile Expo (React Native)           |
-| `admin/`  | Back-office (à venir)                            |
+| `admin/`  | Back-office web (React + Vite)                   |
 
 ## Prérequis
 
@@ -105,6 +105,15 @@ Exemple : `EXPO_PUBLIC_API_URL=http://192.168.1.42:3000/api/v1`
 
 Redémarrer Expo après modification de `.env` (`npx expo start -c` si besoin).
 
-## Admin
+## Lancer l'administration web
 
-Le back-office (`admin/`) sera mis en place ultérieurement. Voir `admin/README.md`.
+```bash
+cd admin
+cp .env.example .env
+# VITE_API_URL=http://localhost:3000/api/v1
+npm install
+npm run dev
+```
+
+Interface : [http://localhost:5174](http://localhost:5174)  
+Comptes : `admin@ireduc.cd` / `Admin123!` ou `superadmin@ireduc.cd` / `SuperAdmin123!`
