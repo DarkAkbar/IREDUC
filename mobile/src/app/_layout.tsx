@@ -2,8 +2,11 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Stack } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { useEffect } from "react";
+import { View } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { SafeAreaProvider } from "react-native-safe-area-context";
+import { ErrorBoundary } from "../components/ErrorBoundary";
+import { OfflineBanner } from "../components/OfflineBanner";
 import { useAuthStore } from "../store/authStore";
 import { useFavoritesStore } from "../store/favoritesStore";
 import { colors } from "../theme";
@@ -40,14 +43,17 @@ export default function RootLayout() {
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <SafeAreaProvider>
-        <QueryClientProvider client={queryClient}>
-          <StatusBar style="dark" />
-          <Stack
-            screenOptions={{
-              headerShown: false,
-              contentStyle: { backgroundColor: colors.background },
-            }}
-          >
+        <ErrorBoundary>
+          <QueryClientProvider client={queryClient}>
+            <View style={{ flex: 1, backgroundColor: colors.background }}>
+              <OfflineBanner />
+              <StatusBar style="dark" />
+              <Stack
+                screenOptions={{
+                  headerShown: false,
+                  contentStyle: { backgroundColor: colors.background },
+                }}
+              >
             <Stack.Screen name="(tabs)" />
             <Stack.Screen
               name="auth/login"
@@ -76,8 +82,10 @@ export default function RootLayout() {
             <Stack.Screen name="profile/about" />
             <Stack.Screen name="request/[id]" />
             <Stack.Screen name="request/similar" />
-          </Stack>
-        </QueryClientProvider>
+              </Stack>
+            </View>
+          </QueryClientProvider>
+        </ErrorBoundary>
       </SafeAreaProvider>
     </GestureHandlerRootView>
   );

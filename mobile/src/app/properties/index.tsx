@@ -196,6 +196,10 @@ export default function PropertiesListScreen() {
           keyExtractor={(item) => item.id}
           renderItem={({ item }) => <PropertyListCard item={item} />}
           contentContainerStyle={{ paddingBottom: spacing.xxl }}
+          initialNumToRender={8}
+          maxToRenderPerBatch={8}
+          windowSize={7}
+          removeClippedSubviews
           onEndReached={() => {
             if (query.hasNextPage && !query.isFetchingNextPage) {
               void query.fetchNextPage();

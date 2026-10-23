@@ -133,6 +133,9 @@ export default function RequestsScreen() {
       {!query.isLoading && !query.isError ? (
         <FlatList
           data={items}
+          initialNumToRender={10}
+          windowSize={7}
+          removeClippedSubviews
           keyExtractor={(item) => item.id}
           renderItem={({ item }) => <RequestCard item={item} />}
           contentContainerStyle={{ paddingBottom: spacing.xxl, paddingTop: spacing.md }}

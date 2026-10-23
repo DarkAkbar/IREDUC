@@ -25,8 +25,8 @@ import { useRequireAuth } from "../../hooks/useRequireAuth";
 import { useAuthStore } from "../../store/authStore";
 import { colors, radii, spacing, typography } from "../../theme";
 
-const HERO_IMAGE =
-  "https://images.unsplash.com/photo-1613490493576-7fde63acd811?auto=format&fit=crop&w=1200&q=80";
+/** Fond local (assets) — évite une dépendance réseau pour le hero. */
+const HERO_IMAGE = require("../../assets/splash-icon.png");
 
 export default function HomeScreen() {
   const insets = useSafeAreaInsets();
@@ -109,7 +109,7 @@ export default function HomeScreen() {
         {!isLoading && !isError && data ? (
           <>
             <View style={styles.hero}>
-              <Image source={{ uri: HERO_IMAGE }} style={styles.heroImage} contentFit="cover" />
+              <Image source={HERO_IMAGE} style={styles.heroImage} contentFit="contain" />
               <View style={styles.heroOverlay}>
                 <Text style={styles.heroTitle}>Un chez-vous,{"\n"}une vie meilleure.</Text>
                 <Text style={styles.heroSubtitle}>

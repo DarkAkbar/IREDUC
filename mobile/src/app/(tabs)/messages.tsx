@@ -94,6 +94,9 @@ export default function MessagesScreen() {
           data={query.data ?? []}
           keyExtractor={(item) => item.id}
           contentContainerStyle={{ paddingBottom: spacing.xxl }}
+          initialNumToRender={12}
+          windowSize={7}
+          removeClippedSubviews
           refreshControl={
             <RefreshControl
               refreshing={query.isRefetching}

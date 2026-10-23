@@ -110,7 +110,8 @@ export default function AuthScreen() {
   return (
     <KeyboardAvoidingView
       style={[styles.screen, { paddingTop: insets.top + spacing.md }]}
-      behavior={Platform.OS === "ios" ? "padding" : undefined}
+      behavior={Platform.OS === "ios" ? "padding" : "height"}
+      keyboardVerticalOffset={Platform.OS === "android" ? 24 : 0}
     >
       <ScrollView
         contentContainerStyle={styles.content}
