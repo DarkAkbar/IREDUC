@@ -30,39 +30,27 @@ export function LoginPage() {
   }
 
   return (
-    <div className="relative flex min-h-full items-center justify-center overflow-hidden p-4">
-      <div className="absolute inset-0 bg-ireduc-navy" />
-      <div className="absolute -left-24 top-0 h-80 w-80 rounded-full bg-ireduc-red/25 blur-3xl" />
-      <div className="absolute -right-16 bottom-0 h-96 w-96 rounded-full bg-sky-400/20 blur-3xl" />
-      <div
-        className="absolute inset-0 opacity-[0.08]"
-        style={{
-          backgroundImage:
-            "radial-gradient(circle at 1px 1px, white 1px, transparent 0)",
-          backgroundSize: "24px 24px",
-        }}
-      />
-
-      <div className="relative w-full max-w-md rounded-3xl border border-white/10 bg-white p-8 shadow-2xl">
+    <div className="flex min-h-full items-center justify-center bg-ireduc-slate p-4">
+      <div className="w-full max-w-md rounded-2xl border border-ireduc-border bg-white p-8 shadow-[var(--shadow-card)]">
         <div className="mb-8 text-center">
-          <span className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-ireduc-navy text-lg font-extrabold text-white shadow-lg">
+          <span className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-ireduc-navy text-lg font-bold text-white">
             IR
           </span>
-          <p className="mt-4 text-xs font-bold uppercase tracking-[0.22em] text-ireduc-red">
+          <p className="mt-4 text-xs font-bold uppercase tracking-[0.2em] text-ireduc-primary">
             IREDUC
           </p>
-          <h1 className="mt-2 text-2xl font-extrabold tracking-tight text-ireduc-navy">
+          <h1 className="mt-2 text-[22px] font-bold text-ireduc-navy">
             Administration
           </h1>
-          <p className="mt-2 text-sm text-ireduc-muted">
-            Accès réservé aux administrateurs de la plateforme.
+          <p className="mt-2 text-[15px] text-ireduc-muted">
+            Connectez-vous avec un compte administrateur.
           </p>
         </div>
 
         <form className="space-y-4" onSubmit={onSubmit}>
           {error ? <Alert tone="error">{error}</Alert> : null}
           <div className="space-y-1.5">
-            <label className="text-sm font-semibold text-slate-700" htmlFor="email">
+            <label className="text-sm font-semibold text-ireduc-navy" htmlFor="email">
               E-mail
             </label>
             <Input
@@ -75,7 +63,7 @@ export function LoginPage() {
             />
           </div>
           <div className="space-y-1.5">
-            <label className="text-sm font-semibold text-slate-700" htmlFor="password">
+            <label className="text-sm font-semibold text-ireduc-navy" htmlFor="password">
               Mot de passe
             </label>
             <Input

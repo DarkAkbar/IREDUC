@@ -22,15 +22,15 @@ export function Dialog({
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       <button
         type="button"
-        className="absolute inset-0 bg-ireduc-navy/50"
+        className="absolute inset-0 bg-black/35"
         aria-label="Fermer"
         onClick={onClose}
       />
-      <div className="relative z-10 w-full max-w-lg rounded-lg bg-white shadow-xl">
+      <div className="relative z-10 w-full max-w-lg rounded-2xl border border-ireduc-border bg-white shadow-[var(--shadow-card)]">
         <div className="border-b border-ireduc-border px-5 py-4">
-          <h2 className="text-lg font-semibold text-ireduc-navy">{title}</h2>
+          <h2 className="text-lg font-bold text-ireduc-navy">{title}</h2>
           {description ? (
-            <p className="mt-1 text-sm text-slate-600">{description}</p>
+            <p className="mt-1 text-[15px] text-ireduc-muted">{description}</p>
           ) : null}
         </div>
         <div className="px-5 py-4">{children}</div>

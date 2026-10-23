@@ -97,7 +97,7 @@ export function AdminLayout() {
     .toUpperCase();
 
   return (
-    <div className="flex min-h-full">
+    <div className="flex min-h-full bg-ireduc-slate">
       <aside
         className={cn(
           "fixed inset-y-0 left-0 z-40 flex w-[260px] transform flex-col border-r border-ireduc-border bg-white transition-transform lg:static lg:translate-x-0",
@@ -106,21 +106,21 @@ export function AdminLayout() {
       >
         <div className="flex h-[72px] items-center justify-between px-5">
           <Link to="/" className="flex items-center gap-3">
-            <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-ireduc-navy text-sm font-extrabold tracking-tight text-white shadow-md">
+            <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-ireduc-navy text-sm font-bold tracking-tight text-white">
               IR
             </span>
             <span>
-              <span className="block text-sm font-extrabold tracking-wide text-ireduc-navy">
+              <span className="block text-[15px] font-bold tracking-wide text-ireduc-navy">
                 IREDUC
               </span>
-              <span className="block text-[11px] font-medium text-ireduc-muted">
+              <span className="block text-xs font-medium text-ireduc-muted">
                 Administration
               </span>
             </span>
           </Link>
           <button
             type="button"
-            className="rounded-lg p-1.5 text-slate-500 hover:bg-slate-100 lg:hidden"
+            className="rounded-lg p-1.5 text-ireduc-muted hover:bg-ireduc-navy-soft lg:hidden"
             onClick={() => setOpen(false)}
             aria-label="Fermer le menu"
           >
@@ -129,7 +129,7 @@ export function AdminLayout() {
         </div>
 
         <nav className="flex-1 space-y-1 overflow-y-auto px-3 pb-4">
-          <p className="mb-2 px-3 text-[11px] font-semibold uppercase tracking-[0.14em] text-ireduc-muted">
+          <p className="mb-2 px-3 text-xs font-semibold uppercase tracking-[0.12em] text-ireduc-muted">
             Navigation
           </p>
           {items.map((item) => (
@@ -140,10 +140,10 @@ export function AdminLayout() {
               onClick={() => setOpen(false)}
               className={({ isActive }) =>
                 cn(
-                  "group relative flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all",
+                  "group flex items-center gap-3 rounded-xl px-3 py-2.5 text-[15px] font-semibold transition-colors",
                   isActive
-                    ? "bg-ireduc-navy text-white shadow-sm"
-                    : "text-slate-600 hover:bg-ireduc-navy-soft hover:text-ireduc-navy"
+                    ? "bg-ireduc-navy text-white"
+                    : "text-ireduc-muted hover:bg-ireduc-navy-soft hover:text-ireduc-navy"
                 )
               }
             >
@@ -151,7 +151,11 @@ export function AdminLayout() {
                 <>
                   <item.icon
                     size={18}
-                    className={isActive ? "text-white" : "text-slate-400 group-hover:text-ireduc-navy"}
+                    className={
+                      isActive
+                        ? "text-white"
+                        : "text-ireduc-muted group-hover:text-ireduc-navy"
+                    }
                   />
                   {item.label}
                 </>
@@ -161,10 +165,10 @@ export function AdminLayout() {
         </nav>
 
         <div className="border-t border-ireduc-border p-4">
-          <div className="rounded-2xl bg-gradient-to-br from-ireduc-navy to-ireduc-navy-light p-4 text-white">
+          <div className="rounded-2xl bg-ireduc-navy p-4 text-white">
             <p className="text-xs font-medium text-white/70">Connecté en tant que</p>
-            <p className="mt-1 truncate text-sm font-semibold">{user?.fullName}</p>
-            <p className="truncate text-xs text-white/60">
+            <p className="mt-1 truncate text-[15px] font-bold">{user?.fullName}</p>
+            <p className="truncate text-xs text-white/70">
               {isSuperAdmin(role) ? "Super administrateur" : "Administrateur"}
             </p>
           </div>
@@ -174,14 +178,14 @@ export function AdminLayout() {
       {open ? (
         <button
           type="button"
-          className="fixed inset-0 z-30 bg-ireduc-navy/40 backdrop-blur-[2px] lg:hidden"
+          className="fixed inset-0 z-30 bg-black/35 lg:hidden"
           aria-label="Fermer"
           onClick={() => setOpen(false)}
         />
       ) : null}
 
       <div className="flex min-w-0 flex-1 flex-col">
-        <header className="sticky top-0 z-20 flex h-[72px] items-center justify-between gap-4 border-b border-ireduc-border/80 bg-white/80 px-4 backdrop-blur-md lg:px-8">
+        <header className="sticky top-0 z-20 flex h-[72px] items-center justify-between gap-4 border-b border-ireduc-border bg-white px-4 lg:px-8">
           <div className="flex min-w-0 items-center gap-3">
             <button
               type="button"
@@ -192,25 +196,25 @@ export function AdminLayout() {
               <Menu size={20} />
             </button>
             <div className="min-w-0">
-              <p className="truncate text-lg font-bold tracking-tight text-ireduc-navy">
+              <p className="truncate text-[22px] font-bold text-ireduc-navy">
                 {resolveTitle(location.pathname)}
               </p>
-              <p className="hidden text-xs text-ireduc-muted sm:block">
+              <p className="hidden text-xs font-medium text-ireduc-muted sm:block">
                 Plateforme immobilière & habitat — Kinshasa
               </p>
             </div>
           </div>
 
           <div className="flex items-center gap-2 sm:gap-3">
-            <div className="hidden items-center gap-2 rounded-full border border-ireduc-border bg-white px-2 py-1.5 sm:flex">
+            <div className="hidden items-center gap-2 rounded-full border border-ireduc-border bg-ireduc-slate px-2 py-1.5 sm:flex">
               <span className="flex h-8 w-8 items-center justify-center rounded-full bg-ireduc-navy text-xs font-bold text-white">
                 {initials}
               </span>
               <div className="pr-2">
-                <p className="max-w-[140px] truncate text-xs font-semibold text-ireduc-navy">
+                <p className="max-w-[140px] truncate text-xs font-bold text-ireduc-navy">
                   {user?.fullName}
                 </p>
-                <p className="text-[10px] text-ireduc-muted">
+                <p className="text-[10px] font-medium text-ireduc-muted">
                   {isSuperAdmin(role) ? "SUPER_ADMIN" : "ADMIN"}
                 </p>
               </div>

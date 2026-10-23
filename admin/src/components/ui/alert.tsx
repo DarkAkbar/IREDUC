@@ -11,12 +11,18 @@ export function Alert({
   className?: string;
 }) {
   const tones = {
-    info: "border-sky-200 bg-sky-50 text-sky-900",
-    success: "border-emerald-200 bg-emerald-50 text-emerald-900",
-    error: "border-red-200 bg-red-50 text-red-800",
+    info: "border-ireduc-border bg-ireduc-navy-soft text-ireduc-navy",
+    success: "border-emerald-200 bg-emerald-50 text-ireduc-success",
+    error: "border-red-200 bg-ireduc-red-soft text-ireduc-red",
   };
   return (
-    <div className={cn("rounded-md border px-3 py-2 text-sm", tones[tone], className)}>
+    <div
+      className={cn(
+        "rounded-xl border px-3 py-2 text-[15px] font-medium",
+        tones[tone],
+        className
+      )}
+    >
       {children}
     </div>
   );

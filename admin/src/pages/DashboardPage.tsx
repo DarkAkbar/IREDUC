@@ -215,7 +215,7 @@ export function DashboardPage() {
                     <p className="mt-2 text-3xl font-extrabold tracking-tight text-ireduc-navy">
                       {card.value}
                     </p>
-                    <p className="mt-1 text-xs text-slate-400">{card.hint}</p>
+                    <p className="mt-1 text-xs font-medium text-ireduc-muted">{card.hint}</p>
                   </div>
                   <span
                     className={cn(
@@ -245,32 +245,33 @@ export function DashboardPage() {
               <AreaChart data={chartData}>
                 <defs>
                   <linearGradient id="fillInscriptions" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="#0b1f3a" stopOpacity={0.28} />
-                    <stop offset="100%" stopColor="#0b1f3a" stopOpacity={0.02} />
+                    <stop offset="0%" stopColor="#0B2A8A" stopOpacity={0.28} />
+                    <stop offset="100%" stopColor="#0B2A8A" stopOpacity={0.02} />
                   </linearGradient>
                   <linearGradient id="fillDemandes" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="#c8102e" stopOpacity={0.25} />
-                    <stop offset="100%" stopColor="#c8102e" stopOpacity={0.02} />
+                    <stop offset="0%" stopColor="#E30613" stopOpacity={0.25} />
+                    <stop offset="100%" stopColor="#E30613" stopOpacity={0.02} />
                   </linearGradient>
                 </defs>
-                <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" vertical={false} />
+                <CartesianGrid strokeDasharray="3 3" stroke="#D7DEEE" vertical={false} />
                 <XAxis
                   dataKey="date"
-                  tick={{ fontSize: 12, fill: "#64748b" }}
+                  tick={{ fontSize: 12, fill: "#6B7A99" }}
                   axisLine={false}
                   tickLine={false}
                 />
                 <YAxis
                   allowDecimals={false}
-                  tick={{ fontSize: 12, fill: "#64748b" }}
+                  tick={{ fontSize: 12, fill: "#6B7A99" }}
                   axisLine={false}
                   tickLine={false}
                 />
                 <Tooltip
                   contentStyle={{
                     borderRadius: 12,
-                    border: "1px solid #e2e8f0",
-                    boxShadow: "0 8px 24px rgb(15 23 42 / 0.08)",
+                    border: "1px solid #D7DEEE",
+                    boxShadow: "0 4px 16px rgba(11, 42, 138, 0.08)",
+                    color: "#0B2A8A",
                   }}
                 />
                 <Legend />
@@ -278,7 +279,7 @@ export function DashboardPage() {
                   type="monotone"
                   dataKey="inscriptions"
                   name="Inscriptions"
-                  stroke="#0b1f3a"
+                  stroke="#0B2A8A"
                   fill="url(#fillInscriptions)"
                   strokeWidth={2.5}
                 />
@@ -286,7 +287,7 @@ export function DashboardPage() {
                   type="monotone"
                   dataKey="demandes"
                   name="Demandes"
-                  stroke="#c8102e"
+                  stroke="#E30613"
                   fill="url(#fillDemandes)"
                   strokeWidth={2.5}
                 />
@@ -328,7 +329,7 @@ export function DashboardPage() {
               return (
                 <div key={row.label}>
                   <div className="mb-1.5 flex items-center justify-between text-sm">
-                    <span className="font-medium text-slate-600">{row.label}</span>
+                    <span className="font-semibold text-ireduc-muted">{row.label}</span>
                     <span className="font-bold text-ireduc-navy">
                       {row.value}{" "}
                       <span className="text-xs font-medium text-ireduc-muted">

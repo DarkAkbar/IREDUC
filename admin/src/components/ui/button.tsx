@@ -3,23 +3,22 @@ import type { ButtonHTMLAttributes } from "react";
 import { cn } from "@/lib/utils";
 
 const buttonVariants = cva(
-  "inline-flex items-center justify-center gap-2 rounded-xl text-sm font-semibold transition-all disabled:pointer-events-none disabled:opacity-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ireduc-navy active:scale-[0.98]",
+  "inline-flex items-center justify-center gap-2 rounded-xl text-[15px] font-bold transition-opacity disabled:pointer-events-none disabled:opacity-55 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ireduc-navy",
   {
     variants: {
       variant: {
-        default:
-          "bg-ireduc-navy text-white shadow-sm hover:bg-ireduc-navy-light hover:shadow-md",
-        danger:
-          "bg-ireduc-red text-white shadow-sm hover:bg-ireduc-red-dark hover:shadow-md",
+        default: "bg-ireduc-primary text-white hover:opacity-90",
+        navy: "bg-ireduc-navy text-white hover:opacity-90",
+        danger: "bg-ireduc-red text-white hover:opacity-90",
         outline:
-          "border border-ireduc-border bg-white text-ireduc-navy hover:border-ireduc-navy/30 hover:bg-ireduc-navy-soft/60",
+          "border-[1.5px] border-ireduc-navy bg-white text-ireduc-navy hover:bg-ireduc-navy-soft",
         ghost: "text-ireduc-navy hover:bg-ireduc-navy-soft",
-        success: "bg-emerald-600 text-white shadow-sm hover:bg-emerald-700",
+        success: "bg-ireduc-success text-white hover:opacity-90",
       },
       size: {
-        default: "h-10 px-4 py-2",
-        sm: "h-8 px-3 text-xs",
-        lg: "h-11 px-6",
+        default: "h-11 min-h-[44px] px-4 py-2",
+        sm: "h-9 px-3 text-sm",
+        lg: "h-12 px-6",
       },
     },
     defaultVariants: {
