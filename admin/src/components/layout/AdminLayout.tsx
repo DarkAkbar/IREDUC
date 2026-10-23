@@ -97,20 +97,22 @@ export function AdminLayout() {
     .toUpperCase();
 
   return (
-    <div className="flex min-h-full bg-ireduc-slate">
+    <div className="min-h-full bg-ireduc-slate">
+      {/* Sidebar toujours fixe (ne scroll pas avec le contenu) */}
       <aside
         className={cn(
-          "fixed inset-y-0 left-0 z-40 flex w-[260px] transform flex-col border-r border-ireduc-border bg-white transition-transform lg:static lg:translate-x-0",
-          open ? "translate-x-0" : "-translate-x-full"
+          "fixed inset-y-0 left-0 z-40 flex w-[260px] flex-col border-r border-ireduc-border bg-white transition-transform",
+          open ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
         )}
       >
-        <div className="flex h-[72px] items-center justify-between px-5">
+        <div className="flex h-[72px] shrink-0 items-center justify-between border-b border-ireduc-border px-5">
           <Link to="/" className="flex items-center gap-3">
-            <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-ireduc-navy text-sm font-bold tracking-tight text-white">
+            <span className="relative flex h-10 w-10 items-center justify-center overflow-hidden rounded-xl bg-ireduc-navy text-sm font-bold text-white">
               IR
+              <span className="absolute bottom-0 left-0 right-0 h-1 bg-ireduc-primary" />
             </span>
             <span>
-              <span className="block text-[15px] font-bold tracking-wide text-ireduc-navy">
+              <span className="block text-[15px] font-bold tracking-wide text-ireduc-primary">
                 IREDUC
               </span>
               <span className="block text-xs font-medium text-ireduc-muted">
@@ -128,7 +130,7 @@ export function AdminLayout() {
           </button>
         </div>
 
-        <nav className="flex-1 space-y-1 overflow-y-auto px-3 pb-4">
+        <nav className="min-h-0 flex-1 space-y-1 overflow-y-auto px-3 py-4">
           <p className="mb-2 px-3 text-xs font-semibold uppercase tracking-[0.12em] text-ireduc-muted">
             Navigation
           </p>
@@ -140,10 +142,10 @@ export function AdminLayout() {
               onClick={() => setOpen(false)}
               className={({ isActive }) =>
                 cn(
-                  "group flex items-center gap-3 rounded-xl px-3 py-2.5 text-[15px] font-semibold transition-colors",
+                  "group relative flex items-center gap-3 rounded-xl px-3 py-2.5 text-[15px] font-semibold transition-colors",
                   isActive
-                    ? "bg-ireduc-navy text-white"
-                    : "text-ireduc-muted hover:bg-ireduc-navy-soft hover:text-ireduc-navy"
+                    ? "bg-ireduc-primary text-white"
+                    : "text-ireduc-muted hover:bg-ireduc-red-soft hover:text-ireduc-primary"
                 )
               }
             >
@@ -154,7 +156,7 @@ export function AdminLayout() {
                     className={
                       isActive
                         ? "text-white"
-                        : "text-ireduc-muted group-hover:text-ireduc-navy"
+                        : "text-ireduc-muted group-hover:text-ireduc-primary"
                     }
                   />
                   {item.label}
@@ -164,13 +166,16 @@ export function AdminLayout() {
           ))}
         </nav>
 
-        <div className="border-t border-ireduc-border p-4">
-          <div className="rounded-2xl bg-ireduc-navy p-4 text-white">
-            <p className="text-xs font-medium text-white/70">Connecté en tant que</p>
-            <p className="mt-1 truncate text-[15px] font-bold">{user?.fullName}</p>
-            <p className="truncate text-xs text-white/70">
-              {isSuperAdmin(role) ? "Super administrateur" : "Administrateur"}
-            </p>
+        <div className="shrink-0 border-t border-ireduc-border p-4">
+          <div className="overflow-hidden rounded-2xl bg-ireduc-navy">
+            <div className="h-1 bg-ireduc-primary" />
+            <div className="p-4 text-white">
+              <p className="text-xs font-medium text-white/70">Connecté en tant que</p>
+              <p className="mt-1 truncate text-[15px] font-bold">{user?.fullName}</p>
+              <p className="truncate text-xs text-white/70">
+                {isSuperAdmin(role) ? "Super administrateur" : "Administrateur"}
+              </p>
+            </div>
           </div>
         </div>
       </aside>
@@ -184,7 +189,8 @@ export function AdminLayout() {
         />
       ) : null}
 
-      <div className="flex min-w-0 flex-1 flex-col">
+      {/* Contenu décalé : seul cette zone scroll */}
+      <div className="flex min-h-full min-w-0 flex-col lg:ml-[260px]">
         <header className="sticky top-0 z-20 flex h-[72px] items-center justify-between gap-4 border-b border-ireduc-border bg-white px-4 lg:px-8">
           <div className="flex min-w-0 items-center gap-3">
             <button
@@ -207,7 +213,7 @@ export function AdminLayout() {
 
           <div className="flex items-center gap-2 sm:gap-3">
             <div className="hidden items-center gap-2 rounded-full border border-ireduc-border bg-ireduc-slate px-2 py-1.5 sm:flex">
-              <span className="flex h-8 w-8 items-center justify-center rounded-full bg-ireduc-navy text-xs font-bold text-white">
+              <span className="flex h-8 w-8 items-center justify-center rounded-full bg-ireduc-primary text-xs font-bold text-white">
                 {initials}
               </span>
               <div className="pr-2">
