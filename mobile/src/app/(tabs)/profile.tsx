@@ -272,9 +272,9 @@ export default function ProfileScreen() {
             onPress={() => router.push("/profile/password" as never)}
           />
           <MenuRow
-            icon="heart-outline"
-            label="Mes favoris"
-            onPress={() => router.push("/favorites" as never)}
+            icon="chatbubble-ellipses-outline"
+            label="Messages"
+            onPress={() => router.push("/messages" as never)}
           />
           <MenuRow
             icon="notifications-outline"

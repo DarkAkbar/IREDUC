@@ -2,7 +2,6 @@ import { Ionicons } from "@expo/vector-icons";
 import { useQuery } from "@tanstack/react-query";
 import { Tabs } from "expo-router";
 import { StyleSheet, Text, View } from "react-native";
-import { fetchConversations } from "../../api/conversations";
 import { fetchMyRequests } from "../../api/requests";
 import { useAuthStore } from "../../store/authStore";
 import { colors } from "../../theme";
@@ -40,18 +39,7 @@ export default function TabsLayout() {
     staleTime: 20_000,
   });
 
-  const conversationsQuery = useQuery({
-    queryKey: ["conversations", "badge"],
-    enabled: isAuthenticated,
-    queryFn: fetchConversations,
-    staleTime: 15_000,
-    refetchInterval: 20_000,
-  });
-
   const requestsBadge = requestsQuery.data?.counters.all ?? 0;
-  const messagesBadge =
-    conversationsQuery.data?.reduce((sum, c) => sum + (c.unreadCount || 0), 0) ??
-    0;
 
   return (
     <Tabs
@@ -102,16 +90,11 @@ export default function TabsLayout() {
         }}
       />
       <Tabs.Screen
-        name="messages"
+        name="favorites"
         options={{
-          title: "Messages",
+          title: "Favoris",
           tabBarIcon: ({ color, size }) => (
-            <TabIconWithBadge
-              name="chatbubble-ellipses-outline"
-              color={String(color)}
-              size={size}
-              badge={messagesBadge}
-            />
+            <Ionicons name="heart-outline" size={size} color={color} />
           ),
         }}
       />

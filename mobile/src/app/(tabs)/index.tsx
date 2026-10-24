@@ -13,6 +13,7 @@ import {
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { mediaUrl } from "../../api/client";
+import { fetchConversations } from "../../api/conversations";
 import { fetchHome } from "../../api/home";
 import { fetchNotifications } from "../../api/notifications";
 import { IreducLogo } from "../../components/IreducLogo";
@@ -49,6 +50,17 @@ export default function HomeScreen() {
   });
   const unreadNotifs = notifQuery.data?.unreadCount ?? 0;
 
+  const conversationsQuery = useQuery({
+    queryKey: ["conversations", "badge"],
+    enabled: isAuthenticated,
+    queryFn: fetchConversations,
+    staleTime: 15_000,
+    refetchInterval: 20_000,
+  });
+  const unreadMessages =
+    conversationsQuery.data?.reduce((sum, c) => sum + (c.unreadCount || 0), 0) ??
+    0;
+
   const properties =
     data?.sections.featuredProperties.items?.length
       ? data.sections.featuredProperties.items
@@ -80,10 +92,33 @@ export default function HomeScreen() {
             <Pressable
               style={styles.bell}
               onPress={() => {
+                if (requireAuth("/messages")) {
+                  router.push("/messages" as never);
+                }
+              }}
+              accessibilityLabel="Messages"
+            >
+              <Ionicons
+                name="chatbubble-ellipses-outline"
+                size={22}
+                color={colors.navy}
+              />
+              {unreadMessages > 0 ? (
+                <View style={styles.bellBadge}>
+                  <Text style={styles.bellBadgeText}>
+                    {unreadMessages > 99 ? "99+" : unreadMessages}
+                  </Text>
+                </View>
+              ) : null}
+            </Pressable>
+            <Pressable
+              style={styles.bell}
+              onPress={() => {
                 if (requireAuth("/notifications")) {
                   router.push("/notifications" as never);
                 }
               }}
+              accessibilityLabel="Notifications"
             >
               <Ionicons name="notifications-outline" size={22} color={colors.navy} />
               {unreadNotifs > 0 ? (

@@ -68,6 +68,7 @@ export default function RootLayout() {
             <Stack.Screen name="property/[id]" />
             <Stack.Screen name="service/[id]" />
             <Stack.Screen name="favorites" />
+            <Stack.Screen name="messages" />
             <Stack.Screen name="reserve" />
             <Stack.Screen name="discuss" />
             <Stack.Screen name="conversation/[id]" />

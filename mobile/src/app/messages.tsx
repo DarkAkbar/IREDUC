@@ -11,15 +11,16 @@ import {
   View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { mediaUrl } from "../../api/client";
-import { fetchConversations } from "../../api/conversations";
-import { ConversationListItem } from "../../api/types";
-import { EmptyState } from "../../components/list/EmptyState";
-import { ErrorState } from "../../components/list/ErrorState";
-import { Button } from "../../components/ui/Button";
-import { ListSkeleton } from "../../components/ui/SkeletonLoader";
-import { useAuthStore } from "../../store/authStore";
-import { colors, radii, spacing, typography } from "../../theme";
+import { mediaUrl } from "../api/client";
+import { fetchConversations } from "../api/conversations";
+import { ConversationListItem } from "../api/types";
+import { EmptyState } from "../components/list/EmptyState";
+import { ErrorState } from "../components/list/ErrorState";
+import { ListScreenHeader } from "../components/list/ListScreenHeader";
+import { Button } from "../components/ui/Button";
+import { ListSkeleton } from "../components/ui/SkeletonLoader";
+import { useAuthStore } from "../store/authStore";
+import { colors, radii, spacing, typography } from "../theme";
 
 function formatMessageTime(value: string) {
   const date = new Date(value);
@@ -60,31 +61,37 @@ export default function MessagesScreen() {
 
   if (isHydrated && !isAuthenticated) {
     return (
-      <View style={[styles.screen, { paddingTop: insets.top + spacing.xl }]}>
-        <Text style={typography.title}>Messages</Text>
-        <Text style={styles.subtitle}>
-          Connectez-vous pour échanger avec les propriétaires et prestataires.
-        </Text>
-        <Button
-          label="Se connecter"
-          style={{ marginTop: spacing.lg }}
-          onPress={() =>
-            router.push({
-              pathname: "/auth/login",
-              params: { returnTo: "/(tabs)/messages" },
-            } as never)
-          }
-        />
+      <View style={[styles.screen, { paddingTop: insets.top }]}>
+        <ListScreenHeader showBack />
+        <View style={styles.padded}>
+          <Text style={typography.title}>Messages</Text>
+          <Text style={styles.subtitle}>
+            Connectez-vous pour échanger avec les propriétaires et prestataires.
+          </Text>
+          <Button
+            label="Se connecter"
+            style={{ marginTop: spacing.lg }}
+            onPress={() =>
+              router.push({
+                pathname: "/auth/login",
+                params: { returnTo: "/messages" },
+              } as never)
+            }
+          />
+        </View>
       </View>
     );
   }
 
   return (
     <View style={[styles.screen, { paddingTop: insets.top }]}>
-      <Text style={[typography.title, styles.title]}>Messages</Text>
-      <Text style={styles.subtitle}>
-        Vos conversations avec les propriétaires et prestataires.
-      </Text>
+      <ListScreenHeader showBack />
+      <View style={styles.padded}>
+        <Text style={[typography.title, styles.title]}>Messages</Text>
+        <Text style={styles.subtitle}>
+          Vos conversations avec les propriétaires et prestataires.
+        </Text>
+      </View>
 
       {query.isLoading ? <ListSkeleton /> : null}
       {query.isError ? <ErrorState onRetry={() => void query.refetch()} /> : null}
@@ -93,7 +100,10 @@ export default function MessagesScreen() {
         <FlatList
           data={query.data ?? []}
           keyExtractor={(item) => item.id}
-          contentContainerStyle={{ paddingBottom: spacing.xxl }}
+          contentContainerStyle={{
+            paddingBottom: spacing.xxl,
+            paddingHorizontal: spacing.lg,
+          }}
           initialNumToRender={12}
           windowSize={7}
           removeClippedSubviews
@@ -170,10 +180,14 @@ const styles = StyleSheet.create({
   screen: {
     flex: 1,
     backgroundColor: colors.background,
-    paddingHorizontal: spacing.lg,
   },
-  title: { marginTop: spacing.md },
-  subtitle: { ...typography.body, marginTop: spacing.xs, marginBottom: spacing.md },
+  padded: { paddingHorizontal: spacing.lg },
+  title: { marginTop: spacing.sm },
+  subtitle: {
+    ...typography.body,
+    marginTop: spacing.xs,
+    marginBottom: spacing.md,
+  },
   row: {
     flexDirection: "row",
     alignItems: "center",
