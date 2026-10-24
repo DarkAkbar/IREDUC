@@ -9,6 +9,9 @@ const envSchema = z.object({
   JWT_REFRESH_SECRET: z.string().min(1, "JWT_REFRESH_SECRET est requis"),
   PORT: z.coerce.number().int().positive().default(3000),
   APP_URL: z.string().url().default("http://localhost:3000"),
+  NODE_ENV: z
+    .enum(["development", "test", "production"])
+    .default("development"),
   MAIL_DRIVER: z.enum(["console", "resend", "smtp"]).default("console"),
   MAIL_FROM: z.string().default("IREDUC <noreply@ireduc.cd>"),
   RESEND_API_KEY: z.string().optional(),
