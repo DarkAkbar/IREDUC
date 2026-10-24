@@ -23,6 +23,7 @@ import { requestsRouter } from "./modules/requests/requests.routes";
 import { reviewsRouter } from "./modules/reviews/reviews.routes";
 import { servicesRouter } from "./modules/services/services.routes";
 import { usersRouter } from "./modules/users/users.routes";
+import { healthRouter } from "./routes/health";
 
 export function createApp() {
   const app = express();
@@ -46,9 +47,7 @@ export function createApp() {
     })
   );
 
-  app.get("/health", (_req, res) => {
-    res.status(200).json({ status: "ok" });
-  });
+  app.use("/health", healthRouter);
 
   app.use("/docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
   app.get("/docs.json", (_req, res) => {
