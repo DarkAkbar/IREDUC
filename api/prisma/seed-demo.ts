@@ -16,10 +16,15 @@ import {
   VisitMode,
 } from "@prisma/client";
 import * as bcrypt from "bcrypt";
+import dotenv from "dotenv";
 import fs from "fs";
 import path from "path";
 import sharp from "sharp";
 import { PrismaClient } from "@prisma/client";
+import { confirmSeedTruncate } from "./seed-confirm";
+
+// Ne pas écraser DATABASE_URL déjà définie (ex. Vitest → .env.test / ireduc_test)
+dotenv.config({ override: false });
 
 const prisma = new PrismaClient();
 
@@ -143,6 +148,7 @@ async function ensureDemoImage(index: number): Promise<string> {
 }
 
 async function main() {
+  await confirmSeedTruncate("seed de démonstration (npm run seed:demo)");
   console.log("Seed DEMO — nettoyage…");
   clearDemoImages();
   await prisma.$executeRawUnsafe(`

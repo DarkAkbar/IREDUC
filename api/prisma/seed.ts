@@ -1,5 +1,10 @@
 import { PrismaClient, OfferType, PropertyKind, RequestStatus, RequestTarget, ProjectType, VisitMode, MediaType, ListingStatus, ProviderType, SystemRole, PaymentStatus } from "@prisma/client";
 import * as bcrypt from "bcrypt";
+import dotenv from "dotenv";
+import { confirmSeedTruncate } from "./seed-confirm";
+
+// Ne pas écraser DATABASE_URL déjà définie (ex. Vitest → .env.test / ireduc_test)
+dotenv.config({ override: false });
 
 const prisma = new PrismaClient();
 
@@ -59,6 +64,7 @@ const SERVICE_CATEGORIES = [
 const PHOTO = (id: number) => `https://picsum.photos/seed/ireduc-${id}/800/600`;
 
 async function main() {
+  await confirmSeedTruncate("seed de base (prisma db seed)");
   console.log("Nettoyage des données existantes...");
   await prisma.$executeRawUnsafe(`
     TRUNCATE TABLE
