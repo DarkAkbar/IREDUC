@@ -12,6 +12,7 @@ import {
   View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { mediaUrl } from "../../api/client";
 import { fetchHome } from "../../api/home";
 import { fetchNotifications } from "../../api/notifications";
 import { IreducLogo } from "../../components/IreducLogo";
@@ -25,8 +26,8 @@ import { useRequireAuth } from "../../hooks/useRequireAuth";
 import { useAuthStore } from "../../store/authStore";
 import { colors, radii, spacing, typography } from "../../theme";
 
-/** Fond local (assets) — évite une dépendance réseau pour le hero. */
-const HERO_IMAGE = require("../../../assets/splash-icon.png");
+/** Logo local de secours si aucune photo de bien n'est disponible. */
+const HERO_FALLBACK = require("../../../assets/icon.png");
 
 export default function HomeScreen() {
   const insets = useSafeAreaInsets();
@@ -52,6 +53,8 @@ export default function HomeScreen() {
     data?.sections.featuredProperties.items?.length
       ? data.sections.featuredProperties.items
       : data?.sections.housesForRent.items ?? [];
+
+  const heroUri = mediaUrl(properties[0]?.coverPhoto?.url);
 
   return (
     <View style={[styles.screen, { paddingTop: insets.top }]}>
@@ -109,12 +112,29 @@ export default function HomeScreen() {
         {!isLoading && !isError && data ? (
           <>
             <View style={styles.hero}>
-              <Image source={HERO_IMAGE} style={styles.heroImage} contentFit="contain" />
-              <View style={styles.heroOverlay}>
-                <Text style={styles.heroTitle}>Un chez-vous,{"\n"}une vie meilleure.</Text>
-                <Text style={styles.heroSubtitle}>
-                  Immobilier et services pour concrétiser tous vos projets.
-                </Text>
+              <View style={styles.heroImageWrap}>
+                {heroUri ? (
+                  <Image
+                    source={{ uri: heroUri }}
+                    style={styles.heroImage}
+                    contentFit="cover"
+                    transition={200}
+                  />
+                ) : (
+                  <Image
+                    source={HERO_FALLBACK}
+                    style={styles.heroImage}
+                    contentFit="cover"
+                  />
+                )}
+                <View style={styles.heroOverlay}>
+                  <Text style={styles.heroTitle}>
+                    Un chez-vous,{"\n"}une vie meilleure.
+                  </Text>
+                  <Text style={styles.heroSubtitle}>
+                    Immobilier et services pour concrétiser tous vos projets.
+                  </Text>
+                </View>
               </View>
               <View style={styles.searchWrap}>
                 <SearchBar
@@ -293,9 +313,15 @@ const styles = StyleSheet.create({
   },
   bellBadgeText: { color: colors.white, fontSize: 9, fontWeight: "800" },
   hero: { marginBottom: spacing.xl },
-  heroImage: { width: "100%", height: 220 },
+  heroImageWrap: {
+    width: "100%",
+    height: 220,
+    backgroundColor: colors.navy,
+    overflow: "hidden",
+  },
+  heroImage: { width: "100%", height: "100%" },
   heroOverlay: {
-    ...StyleSheet.absoluteFill,
+    ...StyleSheet.absoluteFillObject,
     backgroundColor: colors.overlay,
     justifyContent: "center",
     paddingHorizontal: spacing.xl,
