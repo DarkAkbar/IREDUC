@@ -6,6 +6,7 @@ import { useState } from "react";
 import {
   Alert,
   Pressable,
+  RefreshControl,
   ScrollView,
   StyleSheet,
   Text,
@@ -13,12 +14,19 @@ import {
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { resendVerification } from "../../api/auth";
-import { mediaUrl } from "../../api/client";
+import { API_URL, mediaUrl } from "../../api/client";
 import { fetchMyProvider } from "../../api/providers";
 import { Button } from "../../components/ui/Button";
 import { useAuthStore } from "../../store/authStore";
 import { colors, radii, spacing, typography } from "../../theme";
 import { getErrorMessage } from "../../utils/errors";
+
+type HealthInfo = {
+  database: string;
+  apiUrl: string;
+  propertiesTotal: number;
+  propertiesByStatus: Record<string, number>;
+};
 
 function MenuRow({
   icon,
@@ -68,6 +76,19 @@ export default function ProfileScreen() {
     enabled: isAuthenticated && Boolean(user?.providerProfile),
     queryFn: fetchMyProvider,
     retry: false,
+  });
+
+  const healthQuery = useQuery({
+    queryKey: ["health-info"],
+    enabled: __DEV__,
+    queryFn: async () => {
+      const origin = API_URL.replace(/\/api\/v1\/?$/, "");
+      const response = await fetch(`${origin}/health/info`);
+      if (!response.ok) throw new Error("health/info indisponible");
+      return (await response.json()) as HealthInfo;
+    },
+    retry: false,
+    staleTime: 60_000,
   });
 
   const provider = providerQuery.data;
@@ -140,7 +161,19 @@ export default function ProfileScreen() {
 
   return (
     <View style={[styles.screen, { paddingTop: insets.top }]}>
-      <ScrollView contentContainerStyle={styles.content}>
+      <ScrollView
+        contentContainerStyle={styles.content}
+        refreshControl={
+          <RefreshControl
+            refreshing={providerQuery.isRefetching || healthQuery.isRefetching}
+            onRefresh={() => {
+              void providerQuery.refetch();
+              if (__DEV__) void healthQuery.refetch();
+            }}
+            tintColor={colors.primary}
+          />
+        }
+      >
         <Text style={typography.title}>Profil</Text>
 
         <View style={styles.headerCard}>
@@ -265,6 +298,24 @@ export default function ProfileScreen() {
             onPress={onLogout}
           />
         </View>
+
+        {__DEV__ ? (
+          <View style={styles.devBox}>
+            <Text style={styles.devTitle}>Mode développement</Text>
+            <Text style={styles.devText}>API : {API_URL}</Text>
+            <Text style={styles.devText}>
+              Base : {healthQuery.data?.database ?? "…"}
+            </Text>
+            <Text style={styles.devText}>
+              Biens : {healthQuery.data?.propertiesTotal ?? "—"}
+              {healthQuery.data?.propertiesByStatus
+                ? ` (${Object.entries(healthQuery.data.propertiesByStatus)
+                    .map(([k, v]) => `${k}:${v}`)
+                    .join(", ")})`
+                : ""}
+            </Text>
+          </View>
+        ) : null}
       </ScrollView>
     </View>
   );
@@ -340,4 +391,13 @@ const styles = StyleSheet.create({
   },
   menuLabel: { flex: 1, color: colors.navy, fontWeight: "700", fontSize: 14 },
   menuDanger: { color: colors.primary },
+  devBox: {
+    marginTop: spacing.lg,
+    padding: spacing.md,
+    borderRadius: radii.lg,
+    backgroundColor: colors.navy,
+    gap: 4,
+  },
+  devTitle: { color: colors.white, fontWeight: "800", fontSize: 13 },
+  devText: { color: "#D7DEEE", fontSize: 11, fontWeight: "600" },
 });

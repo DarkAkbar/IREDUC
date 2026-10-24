@@ -11,12 +11,20 @@ import {
   Wrench,
   X,
 } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import { Link, NavLink, Outlet, useLocation } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
 import { isSuperAdmin } from "@/lib/auth-storage";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+
+type HealthInfo = {
+  database: string;
+  apiUrl: string;
+  propertiesByStatus: Record<string, number>;
+  propertiesTotal: number;
+};
 
 const navItems = [
   { to: "/", label: "Tableau de bord", icon: Home, roles: ["ADMIN", "SUPER_ADMIN"] },
@@ -95,6 +103,22 @@ export function AdminLayout() {
     .join("")
     .slice(0, 2)
     .toUpperCase();
+
+  const apiBase = (import.meta.env.VITE_API_URL as string) ?? "";
+  const healthQuery = useQuery({
+    queryKey: ["health-info"],
+    enabled: import.meta.env.DEV,
+    queryFn: async () => {
+      const origin = apiBase.replace(/\/api\/v1\/?$/, "");
+      const response = await fetch(`${origin}/health/info`);
+      if (!response.ok) {
+        throw new Error("health/info indisponible");
+      }
+      return (await response.json()) as HealthInfo;
+    },
+    retry: false,
+    staleTime: 60_000,
+  });
 
   return (
     <div className="min-h-full bg-ireduc-slate">
@@ -235,6 +259,19 @@ export function AdminLayout() {
         <main className="flex-1 p-4 lg:p-8">
           <Outlet />
         </main>
+
+        {import.meta.env.DEV ? (
+          <footer className="border-t border-ireduc-border bg-white px-4 py-2 text-[11px] text-ireduc-muted lg:px-8">
+            <span className="font-semibold text-ireduc-navy">DEV</span>
+            {" · "}
+            API : {apiBase || "—"}
+            {" · "}
+            Base : {healthQuery.data?.database ?? "…"}
+            {healthQuery.data
+              ? ` · Biens : ${healthQuery.data.propertiesTotal}`
+              : null}
+          </footer>
+        ) : null}
       </div>
     </div>
   );
