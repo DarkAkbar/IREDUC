@@ -1,5 +1,5 @@
 import { Ionicons } from "@expo/vector-icons";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Image } from "expo-image";
 import * as ImagePicker from "expo-image-picker";
 import { useLocalSearchParams, useRouter } from "expo-router";
@@ -62,6 +62,7 @@ const KINDS: { key: PropertyKind; label: string }[] = [
 export default function PublishScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
+  const queryClient = useQueryClient();
   const params = useLocalSearchParams<{
     id?: string;
     type?: string;
@@ -339,6 +340,16 @@ export default function PublishScreen() {
         } else {
           await submitService(listingId);
         }
+      }
+
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["my-properties"] }),
+        queryClient.invalidateQueries({ queryKey: ["my-services"] }),
+        queryClient.invalidateQueries({ queryKey: ["home"] }),
+        queryClient.invalidateQueries({ queryKey: ["health-info"] }),
+      ]);
+
+      if (options?.submit && listingId) {
         Alert.alert(
           "Annonce soumise",
           "Votre annonce a été envoyée pour validation.",

@@ -2,12 +2,14 @@ import { useQuery } from "@tanstack/react-query";
 import {
   Building2,
   ClipboardList,
+  RefreshCw,
   Store,
   Users,
   Wrench,
   ArrowUpRight,
 } from "lucide-react";
 import { Link } from "react-router-dom";
+import { Button } from "@/components/ui/button";
 import {
   Area,
   AreaChart,
@@ -76,7 +78,7 @@ const kpiStyles = [
 ];
 
 export function DashboardPage() {
-  const { data, isLoading, error } = useQuery({
+  const { data, isLoading, error, refetch, isFetching } = useQuery({
     queryKey: ["admin-stats"],
     queryFn: async () => {
       const { data: body } = await api.get<AdminStats>("/admin/stats");
@@ -154,12 +156,24 @@ export function DashboardPage() {
             Bienvenue — synthèse d&apos;activité de la plateforme.
           </p>
         </div>
-        {data.pendingQueue.total > 0 ? (
-          <span className="inline-flex items-center gap-2 rounded-full bg-ireduc-red-soft px-3 py-1 text-xs font-semibold text-ireduc-red">
-            <span className="h-1.5 w-1.5 rounded-full bg-ireduc-red" />
-            {data.pendingQueue.total} élément(s) à valider
-          </span>
-        ) : null}
+        <div className="flex flex-wrap items-center gap-2">
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            disabled={isFetching}
+            onClick={() => void refetch()}
+          >
+            <RefreshCw size={14} className={isFetching ? "animate-spin" : undefined} />
+            Actualiser
+          </Button>
+          {data.pendingQueue.total > 0 ? (
+            <span className="inline-flex items-center gap-2 rounded-full bg-ireduc-red-soft px-3 py-1 text-xs font-semibold text-ireduc-red">
+              <span className="h-1.5 w-1.5 rounded-full bg-ireduc-red" />
+              {data.pendingQueue.total} élément(s) à valider
+            </span>
+          ) : null}
+        </div>
       </div>
 
       {data.pendingQueue.total > 0 ? (

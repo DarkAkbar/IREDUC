@@ -1,8 +1,10 @@
 import { useQuery } from "@tanstack/react-query";
+import { RefreshCw } from "lucide-react";
 import { useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { Alert } from "@/components/ui/alert";
 import { Badge, statusTone } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Pagination } from "@/components/ui/pagination";
@@ -42,7 +44,7 @@ export function ListingsPage({
   const label = kind === "properties" ? "annonces" : "services";
   const basePath = `/${kind}`;
 
-  const { data, isLoading, error } = useQuery({
+  const { data, isLoading, error, refetch, isFetching } = useQuery({
     queryKey: [`admin-${kind}`, status, page, params.get("q") ?? ""],
     queryFn: async () => {
       const { data: body } = await api.get<PageResult>(`/admin/${kind}`, {
@@ -68,7 +70,19 @@ export function ListingsPage({
 
   return (
     <div className="space-y-4">
-      <p className="text-sm text-ireduc-muted">Modération et mise à la une.</p>
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <p className="text-sm text-ireduc-muted">Modération et mise à la une.</p>
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          disabled={isFetching}
+          onClick={() => void refetch()}
+        >
+          <RefreshCw size={14} className={isFetching ? "animate-spin" : undefined} />
+          Actualiser
+        </Button>
+      </div>
 
       <Card>
         <CardHeader>

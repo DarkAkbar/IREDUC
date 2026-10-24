@@ -72,7 +72,12 @@ export function ListingDetailPage({
       return body;
     },
     onSuccess: async (body) => {
-      await queryClient.invalidateQueries({ queryKey: [`admin-${kind}`] });
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: [`admin-${kind}`] }),
+        queryClient.invalidateQueries({ queryKey: [`admin-${kind}-detail`] }),
+        queryClient.invalidateQueries({ queryKey: ["admin-stats"] }),
+        queryClient.invalidateQueries({ queryKey: ["health-info"] }),
+      ]);
       setMessage(
         body.nextPendingId
           ? "Décision enregistrée. Ouverture de l'élément suivant…"
@@ -94,7 +99,11 @@ export function ListingDetailPage({
       return body as ListingDetail;
     },
     onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: [`admin-${kind}-detail`, id] });
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: [`admin-${kind}-detail`, id] }),
+        queryClient.invalidateQueries({ queryKey: [`admin-${kind}`] }),
+        queryClient.invalidateQueries({ queryKey: ["admin-stats"] }),
+      ]);
       setMessage("Mise à la une mise à jour.");
     },
   });

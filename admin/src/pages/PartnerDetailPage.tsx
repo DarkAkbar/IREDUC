@@ -82,8 +82,12 @@ export function PartnerDetailPage() {
       });
     },
     onSuccess: async (_data, variables) => {
-      await queryClient.invalidateQueries({ queryKey: ["admin-providers"] });
-      await queryClient.invalidateQueries({ queryKey: ["admin-provider", id] });
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["admin-providers"] }),
+        queryClient.invalidateQueries({ queryKey: ["admin-provider", id] }),
+        queryClient.invalidateQueries({ queryKey: ["admin-stats"] }),
+        queryClient.invalidateQueries({ queryKey: ["health-info"] }),
+      ]);
       setMessage(
         variables.kind === "approve"
           ? "Partenaire approuvé."

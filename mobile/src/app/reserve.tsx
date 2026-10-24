@@ -1,5 +1,5 @@
 import { Ionicons } from "@expo/vector-icons";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useEffect, useMemo, useState } from "react";
 import {
@@ -45,6 +45,7 @@ function getErrorMessage(error: unknown, fallback: string) {
 export default function ReserveScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
+  const queryClient = useQueryClient();
   const params = useLocalSearchParams<{ type?: string; id?: string; title?: string }>();
   const { requireAuth, isAuthenticated } = useRequireAuth();
   const user = useAuthStore((s) => s.user);
@@ -187,6 +188,12 @@ export default function ReserveScreen() {
         message: draft.message.trim() || undefined,
       };
       const created = await createRequest(payload);
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["my-requests"] }),
+        queryClient.invalidateQueries({ queryKey: ["requests-received"] }),
+        queryClient.invalidateQueries({ queryKey: ["home"] }),
+        queryClient.invalidateQueries({ queryKey: ["notifications"] }),
+      ]);
       setSubmitted(created);
     } catch (error) {
       Alert.alert(

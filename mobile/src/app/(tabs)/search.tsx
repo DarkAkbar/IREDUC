@@ -4,6 +4,7 @@ import { pushPath } from "../../utils/navigation";
 import { useEffect, useState } from "react";
 import {
   Pressable,
+  RefreshControl,
   ScrollView,
   StyleSheet,
   Text,
@@ -86,7 +87,22 @@ export default function SearchScreen() {
         onFilterPress={() => router.push("/filters")}
       />
 
-      <ScrollView contentContainerStyle={styles.content}>
+      <ScrollView
+        contentContainerStyle={styles.content}
+        refreshControl={
+          <RefreshControl
+            refreshing={
+              propertiesQuery.isRefetching || servicesQuery.isRefetching
+            }
+            onRefresh={() => {
+              if (!enabled) return;
+              void propertiesQuery.refetch();
+              void servicesQuery.refetch();
+            }}
+            tintColor={colors.primary}
+          />
+        }
+      >
         {!enabled ? (
           <View style={styles.recentBox}>
             <View style={styles.recentHeader}>
