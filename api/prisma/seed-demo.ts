@@ -91,26 +91,60 @@ const DEMO_COLORS = [
   "#264653",
 ];
 
-async function ensureDemoImage(index: number): Promise<string> {
+function demoImagesDir() {
   const dir = path.resolve(process.cwd(), "uploads", "demo");
   fs.mkdirSync(dir, { recursive: true });
+  return dir;
+}
+
+/** Supprime les anciens placeholders pour forcer le re-téléchargement. */
+function clearDemoImages() {
+  const dir = demoImagesDir();
+  for (const name of fs.readdirSync(dir)) {
+    fs.unlinkSync(path.join(dir, name));
+  }
+}
+
+/**
+ * Photos locales libres de droits : téléchargées depuis Lorem Picsum (CC0-like),
+ * puis stockées dans uploads/demo pour usage offline.
+ */
+async function ensureDemoImage(index: number): Promise<string> {
+  const dir = demoImagesDir();
   const filename = `demo-${index}.jpg`;
   const filePath = path.join(dir, filename);
-  if (!fs.existsSync(filePath)) {
-    const color = DEMO_COLORS[index % DEMO_COLORS.length]!;
-    const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="800" height="600">
-      <rect width="800" height="600" fill="${color}"/>
-      <rect x="40" y="40" width="720" height="520" fill="#ffffff" opacity="0.12"/>
-      <text x="400" y="290" text-anchor="middle" font-family="Arial" font-size="42" fill="#ffffff" font-weight="700">IREDUC</text>
-      <text x="400" y="340" text-anchor="middle" font-family="Arial" font-size="22" fill="#ffffff">Démo ${index}</text>
-    </svg>`;
-    await sharp(Buffer.from(svg)).jpeg({ quality: 82 }).toFile(filePath);
+
+  if (!fs.existsSync(filePath) || fs.statSync(filePath).size < 20_000) {
+    try {
+      const response = await fetch(
+        `https://picsum.photos/seed/ireduc-kin-${index}/960/720`,
+        { redirect: "follow" }
+      );
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}`);
+      }
+      const buffer = Buffer.from(await response.arrayBuffer());
+      await sharp(buffer)
+        .resize({ width: 960, height: 720, fit: "cover" })
+        .jpeg({ quality: 82 })
+        .toFile(filePath);
+    } catch {
+      // Repli hors-ligne : image unie (évite un seed cassé sans réseau)
+      const color = DEMO_COLORS[index % DEMO_COLORS.length]!;
+      const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="960" height="720">
+        <rect width="960" height="720" fill="${color}"/>
+        <text x="480" y="360" text-anchor="middle" font-family="Arial" font-size="36" fill="#ffffff">IREDUC</text>
+      </svg>`;
+      await sharp(Buffer.from(svg)).jpeg({ quality: 82 }).toFile(filePath);
+    }
   }
+
   return `/uploads/demo/${filename}`;
 }
 
 async function main() {
   console.log("Seed DEMO — nettoyage…");
+  clearDemoImages();
   await prisma.$executeRawUnsafe(`
     TRUNCATE TABLE
       "UserToken",
