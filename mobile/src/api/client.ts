@@ -95,9 +95,16 @@ api.interceptors.response.use(
   }
 );
 
+/** À incrémenter après un `seed:demo` pour invalider le cache Expo Image. */
+const MEDIA_CACHE_VERSION = "20261024c";
+
 export function mediaUrl(path: string | null | undefined): string | null {
   if (!path) return null;
-  if (path.startsWith("http")) return path;
+  if (path.startsWith("http")) {
+    const sep = path.includes("?") ? "&" : "?";
+    return `${path}${sep}v=${MEDIA_CACHE_VERSION}`;
+  }
   const origin = API_URL.replace(/\/api\/v1\/?$/, "");
-  return `${origin}${path.startsWith("/") ? path : `/${path}`}`;
+  const url = `${origin}${path.startsWith("/") ? path : `/${path}`}`;
+  return `${url}?v=${MEDIA_CACHE_VERSION}`;
 }

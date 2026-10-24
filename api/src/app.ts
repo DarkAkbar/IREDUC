@@ -27,11 +27,24 @@ import { usersRouter } from "./modules/users/users.routes";
 export function createApp() {
   const app = express();
 
-  app.use(helmet());
+  // cross-origin : les images /uploads sont lues depuis l'app mobile (autre origine)
+  app.use(
+    helmet({
+      crossOriginResourcePolicy: { policy: "cross-origin" },
+    })
+  );
   app.use(cors());
   app.use(express.json({ limit: "1mb" }));
   app.use(apiRateLimiter);
-  app.use("/uploads", express.static(path.resolve(process.cwd(), "uploads")));
+  app.use(
+    "/uploads",
+    express.static(path.resolve(process.cwd(), "uploads"), {
+      setHeaders(res) {
+        // évite de servir indéfiniment d'anciennes images démo en cache HTTP
+        res.setHeader("Cache-Control", "public, max-age=60, must-revalidate");
+      },
+    })
+  );
 
   app.get("/health", (_req, res) => {
     res.status(200).json({ status: "ok" });
