@@ -26,7 +26,7 @@ import { useAuthStore } from "../../store/authStore";
 import { colors, radii, spacing, typography } from "../../theme";
 
 /** Fond local (assets) — évite une dépendance réseau pour le hero. */
-const HERO_IMAGE = require("../../assets/splash-icon.png");
+const HERO_IMAGE = require("../../../assets/splash-icon.png");
 
 export default function HomeScreen() {
   const insets = useSafeAreaInsets();
