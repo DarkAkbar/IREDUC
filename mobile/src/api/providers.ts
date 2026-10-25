@@ -21,6 +21,16 @@ export async function updateProvider(input: UpdateProviderInput) {
   return data;
 }
 
+export async function submitProvider() {
+  const { data } = await api.post<ProviderProfile>("/providers/me/submit");
+  return data;
+}
+
+export async function withdrawProvider() {
+  const { data } = await api.post<ProviderProfile>("/providers/me/withdraw");
+  return data;
+}
+
 export async function uploadProviderLogo(uri: string, mimeType?: string) {
   const form = new FormData();
   const name = uri.split("/").pop() ?? `logo-${Date.now()}.jpg`;

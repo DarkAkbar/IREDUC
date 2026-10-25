@@ -494,6 +494,13 @@ export type ProviderDocument = {
   createdAt: string;
 };
 
+export type ProviderReviewEvent = {
+  id: string;
+  type: string;
+  message: string | null;
+  createdAt: string;
+};
+
 export type ProviderProfile = {
   id: string;
   userId: string;
@@ -506,11 +513,15 @@ export type ProviderProfile = {
   whatsapp: string | null;
   website?: string | null;
   address?: string | null;
-  reviewStatus: "PENDING" | "APPROVED" | "REJECTED" | string;
+  reviewStatus: "DRAFT" | "PENDING" | "APPROVED" | "REJECTED" | string;
   rejectionReason: string | null;
+  reviewNote?: string | null;
   isRegistered: boolean;
   yearsOfExperience: number | null;
+  submittedAt?: string | null;
+  decidedAt?: string | null;
   documents?: ProviderDocument[];
+  history?: ProviderReviewEvent[];
   createdAt: string;
   updatedAt: string;
 };
@@ -521,10 +532,10 @@ export type CreateProviderInput = {
   description?: string;
   contactEmail?: string;
   phone?: string;
-  whatsapp: string;
+  whatsapp?: string;
   website?: string;
   address?: string;
-  isRegistered: boolean;
+  isRegistered?: boolean;
   yearsOfExperience?: number;
 };
 

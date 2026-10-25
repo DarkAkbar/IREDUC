@@ -73,7 +73,10 @@ export default function RootLayout() {
             <Stack.Screen name="discuss" />
             <Stack.Screen name="conversation/[id]" />
             <Stack.Screen name="notifications" />
-            <Stack.Screen name="partner" />
+            <Stack.Screen name="partner/index" />
+            <Stack.Screen name="partner/form" />
+            <Stack.Screen name="partner/status" />
+            <Stack.Screen name="partner/confirm" />
             <Stack.Screen name="publish/index" />
             <Stack.Screen name="listings/index" />
             <Stack.Screen name="listings/received" />
