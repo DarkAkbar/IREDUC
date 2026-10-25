@@ -8,6 +8,9 @@ import * as categoriesService from "./admin.categories.service";
 import * as referentialsService from "./admin.referentials.service";
 import * as reportsService from "./admin.reports.service";
 import * as securityService from "./admin.security.service";
+import * as communicationService from "./admin.communication.service";
+import * as inboxService from "./admin.inbox.service";
+import * as toolsService from "./admin.tools.service";
 import * as moderationService from "./admin.moderation.service";
 import * as requestsService from "./admin.requests.service";
 import * as settingsService from "./admin.settings.service";
@@ -30,7 +33,10 @@ function requireSuperAdmin(req: Request) {
 export async function stats(req: Request, res: Response, next: NextFunction) {
   try {
     requireAdmin(req);
-    const result = await statsService.getAdminStats();
+    const result = await statsService.getAdminStats({
+      from: req.query.from as string | undefined,
+      to: req.query.to as string | undefined,
+    });
     res.status(200).json(result);
   } catch (error) {
     next(error);
@@ -437,6 +443,139 @@ export async function updateRejectionReason(
       req.body
     );
     res.status(200).json(result);
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function adminSearch(req: Request, res: Response, next: NextFunction) {
+  try {
+    requireAdmin(req);
+    const q = String(req.query.q ?? "");
+    const result = await toolsService.globalAdminSearch(q);
+    res.status(200).json(result);
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function systemHealth(req: Request, res: Response, next: NextFunction) {
+  try {
+    requireAdmin(req);
+    const result = await toolsService.getSystemHealth();
+    res.status(200).json(result);
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function exportPartnersCsv(
+  req: Request,
+  res: Response,
+  next: NextFunction
+) {
+  try {
+    requireAdmin(req);
+    const csv = await toolsService.exportPartnersCsv();
+    res.setHeader("Content-Type", "text/csv; charset=utf-8");
+    res.setHeader("Content-Disposition", 'attachment; filename="partenaires.csv"');
+    res.status(200).send(csv);
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function exportPropertiesCsv(
+  req: Request,
+  res: Response,
+  next: NextFunction
+) {
+  try {
+    requireAdmin(req);
+    const csv = await toolsService.exportPropertiesCsv();
+    res.setHeader("Content-Type", "text/csv; charset=utf-8");
+    res.setHeader("Content-Disposition", 'attachment; filename="annonces.csv"');
+    res.status(200).send(csv);
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function exportRequestsCsv(
+  req: Request,
+  res: Response,
+  next: NextFunction
+) {
+  try {
+    requireAdmin(req);
+    const csv = await toolsService.exportRequestsCsv();
+    res.setHeader("Content-Type", "text/csv; charset=utf-8");
+    res.setHeader("Content-Disposition", 'attachment; filename="demandes.csv"');
+    res.status(200).send(csv);
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function createAnnouncement(
+  req: Request,
+  res: Response,
+  next: NextFunction
+) {
+  try {
+    const admin = requireAdmin(req);
+    const result = await communicationService.createAnnouncement(admin.id, req.body);
+    res.status(201).json(result);
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function listAnnouncements(
+  req: Request,
+  res: Response,
+  next: NextFunction
+) {
+  try {
+    requireAdmin(req);
+    const result = await communicationService.listAnnouncements();
+    res.status(200).json({ data: result });
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function listInbox(req: Request, res: Response, next: NextFunction) {
+  try {
+    requireAdmin(req);
+    const page = Number(req.query.page ?? 1);
+    const limit = Number(req.query.limit ?? 20);
+    const result = await inboxService.listInbox({ page, limit });
+    res.status(200).json(result);
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function markInboxRead(req: Request, res: Response, next: NextFunction) {
+  try {
+    requireAdmin(req);
+    const result = await inboxService.markInboxRead(getParam(req, "id"));
+    res.status(200).json(result);
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function inboxUnreadCount(
+  req: Request,
+  res: Response,
+  next: NextFunction
+) {
+  try {
+    requireAdmin(req);
+    const count = await inboxService.unreadInboxCount();
+    res.status(200).json({ count });
   } catch (error) {
     next(error);
   }

@@ -229,6 +229,21 @@ export const reviewVisibilitySchema = z.object({
   hidden: z.boolean(),
 });
 
+export const adminSearchQuerySchema = z.object({
+  q: z.string().trim().min(2, "Au moins 2 caractères"),
+});
+
+export const adminStatsQuerySchema = z.object({
+  from: z.string().min(4).optional(),
+  to: z.string().min(4).optional(),
+});
+
+export const createAnnouncementSchema = z.object({
+  title: z.string().min(3, "Le titre est requis"),
+  body: z.string().min(3, "Le message est requis"),
+  audience: z.enum(["ALL", "CLIENTS", "PARTNERS"]),
+});
+
 export const changeAdminPasswordSchema = z.object({
   currentPassword: z.string().min(1, "Mot de passe actuel requis"),
   newPassword: z

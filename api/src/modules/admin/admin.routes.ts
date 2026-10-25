@@ -33,6 +33,9 @@ import {
   adminCategoriesQuerySchema,
   authEventsQuerySchema,
   changeAdminPasswordSchema,
+  createAnnouncementSchema,
+  adminSearchQuerySchema,
+  adminStatsQuerySchema,
   updateAdminStatusSchema,
   createCommuneSchema,
   createNeighborhoodSchema,
@@ -65,7 +68,20 @@ adminRouter.delete(
   adminController.revokeMyAdminSession
 );
 
-adminRouter.get("/stats", adminController.stats);
+adminRouter.get(
+  "/stats",
+  validate(adminStatsQuerySchema, "query"),
+  adminController.stats
+);
+adminRouter.get(
+  "/search",
+  validate(adminSearchQuerySchema, "query"),
+  adminController.adminSearch
+);
+adminRouter.get("/system-health", adminController.systemHealth);
+adminRouter.get("/exports/partners.csv", adminController.exportPartnersCsv);
+adminRouter.get("/exports/properties.csv", adminController.exportPropertiesCsv);
+adminRouter.get("/exports/requests.csv", adminController.exportRequestsCsv);
 
 adminRouter.get(
   "/properties",
@@ -221,6 +237,20 @@ adminRouter.get(
   "/auth-events",
   validate(authEventsQuerySchema, "query"),
   adminController.listAuthEvents
+);
+
+adminRouter.get("/inbox/unread-count", adminController.inboxUnreadCount);
+adminRouter.get("/inbox", adminController.listInbox);
+adminRouter.patch(
+  "/inbox/:id/read",
+  validate(adminIdParamsSchema, "params"),
+  adminController.markInboxRead
+);
+adminRouter.get("/announcements", adminController.listAnnouncements);
+adminRouter.post(
+  "/announcements",
+  validate(createAnnouncementSchema),
+  adminController.createAnnouncement
 );
 
 adminRouter.get("/reports/open-count", adminController.openReportsCount);

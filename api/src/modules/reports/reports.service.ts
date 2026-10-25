@@ -49,7 +49,7 @@ export async function createReport(
 
   await assertTargetExists(input.targetType, input.targetId);
 
-  return prisma.report.create({
+  const report = await prisma.report.create({
     data: {
       reporterId,
       targetType: input.targetType,
@@ -58,4 +58,18 @@ export async function createReport(
       details: input.details?.trim() || null,
     },
   });
+
+  const { enqueueAdminInbox } = await import("../admin/admin.inbox.service");
+  await enqueueAdminInbox({
+    type: "NEW_REPORT",
+    title: "Nouveau signalement",
+    body: input.reason.trim(),
+    data: {
+      reportId: report.id,
+      targetType: input.targetType,
+      targetId: input.targetId,
+    },
+  });
+
+  return report;
 }

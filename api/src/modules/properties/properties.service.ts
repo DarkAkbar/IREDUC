@@ -327,6 +327,14 @@ export async function submitProperty(ownerId: string, propertyId: string) {
     include: propertyDetailInclude,
   });
 
+  const { enqueueAdminInbox } = await import("../admin/admin.inbox.service");
+  await enqueueAdminInbox({
+    type: "PROPERTY_PENDING",
+    title: "Annonce en attente",
+    body: property.title,
+    data: { propertyId: property.id },
+  });
+
   return mapPropertyDetail(property);
 }
 

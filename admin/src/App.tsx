@@ -20,6 +20,9 @@ import { RequestDetailPage } from "@/pages/RequestDetailPage";
 import { RequestsPage } from "@/pages/RequestsPage";
 import { ReferentialsPage } from "@/pages/ReferentialsPage";
 import { ReportsPage } from "@/pages/ReportsPage";
+import { AnnouncementsPage } from "@/pages/AnnouncementsPage";
+import { HelpPage } from "@/pages/HelpPage";
+import { InboxPage } from "@/pages/InboxPage";
 import { SettingsPage } from "@/pages/SettingsPage";
 import { UserDetailPage } from "@/pages/UserDetailPage";
 import { UsersPage } from "@/pages/UsersPage";
@@ -70,6 +73,9 @@ export default function App() {
                   <Route path="users" element={<UsersPage />} />
                   <Route path="users/:id" element={<UserDetailPage />} />
                   <Route path="profile" element={<MyProfilePage />} />
+                  <Route path="announcements" element={<AnnouncementsPage />} />
+                  <Route path="inbox" element={<InboxPage />} />
+                  <Route path="help" element={<HelpPage />} />
                   <Route element={<ProtectedRoute superAdminOnly />}>
                     <Route path="settings" element={<SettingsPage />} />
                     <Route path="referentials" element={<ReferentialsPage />} />

@@ -24,7 +24,7 @@ import {
 } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
-import { Link, NavLink, Outlet, useLocation } from "react-router-dom";
+import { Link, NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
 import { CommandPalette } from "@/components/layout/CommandPalette";
 import { useAuth } from "@/context/AuthContext";
 import { useTheme } from "@/context/ThemeContext";
@@ -58,6 +58,13 @@ const navGroups = [
     ],
   },
   {
+    label: "Communication",
+    items: [
+      { to: "/announcements", label: "Annonces", icon: Bell, roles: ["ADMIN", "SUPER_ADMIN"] },
+      { to: "/inbox", label: "Boîte admin", icon: Inbox, roles: ["ADMIN", "SUPER_ADMIN"] },
+    ],
+  },
+  {
     label: "Comptes",
     items: [
       { to: "/users", label: "Utilisateurs", icon: Users, roles: ["ADMIN", "SUPER_ADMIN"] },
@@ -73,6 +80,7 @@ const navGroups = [
       { to: "/categories", label: "Catégories", icon: FolderTree, roles: ["SUPER_ADMIN"] },
       { to: "/audit", label: "Journal d'audit", icon: ClipboardList, roles: ["SUPER_ADMIN"] },
       { to: "/auth-events", label: "Sécurité (auth)", icon: Shield, roles: ["SUPER_ADMIN"] },
+      { to: "/help", label: "Aide", icon: Search, roles: ["ADMIN", "SUPER_ADMIN"] },
     ],
   },
 ];
@@ -109,6 +117,7 @@ export function AdminLayout() {
   const [paletteOpen, setPaletteOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
   const location = useLocation();
+  const navigate = useNavigate();
   const role = user?.systemRole ?? "";
   const initials = (user?.fullName ?? "A")
     .split(" ")
@@ -127,6 +136,16 @@ export function AdminLayout() {
     refetchInterval: 60_000,
   });
   const openReportsCount = openReportsQuery.data?.count ?? 0;
+
+  const inboxUnreadQuery = useQuery({
+    queryKey: ["admin-inbox-unread"],
+    queryFn: async () => {
+      const { data } = await api.get<{ count: number }>("/admin/inbox/unread-count");
+      return data.count;
+    },
+    refetchInterval: 60_000,
+  });
+  const inboxUnread = inboxUnreadQuery.data ?? 0;
 
   const healthQuery = useQuery({
     queryKey: ["health-info"],
@@ -325,10 +344,15 @@ export function AdminLayout() {
               <button
                 type="button"
                 className="relative rounded-xl p-2 text-[var(--text-primary)] hover:bg-ireduc-navy-soft"
-                aria-label="Notifications"
+                aria-label="Boîte admin"
+                onClick={() => navigate("/inbox")}
               >
                 <Bell size={18} />
-                <span className="absolute right-1.5 top-1.5 h-2 w-2 rounded-full bg-ireduc-primary" />
+                {inboxUnread > 0 ? (
+                  <span className="absolute right-0.5 top-0.5 min-w-[18px] rounded-full bg-ireduc-primary px-1 text-[10px] font-bold text-white">
+                    {inboxUnread > 99 ? "99+" : inboxUnread}
+                  </span>
+                ) : null}
               </button>
               <button
                 type="button"
