@@ -91,7 +91,7 @@ export function PropertyListCard({ item }: Props) {
 
         <Pressable style={styles.reserve} onPress={onReserve}>
           <Ionicons name="calendar-outline" size={16} color={colors.white} />
-          <Text style={styles.reserveText}>RÉSERVEZ</Text>
+          <Text style={styles.reserveText}>RÉSERVER</Text>
         </Pressable>
       </Pressable>
     </View>

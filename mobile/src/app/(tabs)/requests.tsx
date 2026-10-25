@@ -6,6 +6,7 @@ import {
   FlatList,
   Pressable,
   RefreshControl,
+  ScrollView,
   StyleSheet,
   Text,
   View,
@@ -16,14 +17,8 @@ import { RequestStatus } from "../../api/types";
 import { GuestPrompt } from "../../components/GuestPrompt";
 import { EmptyState } from "../../components/list/EmptyState";
 import { ErrorState } from "../../components/list/ErrorState";
-import {
-  PublishFab,
-  PUBLISH_FAB_BOTTOM_INSET,
-  usePublishFabScroll,
-} from "../../components/PublishFab";
 import { RequestCard } from "../../components/requests/RequestCard";
 import { ListSkeleton } from "../../components/ui/SkeletonLoader";
-import { IreducLogo } from "../../components/IreducLogo";
 import { useAuthStore } from "../../store/authStore";
 import { colors, radii, spacing, typography } from "../../theme";
 
@@ -39,7 +34,6 @@ const TABS: { key: TabKey; label: string }[] = [
 export default function RequestsScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
-  const { onScroll: onFabScroll } = usePublishFabScroll();
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   const isHydrated = useAuthStore((s) => s.isHydrated);
   const [tab, setTab] = useState<TabKey>("ALL");
@@ -75,29 +69,28 @@ export default function RequestsScreen() {
   return (
     <View style={[styles.screen, { paddingTop: insets.top }]}>
       <View style={styles.header}>
-        <IreducLogo compact tagline={undefined} />
-        <View style={styles.headerRight}>
-          <View style={styles.city}>
-            <Ionicons name="location" size={14} color={colors.primary} />
-            <Text style={styles.cityText}>Kinshasa</Text>
-          </View>
-          <Ionicons name="notifications-outline" size={22} color={colors.navy} />
+        <View style={styles.titleRow}>
+          <Text style={typography.title}>Mes demandes</Text>
+          {counters && counters.all > 0 ? (
+            <View style={styles.countBadge}>
+              <Text style={styles.countBadgeText}>{counters.all}</Text>
+            </View>
+          ) : null}
         </View>
-      </View>
-
-      <View style={styles.titleRow}>
-        <Text style={typography.title}>Mes demandes</Text>
-        {counters ? (
-          <View style={styles.countBadge}>
-            <Text style={styles.countBadgeText}>{counters.all}</Text>
-          </View>
-        ) : null}
+        <View style={styles.city}>
+          <Ionicons name="location" size={14} color={colors.primary} />
+          <Text style={styles.cityText}>Kinshasa</Text>
+        </View>
       </View>
       <Text style={styles.subtitle}>
         Suivez l'état de toutes vos demandes de réservation.
       </Text>
 
-      <View style={styles.tabs}>
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        contentContainerStyle={styles.tabs}
+      >
         {TABS.map((t) => {
           const count =
             t.key === "ALL"
@@ -121,7 +114,7 @@ export default function RequestsScreen() {
             </Pressable>
           );
         })}
-      </View>
+      </ScrollView>
 
       {query.isLoading ? <ListSkeleton /> : null}
       {query.isError ? <ErrorState onRetry={() => void query.refetch()} /> : null}
@@ -135,11 +128,9 @@ export default function RequestsScreen() {
           keyExtractor={(item) => item.id}
           renderItem={({ item }) => <RequestCard item={item} />}
           contentContainerStyle={{
-            paddingBottom: PUBLISH_FAB_BOTTOM_INSET,
+            paddingBottom: spacing.xxl,
             paddingTop: spacing.md,
           }}
-          scrollEventThrottle={16}
-          onScroll={(e) => onFabScroll(e.nativeEvent.contentOffset.y)}
           onEndReached={() => {
             if (query.hasNextPage && !query.isFetchingNextPage) {
               void query.fetchNextPage();
@@ -163,7 +154,6 @@ export default function RequestsScreen() {
           }
         />
       ) : null}
-      <PublishFab />
     </View>
   );
 }
@@ -176,8 +166,8 @@ const styles = StyleSheet.create({
     alignItems: "center",
     paddingHorizontal: spacing.lg,
     paddingVertical: spacing.sm,
+    minHeight: 48,
   },
-  headerRight: { flexDirection: "row", alignItems: "center", gap: spacing.md },
   city: {
     flexDirection: "row",
     alignItems: "center",
@@ -194,7 +184,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: spacing.sm,
-    paddingHorizontal: 20,
+    flexShrink: 1,
   },
   countBadge: {
     backgroundColor: colors.primary,
@@ -208,15 +198,17 @@ const styles = StyleSheet.create({
   countBadgeText: { color: colors.white, fontWeight: "800", fontSize: 12 },
   subtitle: {
     ...typography.body,
-    paddingHorizontal: 20,
-    marginTop: spacing.xs,
+    paddingHorizontal: spacing.lg,
+    marginTop: spacing.md,
     marginBottom: spacing.md,
   },
   tabs: {
     flexDirection: "row",
-    flexWrap: "wrap",
+    flexWrap: "nowrap",
+    alignItems: "center",
     gap: spacing.sm,
-    paddingHorizontal: 20,
+    paddingHorizontal: spacing.lg,
+    paddingBottom: spacing.sm,
   },
   tab: {
     paddingHorizontal: spacing.md,

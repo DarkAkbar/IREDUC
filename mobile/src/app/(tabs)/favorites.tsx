@@ -218,19 +218,19 @@ export default function FavoritesTabScreen() {
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.background },
   title: {
-    paddingHorizontal: 20,
+    paddingHorizontal: spacing.lg,
     marginTop: spacing.md,
     marginBottom: spacing.xs,
   },
   subtitle: {
     ...typography.body,
-    paddingHorizontal: 20,
+    paddingHorizontal: spacing.lg,
     marginBottom: spacing.md,
   },
   tabs: {
     flexDirection: "row",
     gap: spacing.sm,
-    paddingHorizontal: 20,
+    paddingHorizontal: spacing.lg,
     marginBottom: spacing.md,
   },
   tab: {
