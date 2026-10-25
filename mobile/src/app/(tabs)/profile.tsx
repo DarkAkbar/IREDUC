@@ -377,13 +377,15 @@ export default function ProfileScreen() {
               value={summary?.unreadMessages ?? 0}
               onPress={() => router.push("/messages" as never)}
             />
-            {partner ? (
-              <StatChip
-                label="Annonces"
-                value={partner.listingsTotal}
-                onPress={() => router.push("/listings" as never)}
-              />
-            ) : null}
+            <StatChip
+              label="Annonces"
+              value={partner?.listingsTotal ?? 0}
+              onPress={() =>
+                router.push(
+                  (partner ? "/listings" : "/partner") as never
+                )
+              }
+            />
           </View>
         )}
 
@@ -580,7 +582,7 @@ const styles = StyleSheet.create({
   screen: {
     flex: 1,
     backgroundColor: colors.background,
-    paddingHorizontal: 20,
+    paddingHorizontal: spacing.lg,
   },
   content: { paddingBottom: spacing.xxl, paddingTop: spacing.md },
   errorBox: {
@@ -665,21 +667,24 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     gap: spacing.sm,
     marginTop: spacing.md,
+    width: "100%",
   },
   statChip: {
     flex: 1,
+    minWidth: 0,
     backgroundColor: colors.white,
     borderRadius: radii.md,
     borderWidth: 1,
     borderColor: colors.border,
     paddingVertical: spacing.sm,
-    paddingHorizontal: 4,
+    paddingHorizontal: 2,
     alignItems: "center",
+    justifyContent: "center",
   },
-  statValue: { color: colors.navy, fontWeight: "800", fontSize: 18 },
+  statValue: { color: colors.navy, fontWeight: "800", fontSize: 16 },
   statLabel: {
     color: colors.textMuted,
-    fontSize: 10,
+    fontSize: 9,
     fontWeight: "700",
     marginTop: 2,
     textAlign: "center",

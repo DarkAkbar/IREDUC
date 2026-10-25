@@ -88,7 +88,7 @@ export function PublishFab({ hidden = false, aboveTabs = true }: Props) {
   return (
     <View
       pointerEvents="box-none"
-      style={[styles.wrap, { bottom, right: spacing.md }]}
+      style={[styles.wrap, { bottom, right: spacing.lg }]}
     >
       <Pressable
         onPress={() => openPublish()}
