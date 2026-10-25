@@ -19,7 +19,7 @@ import { fetchNotifications } from "../../api/notifications";
 import { IreducLogo } from "../../components/IreducLogo";
 import { PropertyCard } from "../../components/PropertyCard";
 import { ServiceCard } from "../../components/ServiceCard";
-import { Button } from "../../components/ui/Button";
+import { PartnerHomeBanner } from "../../components/PartnerHomeBanner";
 import { SearchBar } from "../../components/ui/SearchBar";
 import { SectionHeader } from "../../components/ui/SectionHeader";
 import { HomeSkeleton } from "../../components/ui/SkeletonLoader";
@@ -283,25 +283,7 @@ export default function HomeScreen() {
               <Text style={styles.ctaText}>
                 Devenez partenaire IREDUC et publiez vos annonces à Kinshasa.
               </Text>
-              <Button
-                label="Publier"
-                variant="navy"
-                onPress={() => {
-                  if (requireAuth("/publish")) {
-                    router.push("/publish" as never);
-                  }
-                }}
-              />
-              <Button
-                label="Devenir partenaire"
-                variant="outline"
-                style={{ marginTop: spacing.sm }}
-                onPress={() => {
-                  if (requireAuth("/partner")) {
-                    router.push("/partner" as never);
-                  }
-                }}
-              />
+              <PartnerHomeBanner />
             </View>
           </>
         ) : null}

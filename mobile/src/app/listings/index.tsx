@@ -194,6 +194,14 @@ export default function MyListingsScreen() {
         />
       </View>
       <Pressable
+        style={styles.partnerBanner}
+        onPress={() => router.push("/partner/status" as never)}
+      >
+        <Ionicons name="briefcase-outline" size={18} color={colors.navy} />
+        <Text style={styles.partnerBannerText}>Suivre mon dossier partenaire</Text>
+        <Ionicons name="chevron-forward" size={16} color={colors.textMuted} />
+      </Pressable>
+      <Pressable
         style={styles.receivedLink}
         onPress={() => router.push("/listings/received" as never)}
       >
@@ -360,6 +368,20 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.lg,
     gap: spacing.md,
   },
+  partnerBanner: {
+    marginHorizontal: spacing.lg,
+    marginBottom: spacing.sm,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    borderRadius: radii.md,
+    borderWidth: 1,
+    borderColor: colors.border,
+    backgroundColor: colors.white,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.sm,
+  },
+  partnerBannerText: { flex: 1, color: colors.navy, fontWeight: "700", fontSize: 13 },
   receivedLink: {
     flexDirection: "row",
     alignItems: "center",

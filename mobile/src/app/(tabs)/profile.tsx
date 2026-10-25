@@ -438,6 +438,50 @@ export default function ProfileScreen() {
         </View>
 
         <Text style={styles.sectionTitle}>Espace partenaire</Text>
+        {reviewStatus ? (
+          <Pressable
+            style={styles.partnerStatusCard}
+            onPress={() => router.push("/partner/status" as never)}
+          >
+            <View style={styles.partnerStatusRow}>
+              <Text style={styles.partnerStatusTitle}>Ma demande de partenariat</Text>
+              <View
+                style={[
+                  styles.statusPill,
+                  {
+                    backgroundColor:
+                      reviewStatus === "APPROVED"
+                        ? colors.success
+                        : reviewStatus === "REJECTED"
+                          ? colors.primary
+                          : reviewStatus === "DRAFT"
+                            ? colors.textMuted
+                            : "#D97706",
+                  },
+                ]}
+              >
+                <Text style={styles.statusPillText}>
+                  {reviewStatus === "PENDING"
+                    ? provider?.reviewNote
+                      ? "À compléter"
+                      : "En examen"
+                    : reviewStatus === "APPROVED"
+                      ? "Approuvé"
+                      : reviewStatus === "REJECTED"
+                        ? "Rejeté"
+                        : "Brouillon"}
+                </Text>
+              </View>
+            </View>
+            <Text style={styles.partnerReason}>
+              {reviewStatus === "REJECTED" && provider?.rejectionReason
+                ? `Motif : ${provider.rejectionReason}`
+                : provider?.reviewNote
+                  ? provider.reviewNote
+                  : "Appuyez pour suivre l'état de votre dossier."}
+            </Text>
+          </Pressable>
+        ) : null}
         {reviewStatus === "APPROVED" ? (
           <View style={styles.menu}>
             <MenuRow
@@ -451,36 +495,15 @@ export default function ProfileScreen() {
               onPress={() => router.push("/listings" as never)}
             />
             <MenuRow
-              icon="inbox-outline"
+              icon="mail-unread-outline"
               label="Demandes reçues"
               badge={partner?.pendingReceivedRequests}
               onPress={() => router.push("/listings/received" as never)}
               last
             />
           </View>
-        ) : reviewStatus === "PENDING" || reviewStatus === "REJECTED" ? (
-          <View style={styles.partnerStatusCard}>
-            <Text style={styles.partnerStatusTitle}>
-              Dossier{" "}
-              {reviewStatus === "PENDING" ? "en attente" : "rejeté"}
-            </Text>
-            {reviewStatus === "REJECTED" && provider?.rejectionReason ? (
-              <Text style={styles.partnerReason}>
-                Motif : {provider.rejectionReason}
-              </Text>
-            ) : (
-              <Text style={styles.partnerReason}>
-                Notre équipe examine votre dossier. Vous serez notifié.
-              </Text>
-            )}
-            <Button
-              label="Corriger et renvoyer"
-              variant="outline"
-              onPress={() => router.push("/partner" as never)}
-              style={{ marginTop: spacing.sm }}
-            />
-          </View>
-        ) : (
+        ) : null}
+        {!reviewStatus ? (
           <View style={styles.becomeCard}>
             <Text style={styles.becomeTitle}>Devenir partenaire</Text>
             <Text style={styles.becomeItem}>• Visibilité auprès des chercheurs</Text>
@@ -492,7 +515,7 @@ export default function ProfileScreen() {
               style={{ marginTop: spacing.md }}
             />
           </View>
-        )}
+        ) : null}
 
         <Text style={styles.sectionTitle}>Aide et à propos</Text>
         <View style={styles.menu}>
@@ -688,6 +711,18 @@ const styles = StyleSheet.create({
     paddingHorizontal: 6,
   },
   badgeText: { color: colors.white, fontSize: 11, fontWeight: "800" },
+  partnerStatusRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: spacing.sm,
+  },
+  statusPill: {
+    borderRadius: 999,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+  },
+  statusPillText: { color: colors.white, fontWeight: "800", fontSize: 11 },
   partnerStatusCard: {
     backgroundColor: colors.white,
     borderRadius: radii.lg,
