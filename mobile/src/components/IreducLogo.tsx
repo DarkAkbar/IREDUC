@@ -8,7 +8,7 @@ type Props = {
 };
 
 export function IreducLogo({
-  tagline = "Trouvez. Comparez. Réalisez.",
+  tagline,
   compact = false,
 }: Props) {
   return (

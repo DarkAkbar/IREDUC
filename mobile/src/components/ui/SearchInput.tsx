@@ -7,7 +7,8 @@ type Props = {
   onChangeText: (value: string) => void;
   placeholder?: string;
   onFilterPress?: () => void;
-  filterLabel?: string;
+  /** Nombre de filtres actifs affiché sur le bouton. */
+  activeFilterCount?: number;
 };
 
 export function SearchInput({
@@ -15,8 +16,11 @@ export function SearchInput({
   onChangeText,
   placeholder = "Rechercher...",
   onFilterPress,
-  filterLabel = "Filtres",
+  activeFilterCount = 0,
 }: Props) {
+  const filterLabel =
+    activeFilterCount > 0 ? `Filtres (${activeFilterCount})` : "Filtres";
+
   return (
     <View style={styles.row}>
       <View style={styles.inputWrap}>
@@ -37,7 +41,11 @@ export function SearchInput({
         ) : null}
       </View>
       {onFilterPress ? (
-        <Pressable style={styles.filter} onPress={onFilterPress}>
+        <Pressable
+          style={styles.filter}
+          onPress={onFilterPress}
+          accessibilityLabel={filterLabel}
+        >
           <Ionicons name="options-outline" size={16} color={colors.navy} />
           <Text style={styles.filterText}>{filterLabel}</Text>
         </Pressable>

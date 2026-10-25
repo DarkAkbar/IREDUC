@@ -186,7 +186,7 @@ export default function AuthScreen() {
         ]}
         keyboardShouldPersistTaps="handled"
       >
-        <IreducLogo />
+        <IreducLogo tagline={undefined} />
         <Text style={[typography.hero, { marginTop: spacing.xl }]}>
           {mode === "login" ? "Bon retour" : "Créer un compte"}
         </Text>

@@ -128,16 +128,24 @@ export default function PropertiesListScreen() {
     setSort(SORT_OPTIONS[(idx + 1) % SORT_OPTIONS.length].key);
   }
 
-  const titleKind = kind === "ALL" ? "Biens" : `${kindLabel(kind)}s`;
+  const kindPlural =
+    kind === "ALL" ? "Biens" : `${kindLabel(kind as PropertyKind)}s`;
+  const listTitle =
+    offerType === "RENT"
+      ? `${kindPlural} à louer`
+      : offerType === "SALE"
+        ? `${kindPlural} à vendre`
+        : `${kindPlural} à louer et à vendre`;
 
   return (
     <View style={[styles.screen, { paddingTop: insets.top }]}>
-      <ListScreenHeader onFilterPress={() => router.push("/filters")} />
+      <ListScreenHeader title="Biens" />
       <SearchInput
         value={q}
         onChangeText={setQ}
         placeholder="Rechercher par ville, quartier, type de bien..."
         onFilterPress={() => router.push("/filters")}
+        activeFilterCount={activeChips.length}
       />
       <View style={{ marginTop: spacing.md }}>
         <CategoryTabs tabs={KIND_TABS} activeKey={kind} onChange={setKind} />
@@ -170,7 +178,7 @@ export default function PropertiesListScreen() {
       ) : null}
 
       <View style={styles.heading}>
-        <Text style={typography.title}>{titleKind} à louer et à vendre</Text>
+        <Text style={typography.title}>{listTitle}</Text>
         <Text style={styles.subtitle}>
           Des biens vérifiés pour un cadre de vie meilleur.
         </Text>
@@ -224,7 +232,7 @@ export default function PropertiesListScreen() {
               {query.isFetchingNextPage ? (
                 <Text style={styles.loadingMore}>Chargement...</Text>
               ) : null}
-              <InfoBanner text="Cliquez sur une image ou sur le bouton « Réservez » pour voir tous les détails de l'offre et effectuer votre réservation." />
+              <InfoBanner text="Cliquez sur une image ou sur le bouton « Réserver » pour voir tous les détails de l'offre et effectuer votre réservation." />
             </>
           }
         />
@@ -235,7 +243,11 @@ export default function PropertiesListScreen() {
 
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.background },
-  heading: { paddingHorizontal: spacing.lg, marginBottom: spacing.md, marginTop: spacing.sm },
+  heading: {
+    paddingHorizontal: spacing.lg,
+    marginBottom: spacing.md,
+    marginTop: spacing.md,
+  },
   subtitle: { color: colors.textMuted, marginTop: 4 },
   metaRow: {
     flexDirection: "row",

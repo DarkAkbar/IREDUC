@@ -107,7 +107,7 @@ export default function ServicesListScreen() {
 
   return (
     <View style={[styles.screen, { paddingTop: insets.top }]}>
-      <ListScreenHeader onFilterPress={() => router.push("/filters" as never)} />
+      <ListScreenHeader title="Services" />
       <SearchInput
         value={q}
         onChangeText={setQ}
@@ -201,7 +201,7 @@ const styles = StyleSheet.create({
   heading: {
     paddingHorizontal: spacing.lg,
     marginBottom: spacing.md,
-    marginTop: spacing.sm,
+    marginTop: spacing.md,
   },
   subtitle: { color: colors.textMuted, marginTop: 4 },
   metaRow: {
