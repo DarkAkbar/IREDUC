@@ -7,6 +7,7 @@ import * as auditService from "./admin.audit.service";
 import * as categoriesService from "./admin.categories.service";
 import * as referentialsService from "./admin.referentials.service";
 import * as reportsService from "./admin.reports.service";
+import * as securityService from "./admin.security.service";
 import * as moderationService from "./admin.moderation.service";
 import * as requestsService from "./admin.requests.service";
 import * as settingsService from "./admin.settings.service";
@@ -155,6 +156,120 @@ export async function updateAdminRole(
       req.body.role
     );
     res.status(200).json(result);
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function updateAdminStatus(
+  req: Request,
+  res: Response,
+  next: NextFunction
+) {
+  try {
+    const admin = requireSuperAdmin(req);
+    const result = await adminsService.updateAdminStatus(
+      admin,
+      getParam(req, "id"),
+      req.body.status
+    );
+    res.status(200).json(result);
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function getMyAdminProfile(
+  req: Request,
+  res: Response,
+  next: NextFunction
+) {
+  try {
+    const admin = requireAdmin(req);
+    const result = await securityService.getMyAdminProfile(admin.id);
+    res.status(200).json(result);
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function changeMyAdminPassword(
+  req: Request,
+  res: Response,
+  next: NextFunction
+) {
+  try {
+    const admin = requireAdmin(req);
+    const result = await securityService.changeMyAdminPassword(
+      admin.id,
+      req.body.currentPassword,
+      req.body.newPassword
+    );
+    res.status(200).json(result);
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function listMyAdminSessions(
+  req: Request,
+  res: Response,
+  next: NextFunction
+) {
+  try {
+    const admin = requireAdmin(req);
+    const result = await securityService.listMySessions(admin.id);
+    res.status(200).json({ data: result });
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function revokeMyAdminSession(
+  req: Request,
+  res: Response,
+  next: NextFunction
+) {
+  try {
+    const admin = requireAdmin(req);
+    const result = await securityService.revokeMySession(
+      admin.id,
+      getParam(req, "id")
+    );
+    res.status(200).json(result);
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function listAuthEvents(
+  req: Request,
+  res: Response,
+  next: NextFunction
+) {
+  try {
+    requireSuperAdmin(req);
+    const result = await securityService.listAuthEvents(req.query as never);
+    res.status(200).json(result);
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function exportAuditLogCsv(
+  req: Request,
+  res: Response,
+  next: NextFunction
+) {
+  try {
+    requireSuperAdmin(req);
+    const csv = await securityService.exportAuditLogCsv(req.query as never);
+    res.setHeader("Content-Type", "text/csv; charset=utf-8");
+    res.setHeader(
+      "Content-Disposition",
+      'attachment; filename="journal-audit.csv"'
+    );
+    res.status(200).send(csv);
   } catch (error) {
     next(error);
   }

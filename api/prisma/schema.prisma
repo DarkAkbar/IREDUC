@@ -152,6 +152,7 @@ model User {
   userTokens              UserToken[]
   reportsFiled            Report[]       @relation("ReportReporter")
   reportsResolved         Report[]       @relation("ReportResolver")
+  authEvents              AuthEvent[]
 
   @@index([email])
   @@index([phone])
@@ -607,6 +608,25 @@ model Setting {
   updatedAt DateTime @updatedAt
 
   @@index([key])
+}
+
+model AuthEvent {
+  id           String   @id @default(uuid()) @db.Uuid
+  userId       String?  @db.Uuid
+  emailOrPhone String?
+  eventType    String
+  ipAddress    String?
+  userAgent    String?
+  success      Boolean
+  meta         Json?
+  createdAt    DateTime @default(now())
+
+  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([userId])
+  @@index([eventType])
+  @@index([success])
+  @@index([createdAt])
 }
 
 model RefreshToken {

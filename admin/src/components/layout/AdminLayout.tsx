@@ -62,6 +62,7 @@ const navGroups = [
     items: [
       { to: "/users", label: "Utilisateurs", icon: Users, roles: ["ADMIN", "SUPER_ADMIN"] },
       { to: "/admins", label: "Administrateurs", icon: Shield, roles: ["SUPER_ADMIN"] },
+      { to: "/profile", label: "Mon profil", icon: Users, roles: ["ADMIN", "SUPER_ADMIN"] },
     ],
   },
   {
@@ -71,6 +72,7 @@ const navGroups = [
       { to: "/referentials", label: "Référentiels", icon: MapPin, roles: ["ADMIN", "SUPER_ADMIN"] },
       { to: "/categories", label: "Catégories", icon: FolderTree, roles: ["SUPER_ADMIN"] },
       { to: "/audit", label: "Journal d'audit", icon: ClipboardList, roles: ["SUPER_ADMIN"] },
+      { to: "/auth-events", label: "Sécurité (auth)", icon: Shield, roles: ["SUPER_ADMIN"] },
     ],
   },
 ];

@@ -7,6 +7,7 @@ import {
 } from "../../utils/loginAttempts";
 import { looksLikeEmail, normalizePhone } from "../../utils/phone";
 import { AppError } from "../../utils/errors";
+import * as authEventsService from "./auth-events.service";
 import * as authService from "./auth.service";
 
 function clientIp(req: Request): string {
@@ -79,6 +80,14 @@ export async function login(req: Request, res: Response, next: NextFunction) {
     );
     clearLoginFailures(ip, result._loginKey);
     const { _loginKey: _, ...body } = result;
+    await authEventsService.logAuthEvent({
+      userId: body.user.id,
+      emailOrPhone: identifier,
+      eventType: "LOGIN",
+      ipAddress: ip,
+      userAgent: req.headers["user-agent"] as string | undefined,
+      success: true,
+    });
     res.status(200).json(body);
   } catch (error) {
     if (
@@ -86,6 +95,13 @@ export async function login(req: Request, res: Response, next: NextFunction) {
       error.code === "INVALID_CREDENTIALS"
     ) {
       recordLoginFailure(ip, key);
+      await authEventsService.logAuthEvent({
+        emailOrPhone: identifier,
+        eventType: "LOGIN",
+        ipAddress: ip,
+        userAgent: req.headers["user-agent"] as string | undefined,
+        success: false,
+      });
     }
     next(error);
   }

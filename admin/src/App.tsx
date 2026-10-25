@@ -7,6 +7,8 @@ import { AuthProvider } from "@/context/AuthContext";
 import { ThemeProvider } from "@/context/ThemeContext";
 import { AdminsPage } from "@/pages/AdminsPage";
 import { AuditPage } from "@/pages/AuditPage";
+import { AuthEventsPage } from "@/pages/AuthEventsPage";
+import { MyProfilePage } from "@/pages/MyProfilePage";
 import { CategoriesPage } from "@/pages/CategoriesPage";
 import { DashboardPage } from "@/pages/DashboardPage";
 import { ListingDetailPage } from "@/pages/ListingDetailPage";
@@ -67,11 +69,13 @@ export default function App() {
                   <Route path="reports" element={<ReportsPage />} />
                   <Route path="users" element={<UsersPage />} />
                   <Route path="users/:id" element={<UserDetailPage />} />
+                  <Route path="profile" element={<MyProfilePage />} />
                   <Route element={<ProtectedRoute superAdminOnly />}>
                     <Route path="settings" element={<SettingsPage />} />
                     <Route path="referentials" element={<ReferentialsPage />} />
                     <Route path="categories" element={<CategoriesPage />} />
                     <Route path="audit" element={<AuditPage />} />
+                    <Route path="auth-events" element={<AuthEventsPage />} />
                     <Route path="admins" element={<AdminsPage />} />
                   </Route>
                 </Route>

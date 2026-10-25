@@ -1,4 +1,4 @@
-import { SystemRole } from "@prisma/client";
+import { AccountStatus, SystemRole } from "@prisma/client";
 import { prisma } from "../../config/prisma";
 import { badRequest, conflict, forbidden, notFound } from "../../utils/errors";
 import {
@@ -129,6 +129,59 @@ export async function updateAdminRole(
     "USER",
     targetId,
     role === "ADMIN" ? "PROMOTE_ADMIN" : "DEMOTE_ADMIN"
+  );
+
+  return updated;
+}
+
+export async function updateAdminStatus(
+  actor: { id: string; role: SystemRole },
+  targetId: string,
+  status: AccountStatus
+) {
+  if (actor.role !== SystemRole.SUPER_ADMIN) {
+    throw forbidden("Réservé au super administrateur");
+  }
+  if (actor.id === targetId) {
+    throw badRequest("Vous ne pouvez pas modifier votre propre statut");
+  }
+
+  const target = await prisma.user.findUnique({ where: { id: targetId } });
+  if (!target) throw notFound("Administrateur introuvable");
+  if (
+    target.systemRole !== SystemRole.ADMIN &&
+    target.systemRole !== SystemRole.SUPER_ADMIN
+  ) {
+    throw badRequest("La cible n'est pas un administrateur");
+  }
+  if (target.systemRole === SystemRole.SUPER_ADMIN) {
+    throw forbidden("Impossible de suspendre un super administrateur");
+  }
+
+  const updated = await prisma.user.update({
+    where: { id: targetId },
+    data: { accountStatus: status },
+    select: {
+      id: true,
+      fullName: true,
+      email: true,
+      systemRole: true,
+      accountStatus: true,
+    },
+  });
+
+  if (status === AccountStatus.SUSPENDED) {
+    await prisma.refreshToken.updateMany({
+      where: { userId: targetId, revokedAt: null },
+      data: { revokedAt: new Date() },
+    });
+  }
+
+  await logAdminAction(
+    actor.id,
+    "USER",
+    targetId,
+    status === AccountStatus.SUSPENDED ? "SUSPEND_ADMIN" : "REACTIVATE_ADMIN"
   );
 
   return updated;

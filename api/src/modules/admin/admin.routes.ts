@@ -31,6 +31,9 @@ import {
   adminReportsQuerySchema,
   reviewVisibilitySchema,
   adminCategoriesQuerySchema,
+  authEventsQuerySchema,
+  changeAdminPasswordSchema,
+  updateAdminStatusSchema,
   createCommuneSchema,
   createNeighborhoodSchema,
   createRejectionReasonSchema,
@@ -48,6 +51,19 @@ adminRouter.use(
 adminRouter.get("/ping", (_req, res) => {
   res.status(200).json({ message: "ok" });
 });
+
+adminRouter.get("/me/profile", adminController.getMyAdminProfile);
+adminRouter.patch(
+  "/me/profile/password",
+  validate(changeAdminPasswordSchema),
+  adminController.changeMyAdminPassword
+);
+adminRouter.get("/me/sessions", adminController.listMyAdminSessions);
+adminRouter.delete(
+  "/me/sessions/:id",
+  validate(adminIdParamsSchema, "params"),
+  adminController.revokeMyAdminSession
+);
 
 adminRouter.get("/stats", adminController.stats);
 
@@ -184,11 +200,27 @@ adminRouter.patch(
   validate(updateAdminRoleSchema),
   adminController.updateAdminRole
 );
+adminRouter.patch(
+  "/admins/:id/status",
+  validate(adminIdParamsSchema, "params"),
+  validate(updateAdminStatusSchema),
+  adminController.updateAdminStatus
+);
 
 adminRouter.get(
   "/audit-log",
   validate(auditLogQuerySchema, "query"),
   adminController.listAuditLog
+);
+adminRouter.get(
+  "/audit-log/export.csv",
+  validate(auditLogQuerySchema, "query"),
+  adminController.exportAuditLogCsv
+);
+adminRouter.get(
+  "/auth-events",
+  validate(authEventsQuerySchema, "query"),
+  adminController.listAuthEvents
 );
 
 adminRouter.get("/reports/open-count", adminController.openReportsCount);

@@ -229,6 +229,30 @@ export const reviewVisibilitySchema = z.object({
   hidden: z.boolean(),
 });
 
+export const changeAdminPasswordSchema = z.object({
+  currentPassword: z.string().min(1, "Mot de passe actuel requis"),
+  newPassword: z
+    .string()
+    .refine((value) => value.length >= 8 && /\d/.test(value), {
+      message:
+        "Le mot de passe doit contenir au moins 8 caractères et un chiffre",
+    }),
+});
+
+export const authEventsQuerySchema = paginationQuerySchema.extend({
+  success: z
+    .enum(["true", "false"])
+    .optional()
+    .transform((v) => (v === undefined ? undefined : v === "true")),
+  eventType: z.string().trim().min(1).optional(),
+  from: z.string().min(4).optional(),
+  to: z.string().min(4).optional(),
+});
+
+export const updateAdminStatusSchema = z.object({
+  status: z.nativeEnum(AccountStatus),
+});
+
 export const adminCategoriesQuerySchema = z.object({
   parentId: z
     .union([z.string().uuid(), z.literal("null")])

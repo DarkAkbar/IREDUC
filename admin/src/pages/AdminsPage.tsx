@@ -67,6 +67,18 @@ export function AdminsPage() {
     },
   });
 
+  const statusMutation = useMutation({
+    mutationFn: async (payload: { id: string; status: "ACTIVE" | "SUSPENDED" }) => {
+      await api.patch(`/admin/admins/${payload.id}/status`, {
+        status: payload.status,
+      });
+    },
+    onSuccess: async () => {
+      setMessage("Statut administrateur mis à jour.");
+      await queryClient.invalidateQueries({ queryKey: ["admin-admins"] });
+    },
+  });
+
   const roleMutation = useMutation({
     mutationFn: async (payload: { id: string; role: "ADMIN" | "USER" }) => {
       await api.patch(`/admin/admins/${payload.id}/role`, { role: payload.role });
@@ -196,20 +208,36 @@ export function AdminsPage() {
                 row.systemRole === "SUPER_ADMIN" ? (
                   <span className="text-xs text-[var(--text-muted)]">—</span>
                 ) : row.systemRole === "ADMIN" ? (
-                  <Button
-                    type="button"
-                    size="sm"
-                    variant="outline"
-                    onClick={() =>
-                      setRoleTarget({
-                        id: row.id,
-                        role: "USER",
-                        name: row.fullName,
-                      })
-                    }
-                  >
-                    Rétrograder en USER
-                  </Button>
+                  <div className="flex flex-wrap justify-end gap-2">
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant={row.accountStatus === "ACTIVE" ? "danger" : "success"}
+                      onClick={() =>
+                        statusMutation.mutate({
+                          id: row.id,
+                          status:
+                            row.accountStatus === "ACTIVE" ? "SUSPENDED" : "ACTIVE",
+                        })
+                      }
+                    >
+                      {row.accountStatus === "ACTIVE" ? "Désactiver" : "Réactiver"}
+                    </Button>
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="outline"
+                      onClick={() =>
+                        setRoleTarget({
+                          id: row.id,
+                          role: "USER",
+                          name: row.fullName,
+                        })
+                      }
+                    >
+                      Rétrograder en USER
+                    </Button>
+                  </div>
                 ) : (
                   <Button
                     type="button"
