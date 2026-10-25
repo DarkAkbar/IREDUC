@@ -1,4 +1,5 @@
 import { NextFunction, Request, Response } from "express";
+import { extractDeviceMeta } from "../../utils/deviceMeta";
 import {
   clearLoginFailures,
   isLoginBlocked,
@@ -30,7 +31,7 @@ function normalizeIdentifierKey(identifier: string): string {
 
 export async function register(req: Request, res: Response, next: NextFunction) {
   try {
-    const result = await authService.register(req.body);
+    const result = await authService.register(req.body, extractDeviceMeta(req));
     res.status(201).json(result);
   } catch (error) {
     next(error);
@@ -69,10 +70,13 @@ export async function login(req: Request, res: Response, next: NextFunction) {
       return;
     }
 
-    const result = await authService.login({
-      identifier,
-      password: req.body.password,
-    });
+    const result = await authService.login(
+      {
+        identifier,
+        password: req.body.password,
+      },
+      extractDeviceMeta(req)
+    );
     clearLoginFailures(ip, result._loginKey);
     const { _loginKey: _, ...body } = result;
     res.status(200).json(body);
@@ -89,7 +93,10 @@ export async function login(req: Request, res: Response, next: NextFunction) {
 
 export async function refresh(req: Request, res: Response, next: NextFunction) {
   try {
-    const result = await authService.refresh(req.body.refreshToken);
+    const result = await authService.refresh(
+      req.body.refreshToken,
+      extractDeviceMeta(req)
+    );
     res.status(200).json(result);
   } catch (error) {
     next(error);

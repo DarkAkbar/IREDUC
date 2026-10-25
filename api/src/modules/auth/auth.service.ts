@@ -21,6 +21,7 @@ import {
   normalizeOptionalEmail,
   normalizePhone,
 } from "../../utils/phone";
+import type { DeviceMeta } from "../../utils/deviceMeta";
 import { toPublicUser } from "./auth.mapper";
 
 const INVALID_CREDENTIALS_MESSAGE = "Identifiant ou mot de passe incorrect";
@@ -59,7 +60,8 @@ async function issueTokenPair(
   userId: string,
   phone: string,
   email: string | null,
-  role: Parameters<typeof signAccessToken>[0]["role"]
+  role: Parameters<typeof signAccessToken>[0]["role"],
+  deviceMeta?: DeviceMeta
 ) {
   const accessToken = signAccessToken({ sub: userId, phone, email, role });
   const refreshToken = generateOpaqueToken();
@@ -69,18 +71,25 @@ async function issueTokenPair(
       userId,
       tokenHash: hashToken(refreshToken),
       expiresAt: refreshExpiryDate(),
+      deviceName: deviceMeta?.deviceName ?? null,
+      userAgent: deviceMeta?.userAgent ?? null,
+      ipAddress: deviceMeta?.ipAddress ?? null,
+      lastUsedAt: new Date(),
     },
   });
 
   return { accessToken, refreshToken };
 }
 
-export async function register(input: {
-  fullName: string;
-  phone: string;
-  password: string;
-  email?: string | null;
-}) {
+export async function register(
+  input: {
+    fullName: string;
+    phone: string;
+    password: string;
+    email?: string | null;
+  },
+  deviceMeta?: DeviceMeta
+) {
   const phone = normalizePhone(input.phone);
   const email = normalizeOptionalEmail(input.email ?? null);
 
@@ -111,7 +120,8 @@ export async function register(input: {
     user.id,
     user.phone,
     user.email,
-    user.systemRole
+    user.systemRole,
+    deviceMeta
   );
 
   return {
@@ -246,7 +256,10 @@ export async function resolveLoginIdentifier(identifier: string): Promise<{
   return { normalizedKey: `phone:${phone}`, user };
 }
 
-export async function login(input: { identifier: string; password: string }) {
+export async function login(
+  input: { identifier: string; password: string },
+  deviceMeta?: DeviceMeta
+) {
   let normalizedKey = input.identifier.trim().toLowerCase();
   let user = null as Awaited<ReturnType<typeof prisma.user.findFirst>>;
 
@@ -271,7 +284,8 @@ export async function login(input: { identifier: string; password: string }) {
     user.id,
     user.phone,
     user.email,
-    user.systemRole
+    user.systemRole,
+    deviceMeta
   );
 
   return {
@@ -281,7 +295,10 @@ export async function login(input: { identifier: string; password: string }) {
   };
 }
 
-export async function refresh(refreshToken: string) {
+export async function refresh(
+  refreshToken: string,
+  deviceMeta?: DeviceMeta
+) {
   const tokenHash = hashToken(refreshToken);
   const stored = await prisma.refreshToken.findFirst({
     where: {
@@ -311,7 +328,12 @@ export async function refresh(refreshToken: string) {
     stored.user.id,
     stored.user.phone,
     stored.user.email,
-    stored.user.systemRole
+    stored.user.systemRole,
+    {
+      deviceName: deviceMeta?.deviceName ?? stored.deviceName,
+      userAgent: deviceMeta?.userAgent ?? stored.userAgent,
+      ipAddress: deviceMeta?.ipAddress ?? stored.ipAddress,
+    }
   );
 
   return {
