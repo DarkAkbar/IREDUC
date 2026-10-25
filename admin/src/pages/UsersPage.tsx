@@ -14,8 +14,8 @@ import { formatDate, statusLabel } from "@/lib/utils";
 type UserRow = {
   id: string;
   fullName: string;
-  email: string;
-  phone?: string | null;
+  email: string | null;
+  phone: string;
   systemRole: string;
   accountStatus: string;
   createdAt: string;
@@ -83,7 +83,7 @@ export function UsersPage() {
             }}
           >
             <Input
-              placeholder="Nom, e-mail ou téléphone…"
+              placeholder="Nom, numéro ou e-mail…"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
             />
@@ -126,6 +126,7 @@ export function UsersPage() {
               <thead className="border-b border-ireduc-border bg-slate-50/80 text-xs uppercase tracking-wide text-ireduc-muted">
                 <tr>
                   <th className="px-4 py-3 font-semibold">Utilisateur</th>
+                  <th className="px-4 py-3 font-semibold">Téléphone</th>
                   <th className="px-4 py-3 font-semibold">Rôle</th>
                   <th className="px-4 py-3 font-semibold">Statut</th>
                   <th className="px-4 py-3 font-semibold">Inscrit le</th>
@@ -141,7 +142,10 @@ export function UsersPage() {
                       >
                         {row.fullName}
                       </Link>
-                      <p className="text-xs text-slate-500">{row.email}</p>
+                      <p className="text-xs text-slate-500">{row.email ?? "—"}</p>
+                    </td>
+                    <td className="px-4 py-3 font-medium text-ireduc-navy">
+                      {row.phone}
                     </td>
                     <td className="px-4 py-3">{statusLabel(row.systemRole)}</td>
                     <td className="px-4 py-3">

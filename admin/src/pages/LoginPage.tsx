@@ -8,7 +8,7 @@ import { getErrorMessage, useAuth } from "@/context/AuthContext";
 export function LoginPage() {
   const { login, isAuthenticated } = useAuth();
   const navigate = useNavigate();
-  const [email, setEmail] = useState("admin@ireduc.cd");
+  const [identifier, setIdentifier] = useState("admin@ireduc.cd");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -20,7 +20,7 @@ export function LoginPage() {
     setError(null);
     setLoading(true);
     try {
-      await login(email.trim(), password);
+      await login(identifier.trim(), password);
       navigate("/", { replace: true });
     } catch (err) {
       setError(getErrorMessage(err, "Connexion impossible"));
@@ -43,22 +43,26 @@ export function LoginPage() {
             Administration
           </h1>
           <p className="mt-2 text-[15px] text-ireduc-muted">
-            Connectez-vous avec un compte administrateur.
+            Connectez-vous avec un compte administrateur (numéro ou e-mail).
           </p>
         </div>
 
         <form className="space-y-4" onSubmit={onSubmit}>
           {error ? <Alert tone="error">{error}</Alert> : null}
           <div className="space-y-1.5">
-            <label className="text-sm font-semibold text-ireduc-navy" htmlFor="email">
-              E-mail
+            <label
+              className="text-sm font-semibold text-ireduc-navy"
+              htmlFor="identifier"
+            >
+              Téléphone ou e-mail
             </label>
             <Input
-              id="email"
-              type="email"
+              id="identifier"
+              type="text"
               autoComplete="username"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              value={identifier}
+              onChange={(e) => setIdentifier(e.target.value)}
+              placeholder="+243810000002 ou admin@ireduc.cd"
               required
             />
           </div>

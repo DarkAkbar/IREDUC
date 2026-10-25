@@ -31,6 +31,7 @@ export function AdminsPage() {
   const [message, setMessage] = useState<string | null>(null);
   const [form, setForm] = useState({
     fullName: "",
+    phone: "",
     email: "",
     temporaryPassword: "",
   });
@@ -59,7 +60,7 @@ export function AdminsPage() {
       setMessage(
         `${body.message} Mot de passe temporaire : ${body.temporaryPassword}`
       );
-      setForm({ fullName: "", email: "", temporaryPassword: "" });
+      setForm({ fullName: "", phone: "", email: "", temporaryPassword: "" });
       await queryClient.invalidateQueries({ queryKey: ["admin-admins"] });
     },
   });
@@ -97,7 +98,7 @@ export function AdminsPage() {
           <CardTitle>Créer un administrateur</CardTitle>
         </CardHeader>
         <CardContent>
-          <form className="grid gap-3 md:grid-cols-4" onSubmit={onCreate}>
+          <form className="grid gap-3 md:grid-cols-2 lg:grid-cols-5" onSubmit={onCreate}>
             <Input
               placeholder="Nom complet"
               value={form.fullName}
@@ -107,11 +108,16 @@ export function AdminsPage() {
               required
             />
             <Input
+              placeholder="Téléphone (+243…)"
+              value={form.phone}
+              onChange={(e) => setForm((f) => ({ ...f, phone: e.target.value }))}
+              required
+            />
+            <Input
               type="email"
-              placeholder="E-mail"
+              placeholder="E-mail (facultatif)"
               value={form.email}
               onChange={(e) => setForm((f) => ({ ...f, email: e.target.value }))}
-              required
             />
             <Input
               type="password"

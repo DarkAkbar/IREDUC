@@ -102,7 +102,7 @@ export function PartnersPage() {
             }}
           >
             <Input
-              placeholder="Rechercher un partenaire…"
+              placeholder="Nom, numéro ou e-mail…"
               value={q}
               onChange={(e) => setQ(e.target.value)}
             />
@@ -145,8 +145,12 @@ export function PartnersPage() {
                       <p className="text-xs text-slate-500">{row.user.fullName}</p>
                     </td>
                     <td className="px-4 py-3">
-                      <p>{row.user.email}</p>
-                      <p className="text-xs text-slate-500">{row.user.phone ?? "—"}</p>
+                      <p className="font-medium text-ireduc-navy">
+                        {row.user.phone ?? "—"}
+                      </p>
+                      <p className="text-xs text-slate-500">
+                        {row.user.email ?? "—"}
+                      </p>
                     </td>
                     <td className="px-4 py-3">{row.type}</td>
                     <td className="px-4 py-3">

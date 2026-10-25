@@ -18,7 +18,7 @@ import {
 type AuthContextValue = {
   user: AdminUser | null;
   isAuthenticated: boolean;
-  login: (email: string, password: string) => Promise<void>;
+  login: (identifier: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
 };
 
@@ -27,8 +27,8 @@ const AuthContext = createContext<AuthContextValue | null>(null);
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<AdminUser | null>(() => getStoredUser());
 
-  const login = useCallback(async (email: string, password: string) => {
-    const { data } = await api.post("/auth/login", { email, password });
+  const login = useCallback(async (identifier: string, password: string) => {
+    const { data } = await api.post("/auth/login", { identifier, password });
     const nextUser = data.user as AdminUser;
     if (!isAdminRole(nextUser.systemRole)) {
       throw new Error(
