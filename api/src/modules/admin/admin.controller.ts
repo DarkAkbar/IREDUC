@@ -6,6 +6,7 @@ import * as adminsService from "./admin.admins.service";
 import * as auditService from "./admin.audit.service";
 import * as categoriesService from "./admin.categories.service";
 import * as referentialsService from "./admin.referentials.service";
+import * as reportsService from "./admin.reports.service";
 import * as moderationService from "./admin.moderation.service";
 import * as requestsService from "./admin.requests.service";
 import * as settingsService from "./admin.settings.service";
@@ -272,6 +273,72 @@ export async function updateRejectionReason(
       admin.id,
       getParam(req, "id"),
       req.body
+    );
+    res.status(200).json(result);
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function listReports(req: Request, res: Response, next: NextFunction) {
+  try {
+    requireAdmin(req);
+    const result = await reportsService.listReports(req.query as never);
+    res.status(200).json(result);
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function getReport(req: Request, res: Response, next: NextFunction) {
+  try {
+    requireAdmin(req);
+    const result = await reportsService.getReport(getParam(req, "id"));
+    res.status(200).json(result);
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function updateReport(req: Request, res: Response, next: NextFunction) {
+  try {
+    const admin = requireAdmin(req);
+    const result = await reportsService.updateReport(
+      admin.id,
+      getParam(req, "id"),
+      req.body
+    );
+    res.status(200).json(result);
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function openReportsCount(
+  req: Request,
+  res: Response,
+  next: NextFunction
+) {
+  try {
+    requireAdmin(req);
+    const count = await reportsService.countOpenReports();
+    res.status(200).json({ count });
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function setReviewVisibility(
+  req: Request,
+  res: Response,
+  next: NextFunction
+) {
+  try {
+    const admin = requireAdmin(req);
+    const result = await reportsService.setReviewVisibility(
+      admin.id,
+      getParam(req, "id"),
+      req.body.hidden
     );
     res.status(200).json(result);
   } catch (error) {

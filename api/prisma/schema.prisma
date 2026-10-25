@@ -40,6 +40,21 @@ enum ListingStatus {
   ARCHIVED
 }
 
+enum ReportTargetType {
+  PROPERTY
+  SERVICE
+  USER
+  MESSAGE
+  REVIEW
+}
+
+enum ReportStatus {
+  OPEN
+  IN_PROGRESS
+  RESOLVED
+  DISMISSED
+}
+
 enum OfferType {
   RENT
   SALE
@@ -133,8 +148,10 @@ model User {
   alerts                  Alert[]
   notifications           Notification[]
   adminActions            AdminAction[]
-  refreshTokens RefreshToken[]
-  userTokens    UserToken[]
+  refreshTokens           RefreshToken[]
+  userTokens              UserToken[]
+  reportsFiled            Report[]       @relation("ReportReporter")
+  reportsResolved         Report[]       @relation("ReportResolver")
 
   @@index([email])
   @@index([phone])
@@ -475,6 +492,7 @@ model Review {
   propertyId String?  @db.Uuid
   rating     Int
   comment    String?
+  isHidden   Boolean  @default(false)
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
 
@@ -538,6 +556,29 @@ model Notification {
   @@index([userId])
   @@index([type])
   @@index([readAt])
+}
+
+model Report {
+  id           String           @id @default(uuid()) @db.Uuid
+  reporterId   String           @db.Uuid
+  targetType   ReportTargetType
+  targetId     String           @db.Uuid
+  reason       String
+  details      String?
+  status       ReportStatus     @default(OPEN)
+  adminNote    String?
+  resolvedById String?          @db.Uuid
+  resolvedAt   DateTime?
+  createdAt    DateTime         @default(now())
+  updatedAt    DateTime         @updatedAt
+
+  reporter   User  @relation("ReportReporter", fields: [reporterId], references: [id], onDelete: Cascade)
+  resolvedBy User? @relation("ReportResolver", fields: [resolvedById], references: [id], onDelete: SetNull)
+
+  @@index([status])
+  @@index([targetType, targetId])
+  @@index([reporterId])
+  @@index([createdAt])
 }
 
 model AdminAction {

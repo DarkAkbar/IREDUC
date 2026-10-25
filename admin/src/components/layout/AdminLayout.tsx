@@ -6,6 +6,7 @@ import {
   ChevronRight,
   ClipboardList,
   FolderTree,
+  Flag,
   MapPin,
   Home,
   Inbox,
@@ -28,6 +29,7 @@ import { CommandPalette } from "@/components/layout/CommandPalette";
 import { useAuth } from "@/context/AuthContext";
 import { useTheme } from "@/context/ThemeContext";
 import { usePrefersReducedMotion } from "@/hooks/usePrefersReducedMotion";
+import { api } from "@/lib/api";
 import { isSuperAdmin } from "@/lib/auth-storage";
 import { cn } from "@/lib/utils";
 
@@ -52,6 +54,7 @@ const navGroups = [
       { to: "/partners", label: "Partenaires", icon: Store, roles: ["ADMIN", "SUPER_ADMIN"] },
       { to: "/properties", label: "Annonces", icon: Building2, roles: ["ADMIN", "SUPER_ADMIN"] },
       { to: "/services", label: "Services", icon: Wrench, roles: ["ADMIN", "SUPER_ADMIN"] },
+      { to: "/reports", label: "Signalements", icon: Flag, roles: ["ADMIN", "SUPER_ADMIN"] },
     ],
   },
   {
@@ -77,6 +80,7 @@ const pageTitles: Record<string, string> = {
   "/partners": "Partenaires",
   "/properties": "Annonces",
   "/services": "Services",
+  "/reports": "Signalements",
   "/requests": "Demandes",
   "/users": "Utilisateurs",
   "/settings": "Paramètres",
@@ -112,6 +116,16 @@ export function AdminLayout() {
     .toUpperCase();
 
   const apiBase = (import.meta.env.VITE_API_URL as string) ?? "";
+  const openReportsQuery = useQuery({
+    queryKey: ["admin-reports-open-count"],
+    queryFn: async () => {
+      const { data } = await api.get<{ count: number }>("/admin/reports/open-count");
+      return data;
+    },
+    refetchInterval: 60_000,
+  });
+  const openReportsCount = openReportsQuery.data?.count ?? 0;
+
   const healthQuery = useQuery({
     queryKey: ["health-info"],
     enabled: import.meta.env.DEV,
@@ -211,7 +225,16 @@ export function AdminLayout() {
                             />
                           ) : null}
                           <item.icon size={18} className="shrink-0" />
-                          {!collapsed ? <span className="truncate">{item.label}</span> : null}
+                          {!collapsed ? (
+                            <span className="flex min-w-0 flex-1 items-center gap-2 truncate">
+                              {item.label}
+                              {item.to === "/reports" && openReportsCount > 0 ? (
+                                <span className="rounded-full bg-ireduc-red px-2 py-0.5 text-[10px] font-bold text-white">
+                                  {openReportsCount > 99 ? "99+" : openReportsCount}
+                                </span>
+                              ) : null}
+                            </span>
+                          ) : null}
                         </>
                       )}
                     </NavLink>

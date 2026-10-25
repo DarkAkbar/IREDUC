@@ -17,6 +17,7 @@ import { mediaUrl } from "../../api/client";
 import { fetchProperty } from "../../api/properties";
 import { DetailGallery } from "../../components/detail/DetailGallery";
 import { FavoriteButton } from "../../components/FavoriteButton";
+import { ReportButton } from "../../components/ReportButton";
 import { ErrorState } from "../../components/list/ErrorState";
 import { ListScreenHeader } from "../../components/list/ListScreenHeader";
 import { Badge } from "../../components/ui/Badge";
@@ -232,6 +233,12 @@ export default function PropertyDetailScreen() {
                 <Text style={styles.secondaryLabel}>Créer une alerte</Text>
               </Pressable>
             </View>
+
+            <ReportButton
+              targetType="PROPERTY"
+              targetId={property.id}
+              returnTo={`/property/${property.id}`}
+            />
 
             <Pressable style={styles.whatsapp} onPress={() => void shareWhatsApp()}>
               <Ionicons name="logo-whatsapp" size={18} color={colors.whatsapp} />

@@ -2,6 +2,8 @@ import {
   AccountStatus,
   CategoryKind,
   ListingStatus,
+  ReportStatus,
+  ReportTargetType,
   RequestStatus,
   RequestTarget,
   ReviewStatus,
@@ -207,6 +209,25 @@ export const updateRejectionReasonSchema = z
   .refine((data) => Object.keys(data).length > 0, {
     message: "Aucun champ à mettre à jour",
   });
+
+export const adminReportsQuerySchema = paginationQuerySchema.extend({
+  status: z.nativeEnum(ReportStatus).optional(),
+  targetType: z.nativeEnum(ReportTargetType).optional(),
+});
+
+export const updateReportSchema = z
+  .object({
+    status: z.nativeEnum(ReportStatus).optional(),
+    adminNote: z.string().max(2000).nullable().optional(),
+    action: z.enum(["hide_content", "suspend_user", "dismiss"]).optional(),
+  })
+  .refine((data) => Object.keys(data).length > 0, {
+    message: "Aucun champ à mettre à jour",
+  });
+
+export const reviewVisibilitySchema = z.object({
+  hidden: z.boolean(),
+});
 
 export const adminCategoriesQuerySchema = z.object({
   parentId: z

@@ -19,6 +19,7 @@ import { homeRouter } from "./modules/home/home.routes";
 import { notificationsRouter } from "./modules/notifications/notifications.routes";
 import { propertiesRouter } from "./modules/properties/properties.routes";
 import { providersRouter } from "./modules/providers/providers.routes";
+import { reportsRouter } from "./modules/reports/reports.routes";
 import { requestsRouter } from "./modules/requests/requests.routes";
 import { reviewsRouter } from "./modules/reviews/reviews.routes";
 import { servicesRouter } from "./modules/services/services.routes";
@@ -69,6 +70,7 @@ export function createApp() {
   app.use("/api/v1/favorites", favoritesRouter);
   app.use("/api/v1/alerts", alertsRouter);
   app.use("/api/v1/reviews", reviewsRouter);
+  app.use("/api/v1/reports", reportsRouter);
   app.use("/api/v1/notifications", notificationsRouter);
   app.use("/api/v1/admin", adminRouter);
 

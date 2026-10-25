@@ -799,6 +799,52 @@ export const swaggerSpec = swaggerJsdoc({
           responses: { "200": { description: "Liste paginée" } },
         },
       },
+      "/api/v1/reports": {
+        post: {
+          tags: ["Reports"],
+          summary: "Signaler un contenu (authentifié)",
+          security: [{ bearerAuth: [] }],
+          responses: { "201": { description: "Signalement créé" } },
+        },
+      },
+      "/api/v1/admin/reports": {
+        get: {
+          tags: ["Admin"],
+          summary: "Liste des signalements",
+          security: [{ bearerAuth: [] }],
+          responses: { "200": { description: "Liste paginée" } },
+        },
+      },
+      "/api/v1/admin/reports/open-count": {
+        get: {
+          tags: ["Admin"],
+          summary: "Nombre de signalements ouverts",
+          security: [{ bearerAuth: [] }],
+          responses: { "200": { description: "Compteur" } },
+        },
+      },
+      "/api/v1/admin/reports/{id}": {
+        get: {
+          tags: ["Admin"],
+          summary: "Détail d'un signalement",
+          security: [{ bearerAuth: [] }],
+          responses: { "200": { description: "Détail" } },
+        },
+        patch: {
+          tags: ["Admin"],
+          summary: "Modérer un signalement",
+          security: [{ bearerAuth: [] }],
+          responses: { "200": { description: "Mis à jour" } },
+        },
+      },
+      "/api/v1/admin/reviews/{id}/visibility": {
+        patch: {
+          tags: ["Admin"],
+          summary: "Masquer ou afficher un avis",
+          security: [{ bearerAuth: [] }],
+          responses: { "200": { description: "Visibilité mise à jour" } },
+        },
+      },
       "/api/v1/admin/communes": {
         get: {
           tags: ["Admin"],

@@ -25,8 +25,11 @@ import {
   updateCommuneSchema,
   updateNeighborhoodSchema,
   updateRejectionReasonSchema,
+  updateReportSchema,
   updateSettingSchema,
   updateUserStatusSchema,
+  adminReportsQuerySchema,
+  reviewVisibilitySchema,
   adminCategoriesQuerySchema,
   createCommuneSchema,
   createNeighborhoodSchema,
@@ -172,6 +175,30 @@ adminRouter.get(
   "/audit-log",
   validate(auditLogQuerySchema, "query"),
   adminController.listAuditLog
+);
+
+adminRouter.get("/reports/open-count", adminController.openReportsCount);
+adminRouter.get(
+  "/reports",
+  validate(adminReportsQuerySchema, "query"),
+  adminController.listReports
+);
+adminRouter.get(
+  "/reports/:id",
+  validate(adminIdParamsSchema, "params"),
+  adminController.getReport
+);
+adminRouter.patch(
+  "/reports/:id",
+  validate(adminIdParamsSchema, "params"),
+  validate(updateReportSchema),
+  adminController.updateReport
+);
+adminRouter.patch(
+  "/reviews/:id/visibility",
+  validate(adminIdParamsSchema, "params"),
+  validate(reviewVisibilitySchema),
+  adminController.setReviewVisibility
 );
 
 adminRouter.get(
