@@ -18,6 +18,8 @@ export const DEFAULT_SETTINGS: Record<SettingKey, unknown> = {
     launchCity: "Kinshasa",
     supportWhatsapp: "+243810000000",
     contactEmail: "contact@ireduc.cd",
+    /** Délai indicatif de traitement des dossiers partenaires (heures). */
+    partnerReviewSlaHours: 48,
   },
   mobile: {
     minAppVersion: "1.0.0",

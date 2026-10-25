@@ -251,6 +251,11 @@ export const swaggerSpec = swaggerJsdoc({
                       minAppVersion: { type: "string", example: "1.0.0" },
                       maintenanceMode: { type: "boolean" },
                       maintenanceMessage: { type: "string" },
+                      partnerReviewSlaHours: {
+                        type: "integer",
+                        example: 48,
+                        description: "Délai indicatif de traitement des dossiers",
+                      },
                       legal: {
                         type: "object",
                         properties: {
@@ -450,23 +455,43 @@ export const swaggerSpec = swaggerJsdoc({
       "/api/v1/providers": {
         post: {
           tags: ["Providers"],
-          summary: "Devenir partenaire (profil PENDING)",
+          summary: "Créer un dossier partenaire (brouillon DRAFT)",
           security: [{ bearerAuth: [] }],
-          responses: { "201": { description: "Profil créé" } },
+          responses: { "201": { description: "Brouillon créé" } },
         },
       },
       "/api/v1/providers/me": {
         get: {
           tags: ["Providers"],
-          summary: "Mon profil partenaire",
+          summary:
+            "Dossier partenaire complet (statut, reviewNote, documents, historique)",
           security: [{ bearerAuth: [] }],
           responses: { "200": { description: "Profil partenaire" } },
         },
         patch: {
           tags: ["Providers"],
-          summary: "Mettre à jour mon profil partenaire",
+          summary: "Mettre à jour le brouillon / dossier corrigible",
           security: [{ bearerAuth: [] }],
           responses: { "200": { description: "Profil mis à jour" } },
+        },
+      },
+      "/api/v1/providers/me/submit": {
+        post: {
+          tags: ["Providers"],
+          summary: "Soumettre le dossier (DRAFT → PENDING)",
+          security: [{ bearerAuth: [] }],
+          responses: {
+            "200": { description: "Dossier soumis" },
+            "400": { description: "Pièces manquantes" },
+          },
+        },
+      },
+      "/api/v1/providers/me/withdraw": {
+        post: {
+          tags: ["Providers"],
+          summary: "Retirer une demande en attente (PENDING → DRAFT)",
+          security: [{ bearerAuth: [] }],
+          responses: { "200": { description: "Demande retirée" } },
         },
       },
       "/api/v1/providers/me/documents": {

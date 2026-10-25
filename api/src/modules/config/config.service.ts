@@ -10,6 +10,7 @@ type GeneralSettings = {
   slogan?: string;
   defaultCurrency?: string;
   launchCity?: string;
+  partnerReviewSlaHours?: number;
 };
 
 type MobileSettings = {
@@ -47,5 +48,6 @@ export async function getPublicConfig() {
       termsUrl: mobile.termsUrl ?? env.LEGAL_TERMS_URL,
       privacyUrl: mobile.privacyUrl ?? env.LEGAL_PRIVACY_URL,
     },
+    partnerReviewSlaHours: general.partnerReviewSlaHours ?? 48,
   };
 }
