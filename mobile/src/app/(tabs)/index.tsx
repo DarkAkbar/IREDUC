@@ -28,7 +28,6 @@ import { Button } from "../../components/ui/Button";
 import { SearchBar } from "../../components/ui/SearchBar";
 import { SectionHeader } from "../../components/ui/SectionHeader";
 import { HomeSkeleton } from "../../components/ui/SkeletonLoader";
-import { useOpenPublish } from "../../hooks/useOpenPublish";
 import { useRequireAuth } from "../../hooks/useRequireAuth";
 import { useAuthStore } from "../../store/authStore";
 import { colors, radii, spacing, typography } from "../../theme";
@@ -40,7 +39,6 @@ export default function HomeScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const { requireAuth } = useRequireAuth();
-  const { openPublish } = useOpenPublish();
   const { onScroll: onFabScroll } = usePublishFabScroll();
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
 
@@ -101,17 +99,6 @@ export default function HomeScreen() {
               <Ionicons name="location" size={14} color={colors.primary} />
               <Text style={styles.cityText}>Kinshasa</Text>
               <Ionicons name="chevron-down" size={14} color={colors.navy} />
-            </Pressable>
-            <Pressable
-              style={styles.publishPill}
-              onPress={() => openPublish()}
-              accessibilityRole="button"
-              accessibilityLabel="+ Publier"
-              accessibilityHint="Ouvre le choix du type d'annonce"
-              hitSlop={4}
-            >
-              <Ionicons name="add" size={16} color={colors.white} />
-              <Text style={styles.publishPillText}>Publier</Text>
             </Pressable>
             <Pressable
               style={styles.bell}
@@ -202,8 +189,6 @@ export default function HomeScreen() {
                 />
               </View>
             </View>
-
-            <PartnerHomeBanner />
 
             <View style={styles.section}>
               <SectionHeader
@@ -303,6 +288,8 @@ export default function HomeScreen() {
                 )}
               </View>
             ))}
+
+            <PartnerHomeBanner />
           </>
         ) : null}
       </ScrollView>
@@ -334,19 +321,6 @@ const styles = StyleSheet.create({
     borderColor: colors.border,
   },
   cityText: { color: colors.navy, fontWeight: "700", fontSize: 13 },
-  publishPill: {
-    minHeight: 48,
-    minWidth: 48,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 2,
-    backgroundColor: colors.primary,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: radii.pill,
-  },
-  publishPillText: { color: colors.white, fontWeight: "800", fontSize: 13 },
   bell: {
     minWidth: 48,
     minHeight: 48,
