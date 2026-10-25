@@ -1,6 +1,8 @@
 import { Building2, Home, Inbox, Search, Store, Users, Wrench } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
+import { api } from "@/lib/api";
 import { cn } from "@/lib/utils";
 
 const routes = [
@@ -21,6 +23,19 @@ export function CommandPalette({
 }) {
   const navigate = useNavigate();
   const [q, setQ] = useState("");
+
+  const searchQuery = useQuery({
+    queryKey: ["admin-search", q],
+    enabled: open && q.trim().length >= 2,
+    queryFn: async () => {
+      const { data } = await api.get<{
+        users: Array<{ id: string; fullName: string }>;
+        properties: Array<{ id: string; title: string }>;
+        requests: Array<{ id: string; number: string }>;
+      }>("/admin/search", { params: { q: q.trim() } });
+      return data;
+    },
+  });
 
   const filtered = useMemo(() => {
     const needle = q.trim().toLowerCase();
@@ -95,6 +110,36 @@ export function CommandPalette({
               Aucun résultat
             </li>
           ) : null}
+          {searchQuery.data?.users.slice(0, 3).map((u) => (
+            <li key={u.id}>
+              <button
+                type="button"
+                className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-sm hover:bg-ireduc-navy-soft"
+                onClick={() => {
+                  navigate(`/users/${u.id}`);
+                  onClose();
+                }}
+              >
+                <Users size={16} />
+                {u.fullName}
+              </button>
+            </li>
+          ))}
+          {searchQuery.data?.properties.slice(0, 3).map((p) => (
+            <li key={p.id}>
+              <button
+                type="button"
+                className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-sm hover:bg-ireduc-navy-soft"
+                onClick={() => {
+                  navigate(`/properties/${p.id}`);
+                  onClose();
+                }}
+              >
+                <Building2 size={16} />
+                {p.title}
+              </button>
+            </li>
+          ))}
         </ul>
       </div>
     </div>
