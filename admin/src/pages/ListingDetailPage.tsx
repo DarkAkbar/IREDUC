@@ -7,6 +7,7 @@ import { Badge, statusTone } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Spinner } from "@/components/ui/spinner";
+import { useToast } from "@/components/ui/toast";
 import { api, getErrorMessage } from "@/lib/api";
 import { resolveMediaUrl } from "@/lib/media";
 import { formatDate, formatMoney, statusLabel } from "@/lib/utils";
@@ -26,7 +27,7 @@ type ListingDetail = {
   category?: { name: string } | null;
   owner?: {
     fullName: string;
-    email?: string;
+    email?: string | null;
     phone?: string | null;
   } | null;
   providerProfile?: {
@@ -46,6 +47,7 @@ export function ListingDetailPage({
   const { id = "" } = useParams();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const { pushToast } = useToast();
   const [dialog, setDialog] = useState<"approve" | "reject" | null>(null);
   const [message, setMessage] = useState<string | null>(null);
   const label = kind === "properties" ? "annonce" : "service";
@@ -61,23 +63,31 @@ export function ListingDetailPage({
   });
 
   const reviewMutation = useMutation({
-    mutationFn: async (payload: { decision: "APPROVED" | "REJECTED"; reason: string }) => {
+    mutationFn: async (payload: {
+      decision: "APPROVED" | "REJECTED";
+      reason: string;
+    }) => {
       const { data: body } = await api.patch<{ nextPendingId?: string | null }>(
         `/admin/${kind}/${id}/review`,
         {
           decision: payload.decision,
-          reason: payload.reason || undefined,
+          reason: payload.reason.trim() || undefined,
         }
       );
       return body;
     },
-    onSuccess: async (body) => {
+    onSuccess: async (body, variables) => {
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: [`admin-${kind}`] }),
         queryClient.invalidateQueries({ queryKey: [`admin-${kind}-detail`] }),
         queryClient.invalidateQueries({ queryKey: ["admin-stats"] }),
         queryClient.invalidateQueries({ queryKey: ["health-info"] }),
       ]);
+      const okMsg =
+        variables.decision === "APPROVED"
+          ? `${label[0]!.toUpperCase()}${label.slice(1)} approuvée.`
+          : `${label[0]!.toUpperCase()}${label.slice(1)} rejetée.`;
+      pushToast(okMsg, "success");
       setMessage(
         body.nextPendingId
           ? "Décision enregistrée. Ouverture de l'élément suivant…"
@@ -104,6 +114,7 @@ export function ListingDetailPage({
         queryClient.invalidateQueries({ queryKey: [`admin-${kind}`] }),
         queryClient.invalidateQueries({ queryKey: ["admin-stats"] }),
       ]);
+      pushToast("Mise à la une mise à jour.", "success");
       setMessage("Mise à la une mise à jour.");
     },
   });
@@ -130,10 +141,18 @@ export function ListingDetailPage({
         <div className="flex flex-wrap gap-2">
           {data.status === "PENDING" ? (
             <>
-              <Button variant="success" onClick={() => setDialog("approve")}>
+              <Button
+                variant="success"
+                disabled={reviewMutation.isPending}
+                onClick={() => setDialog("approve")}
+              >
                 Approuver
               </Button>
-              <Button variant="danger" onClick={() => setDialog("reject")}>
+              <Button
+                variant="danger"
+                disabled={reviewMutation.isPending}
+                onClick={() => setDialog("reject")}
+              >
                 Rejeter
               </Button>
             </>
@@ -143,7 +162,11 @@ export function ListingDetailPage({
             disabled={featureMutation.isPending}
             onClick={() => featureMutation.mutate(!data.isFeatured)}
           >
-            {data.isFeatured ? "Retirer de la une" : "Mettre à la une"}
+            {featureMutation.isPending
+              ? "Traitement…"
+              : data.isFeatured
+                ? "Retirer de la une"
+                : "Mettre à la une"}
           </Button>
         </div>
       </div>
@@ -222,15 +245,15 @@ export function ListingDetailPage({
             {data.owner ? (
               <>
                 <p>{data.owner.fullName}</p>
-                <p>{data.owner.email ?? "—"}</p>
                 <p>{data.owner.phone ?? "—"}</p>
+                <p>{data.owner.email ?? "—"}</p>
               </>
             ) : null}
             {data.providerProfile ? (
               <>
                 <p>{data.providerProfile.displayName}</p>
-                <p>{data.providerProfile.contactEmail ?? "—"}</p>
                 <p>{data.providerProfile.phone ?? "—"}</p>
+                <p>{data.providerProfile.contactEmail ?? "—"}</p>
               </>
             ) : null}
             {!data.owner && !data.providerProfile ? (

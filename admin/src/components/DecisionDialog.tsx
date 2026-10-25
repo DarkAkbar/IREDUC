@@ -72,19 +72,22 @@ export function DecisionDialog({
         </>
       }
     >
-      {(requireReason || true) && (
-        <div className="space-y-2">
-          <label className="text-sm font-medium text-slate-700">
-            Motif {requireReason ? "(obligatoire)" : "(optionnel)"}
-          </label>
-          <Textarea
-            value={reason}
-            onChange={(e) => setReason(e.target.value)}
-            placeholder="Saisir un motif…"
-          />
-          {error ? <p className="text-sm text-ireduc-red">{error}</p> : null}
-        </div>
-      )}
+      <div className="space-y-2">
+        <label className="text-sm font-medium text-slate-700">
+          Motif {requireReason ? "(obligatoire)" : "(optionnel)"}
+        </label>
+        <Textarea
+          value={reason}
+          onChange={(e) => setReason(e.target.value)}
+          placeholder="Saisir un motif…"
+          disabled={loading}
+        />
+        {error ? (
+          <p className="text-sm font-medium text-ireduc-red" role="alert">
+            {error}
+          </p>
+        ) : null}
+      </div>
     </Dialog>
   );
 }

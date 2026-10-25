@@ -71,9 +71,27 @@ api.interceptors.response.use(
 
 export function getErrorMessage(error: unknown, fallback = "Une erreur est survenue") {
   if (axios.isAxiosError(error)) {
-    const message = error.response?.data?.message;
+    const data = error.response?.data as
+      | {
+          message?: string | string[];
+          details?: Array<{ path?: string; message?: string }>;
+        }
+      | undefined;
+    const details = data?.details
+      ?.map((d) => d.message)
+      .filter((m): m is string => Boolean(m));
+    if (details && details.length > 0) {
+      return details.join(" · ");
+    }
+    const message = data?.message;
     if (typeof message === "string") return message;
     if (Array.isArray(message)) return message.join(", ");
+    if (error.response?.status === 401) {
+      return "Session expirée. Reconnectez-vous.";
+    }
+    if (error.response?.status === 403) {
+      return "Permissions insuffisantes pour cette action.";
+    }
   }
   if (error instanceof Error) return error.message;
   return fallback;

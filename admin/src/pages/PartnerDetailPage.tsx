@@ -7,6 +7,7 @@ import { Badge, statusTone } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Spinner } from "@/components/ui/spinner";
+import { useToast } from "@/components/ui/toast";
 import { api, getErrorMessage } from "@/lib/api";
 import { docTypeLabel, resolveMediaUrl } from "@/lib/media";
 import { formatDate, statusLabel } from "@/lib/utils";
@@ -26,7 +27,7 @@ type ProviderDetail = {
   yearsOfExperience?: number | null;
   user: {
     fullName: string;
-    email: string;
+    email: string | null;
     phone?: string | null;
     whatsapp?: string | null;
   };
@@ -51,6 +52,7 @@ export function PartnerDetailPage() {
   const { id = "" } = useParams();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const { pushToast } = useToast();
   const [dialog, setDialog] = useState<"approve" | "reject" | "complement" | null>(
     null
   );
@@ -74,28 +76,36 @@ export function PartnerDetailPage() {
         await api.patch(`/admin/providers/${id}/request-complement`, {
           reason: payload.reason,
         });
-        return;
+        return { nextPendingId: null as string | null };
       }
-      await api.patch(`/admin/providers/${id}/review`, {
-        decision: payload.kind === "approve" ? "APPROVED" : "REJECTED",
-        reason: payload.reason || undefined,
-      });
+      const { data: body } = await api.patch<{ nextPendingId?: string | null }>(
+        `/admin/providers/${id}/review`,
+        {
+          decision: payload.kind === "approve" ? "APPROVED" : "REJECTED",
+          reason: payload.reason.trim() || undefined,
+        }
+      );
+      return body;
     },
-    onSuccess: async (_data, variables) => {
+    onSuccess: async (body, variables) => {
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: ["admin-providers"] }),
-        queryClient.invalidateQueries({ queryKey: ["admin-provider", id] }),
+        queryClient.invalidateQueries({ queryKey: ["admin-provider"] }),
         queryClient.invalidateQueries({ queryKey: ["admin-stats"] }),
         queryClient.invalidateQueries({ queryKey: ["health-info"] }),
       ]);
-      setMessage(
+      const okMsg =
         variables.kind === "approve"
           ? "Partenaire approuvé."
           : variables.kind === "reject"
             ? "Partenaire rejeté."
-            : "Demande de complément envoyée."
-      );
-      if (variables.kind !== "complement") {
+            : "Demande de complément envoyée.";
+      pushToast(okMsg, "success");
+      setMessage(okMsg);
+      if (variables.kind === "complement") return;
+      if (body.nextPendingId) {
+        navigate(`/partners/${body.nextPendingId}`);
+      } else {
         navigate("/partners?status=PENDING");
       }
     },
@@ -124,13 +134,25 @@ export function PartnerDetailPage() {
         </div>
         {data.reviewStatus === "PENDING" ? (
           <div className="flex flex-wrap gap-2">
-            <Button variant="success" onClick={() => setDialog("approve")}>
+            <Button
+              variant="success"
+              disabled={mutation.isPending}
+              onClick={() => setDialog("approve")}
+            >
               Approuver
             </Button>
-            <Button variant="danger" onClick={() => setDialog("reject")}>
+            <Button
+              variant="danger"
+              disabled={mutation.isPending}
+              onClick={() => setDialog("reject")}
+            >
               Rejeter
             </Button>
-            <Button variant="outline" onClick={() => setDialog("complement")}>
+            <Button
+              variant="outline"
+              disabled={mutation.isPending}
+              onClick={() => setDialog("complement")}
+            >
               Demander un complément
             </Button>
           </div>
@@ -149,12 +171,15 @@ export function PartnerDetailPage() {
           </CardHeader>
           <CardContent className="space-y-2 text-sm">
             <p>
-              <span className="text-slate-500">Compte :</span> {data.user.fullName} (
-              {data.user.email})
+              <span className="text-slate-500">Compte :</span> {data.user.fullName}
             </p>
             <p>
               <span className="text-slate-500">Téléphone :</span>{" "}
               {data.phone ?? data.user.phone ?? "—"}
+            </p>
+            <p>
+              <span className="text-slate-500">E-mail :</span>{" "}
+              {data.user.email ?? "—"}
             </p>
             <p>
               <span className="text-slate-500">WhatsApp :</span>{" "}
