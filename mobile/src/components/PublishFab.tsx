@@ -21,6 +21,8 @@ type Props = {
   aboveTabs?: boolean;
 };
 
+/** À monter uniquement sur Accueil, Rechercher et Mes annonces. */
+
 /** Hauteur visuelle du bouton (pastille ou étendu). */
 export const PUBLISH_FAB_SIZE = 56;
 /** Écart au-dessus de la barre d'onglets / du bas d'écran. */
