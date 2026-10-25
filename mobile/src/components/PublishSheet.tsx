@@ -197,6 +197,7 @@ export function PublishSheet() {
                 onPress={() => void onSelect(option)}
                 accessibilityRole="button"
                 accessibilityLabel={option.title}
+                accessibilityHint={option.description}
               >
                 <View style={styles.iconWrap}>
                   <Ionicons name={option.icon} size={22} color={colors.navy} />

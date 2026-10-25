@@ -107,6 +107,8 @@ export default function HomeScreen() {
               onPress={() => openPublish()}
               accessibilityRole="button"
               accessibilityLabel="+ Publier"
+              accessibilityHint="Ouvre le choix du type d'annonce"
+              hitSlop={4}
             >
               <Ionicons name="add" size={16} color={colors.white} />
               <Text style={styles.publishPillText}>Publier</Text>

@@ -18,6 +18,7 @@ const TAB_BAR_OFFSET = 72;
 export function PublishFab({ hidden = false, aboveTabs = true }: Props) {
   const insets = useSafeAreaInsets();
   const { openPublish } = useOpenPublish();
+  const sheetVisible = usePublishSheetStore((s) => s.visible);
   const collapsed = usePublishSheetStore((s) => s.fabCollapsed);
   const storeHidden = usePublishSheetStore((s) => s.fabHidden);
   const widthAnim = useRef(new Animated.Value(collapsed ? 0 : 1)).current;
@@ -30,7 +31,7 @@ export function PublishFab({ hidden = false, aboveTabs = true }: Props) {
     }).start();
   }, [collapsed, widthAnim]);
 
-  if (hidden || storeHidden) return null;
+  if (hidden || storeHidden || sheetVisible) return null;
 
   const labelOpacity = widthAnim;
   const extraWidth = widthAnim.interpolate({
@@ -47,6 +48,8 @@ export function PublishFab({ hidden = false, aboveTabs = true }: Props) {
         onPress={() => openPublish()}
         accessibilityRole="button"
         accessibilityLabel="+ Publier"
+        accessibilityHint="Ouvre le choix du type d'annonce"
+        hitSlop={4}
         style={({ pressed }) => [styles.fab, pressed && styles.fabPressed]}
       >
         <Ionicons name="add" size={26} color={colors.white} />
