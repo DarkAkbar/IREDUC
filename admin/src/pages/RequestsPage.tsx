@@ -1,15 +1,18 @@
 import { useQuery } from "@tanstack/react-query";
-import { RefreshCw } from "lucide-react";
+import { Eye, RefreshCw } from "lucide-react";
 import { useMemo, useState } from "react";
-import { Link, useSearchParams } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { Alert } from "@/components/ui/alert";
-import { Badge, statusTone } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
+import { DataTable } from "@/components/ui/DataTable";
+import { FilterChips } from "@/components/ui/FilterChips";
 import { Input } from "@/components/ui/input";
+import { PageHeader } from "@/components/ui/PageHeader";
 import { Pagination } from "@/components/ui/pagination";
 import { Select } from "@/components/ui/select";
-import { Spinner } from "@/components/ui/spinner";
+import { TableSkeleton } from "@/components/ui/Skeleton";
+import { StatusBadge, statusTone } from "@/components/ui/StatusBadge";
 import { api, getErrorMessage } from "@/lib/api";
 import { formatDate, statusLabel } from "@/lib/utils";
 
@@ -30,6 +33,7 @@ type PageResult = {
 };
 
 export function RequestsPage() {
+  const navigate = useNavigate();
   const [params, setParams] = useSearchParams();
   const status = params.get("status") ?? "";
   const type = params.get("type") ?? "";
@@ -80,40 +84,40 @@ export function RequestsPage() {
 
   return (
     <div className="space-y-4">
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <p className="text-sm text-ireduc-muted">
-          Supervision des demandes (annulation administrative possible avec motif).
-        </p>
-        <Button
-          type="button"
-          variant="outline"
-          size="sm"
-          disabled={isFetching}
-          onClick={() => void refetch()}
-        >
-          <RefreshCw size={14} className={isFetching ? "animate-spin" : undefined} />
-          Actualiser
-        </Button>
-      </div>
+      <PageHeader
+        title="Demandes"
+        description="Supervision des demandes (annulation administrative possible avec motif)."
+        actions={
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            disabled={isFetching}
+            onClick={() => void refetch()}
+          >
+            <RefreshCw size={14} className={isFetching ? "animate-spin" : undefined} />
+            Actualiser
+          </Button>
+        }
+      />
 
       <Card>
-        <CardHeader>
-          <CardTitle>Filtres</CardTitle>
-        </CardHeader>
-        <CardContent className="flex flex-col gap-3">
+        <CardContent className="space-y-4">
+          <FilterChips
+            value={status || "ALL"}
+            onChange={(value) =>
+              update({ status: value === "ALL" ? "" : value, page: "1" })
+            }
+            options={[
+              { value: "ALL", label: "Toutes" },
+              { value: "PENDING", label: "En attente" },
+              { value: "APPROVED", label: "Approuvées" },
+              { value: "REJECTED", label: "Rejetées" },
+              { value: "CANCELLED", label: "Annulées" },
+              { value: "COMPLETED", label: "Terminées" },
+            ]}
+          />
           <div className="flex flex-col gap-3 md:flex-row">
-            <Select
-              value={status}
-              onChange={(e) => update({ status: e.target.value, page: "1" })}
-              className="md:w-44"
-            >
-              <option value="">Tous les statuts</option>
-              <option value="PENDING">En attente</option>
-              <option value="APPROVED">Approuvée</option>
-              <option value="REJECTED">Rejetée</option>
-              <option value="CANCELLED">Annulée</option>
-              <option value="COMPLETED">Terminée</option>
-            </Select>
             <Select
               value={type}
               onChange={(e) => update({ type: e.target.value, page: "1" })}
@@ -148,94 +152,110 @@ export function RequestsPage() {
               value={search}
               onChange={(e) => setSearch(e.target.value)}
             />
-            <button
-              type="submit"
-              className="rounded-md bg-ireduc-navy px-4 text-sm text-white"
-            >
+            <Button type="submit" variant="navy">
               Rechercher
-            </button>
+            </Button>
           </form>
         </CardContent>
       </Card>
 
-      {isLoading ? <Spinner /> : null}
       {error ? <Alert tone="error">{getErrorMessage(error)}</Alert> : null}
 
-      {data ? (
-        <Card>
-          <CardContent className="overflow-x-auto p-0">
-            <table className="min-w-full text-left text-sm">
-              <thead className="border-b border-ireduc-border bg-slate-50/80 text-xs uppercase tracking-wide text-ireduc-muted">
-                <tr>
-                  <th className="px-4 py-3 font-semibold">N° IRD</th>
-                  <th className="px-4 py-3 font-semibold">Demandeur</th>
-                  <th className="px-4 py-3 font-semibold">Cible</th>
-                  <th className="px-4 py-3 font-semibold">Propriétaire</th>
-                  <th className="px-4 py-3 font-semibold">Statut</th>
-                  <th className="px-4 py-3 font-semibold">Date</th>
-                </tr>
-              </thead>
-              <tbody>
-                {data.data.map((row) => (
-                  <tr
-                    key={row.id}
-                    className="border-b border-ireduc-border/70 transition hover:bg-slate-50/70 last:border-0"
-                  >
-                    <td className="px-4 py-3">
-                      <Link
-                        to={`/requests/${row.id}`}
-                        className="font-medium text-ireduc-navy hover:underline"
-                      >
-                        {row.number}
-                      </Link>
-                    </td>
-                    <td className="px-4 py-3">
-                      <p className="font-medium text-ireduc-navy">
-                        {row.requester.fullName}
+      <Card>
+        {isLoading ? <TableSkeleton /> : null}
+        {data ? (
+          <>
+            <DataTable
+              rows={data.data}
+              emptyTitle="Aucune demande"
+              emptyDescription="Aucune demande pour ces filtres."
+              onRowClick={(row) => navigate(`/requests/${row.id}`)}
+              columns={[
+                {
+                  key: "number",
+                  header: "N° IRD",
+                  render: (row) => (
+                    <span className="font-extrabold text-ireduc-navy">
+                      {row.number}
+                    </span>
+                  ),
+                },
+                {
+                  key: "requester",
+                  header: "Demandeur",
+                  render: (row) => (
+                    <div>
+                      <p className="font-bold">{row.requester.fullName}</p>
+                      <p className="text-xs text-[var(--text-muted)]">
+                        {row.requester.phone}
                       </p>
-                      <p className="text-xs text-slate-500">{row.requester.phone}</p>
-                    </td>
-                    <td className="px-4 py-3">
-                      <p className="font-medium">
+                    </div>
+                  ),
+                },
+                {
+                  key: "target",
+                  header: "Cible",
+                  render: (row) => (
+                    <div>
+                      <p className="font-semibold">
                         {row.target.title ?? "—"}
                       </p>
-                      <p className="text-xs text-slate-500">
+                      <p className="text-xs text-[var(--text-muted)]">
                         {row.targetType === "PROPERTY" ? "Bien" : "Service"}
                       </p>
-                    </td>
-                    <td className="px-4 py-3">
+                    </div>
+                  ),
+                },
+                {
+                  key: "owner",
+                  header: "Propriétaire",
+                  render: (row) => (
+                    <div>
                       <p>{row.owner?.fullName ?? "—"}</p>
-                      <p className="text-xs text-slate-500">
+                      <p className="text-xs text-[var(--text-muted)]">
                         {row.owner?.phone ?? ""}
                       </p>
-                    </td>
-                    <td className="px-4 py-3">
-                      <Badge tone={statusTone(row.status)}>
-                        {statusLabel(row.status)}
-                      </Badge>
-                    </td>
-                    <td className="px-4 py-3">{formatDate(row.createdAt)}</td>
-                  </tr>
-                ))}
-                {data.data.length === 0 ? (
-                  <tr>
-                    <td colSpan={6} className="px-4 py-8 text-center text-slate-500">
-                      Aucune demande pour ces filtres.
-                    </td>
-                  </tr>
-                ) : null}
-              </tbody>
-            </table>
-          </CardContent>
-          <div className="px-4 pb-4">
-            <Pagination
-              page={data.meta.page}
-              totalPages={data.meta.totalPages}
-              onPageChange={(p) => update({ page: String(p) })}
+                    </div>
+                  ),
+                },
+                {
+                  key: "status",
+                  header: "Statut",
+                  render: (row) => (
+                    <StatusBadge tone={statusTone(row.status)}>
+                      {statusLabel(row.status)}
+                    </StatusBadge>
+                  ),
+                },
+                {
+                  key: "date",
+                  header: "Date",
+                  render: (row) => formatDate(row.createdAt),
+                },
+              ]}
+              rowActions={(row) => (
+                <Link
+                  to={`/requests/${row.id}`}
+                  className="inline-flex items-center gap-1 rounded-lg px-2 py-1 text-xs font-bold text-ireduc-navy hover:bg-ireduc-navy-soft"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <Eye size={14} />
+                  Voir
+                </Link>
+              )}
             />
-          </div>
-        </Card>
-      ) : null}
+            {data.data.length > 0 ? (
+              <div className="px-4 pb-4">
+                <Pagination
+                  page={data.meta.page}
+                  totalPages={data.meta.totalPages}
+                  onPageChange={(p) => update({ page: String(p) })}
+                />
+              </div>
+            ) : null}
+          </>
+        ) : null}
+      </Card>
     </div>
   );
 }

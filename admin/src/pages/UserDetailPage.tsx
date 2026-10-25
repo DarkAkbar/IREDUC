@@ -6,6 +6,7 @@ import { Alert } from "@/components/ui/alert";
 import { Badge, statusTone } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { PageHeader } from "@/components/ui/PageHeader";
 import { Spinner } from "@/components/ui/spinner";
 import { api, getErrorMessage } from "@/lib/api";
 import { formatDate, statusLabel } from "@/lib/utils";
@@ -64,21 +65,13 @@ export function UserDetailPage() {
 
   return (
     <div className="space-y-4">
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <div>
-          <Link to="/users" className="text-sm text-ireduc-navy hover:underline">
-            ← Retour aux utilisateurs
-          </Link>
-          <h1 className="mt-2 text-2xl font-bold text-ireduc-navy">{data.fullName}</h1>
-          <div className="mt-2 flex flex-wrap gap-2">
-            <Badge tone={statusTone(data.accountStatus)}>
-              {statusLabel(data.accountStatus)}
-            </Badge>
-            <Badge>{statusLabel(data.systemRole)}</Badge>
-          </div>
-        </div>
-        <div className="flex gap-2">
-          {data.accountStatus === "ACTIVE" ? (
+      <Link to="/users" className="text-sm font-semibold text-ireduc-navy hover:underline">
+        ← Retour aux utilisateurs
+      </Link>
+      <PageHeader
+        title={data.fullName}
+        actions={
+          data.accountStatus === "ACTIVE" ? (
             <Button variant="danger" onClick={() => setDialog("suspend")}>
               Suspendre
             </Button>
@@ -86,8 +79,14 @@ export function UserDetailPage() {
             <Button variant="success" onClick={() => setDialog("reactivate")}>
               Réactiver
             </Button>
-          )}
-        </div>
+          )
+        }
+      />
+      <div className="-mt-2 flex flex-wrap gap-2">
+        <Badge tone={statusTone(data.accountStatus)}>
+          {statusLabel(data.accountStatus)}
+        </Badge>
+        <Badge>{statusLabel(data.systemRole)}</Badge>
       </div>
 
       {message ? <Alert tone="success">{message}</Alert> : null}
@@ -101,22 +100,22 @@ export function UserDetailPage() {
         </CardHeader>
         <CardContent className="space-y-2 text-sm">
           <p>
-            <span className="text-slate-500">E-mail :</span> {data.email}
+            <span className="text-[var(--text-muted)]">E-mail :</span> {data.email}
             {data.emailVerified ? " (vérifié)" : " (non vérifié)"}
           </p>
           <p>
-            <span className="text-slate-500">Téléphone :</span> {data.phone ?? "—"}
+            <span className="text-[var(--text-muted)]">Téléphone :</span> {data.phone ?? "—"}
           </p>
           <p>
-            <span className="text-slate-500">WhatsApp :</span> {data.whatsapp ?? "—"}
+            <span className="text-[var(--text-muted)]">WhatsApp :</span> {data.whatsapp ?? "—"}
           </p>
           <p>
-            <span className="text-slate-500">Inscrit le :</span>{" "}
+            <span className="text-[var(--text-muted)]">Inscrit le :</span>{" "}
             {formatDate(data.createdAt)}
           </p>
           {data.providerProfile ? (
             <p>
-              <span className="text-slate-500">Profil partenaire :</span>{" "}
+              <span className="text-[var(--text-muted)]">Profil partenaire :</span>{" "}
               {data.providerProfile.displayName} (
               {statusLabel(data.providerProfile.reviewStatus)})
             </p>

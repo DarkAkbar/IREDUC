@@ -2,12 +2,14 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState, type FormEvent } from "react";
 import { DecisionDialog } from "@/components/DecisionDialog";
 import { Alert } from "@/components/ui/alert";
-import { Badge, statusTone } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { DataTable } from "@/components/ui/DataTable";
 import { Input } from "@/components/ui/input";
+import { PageHeader } from "@/components/ui/PageHeader";
 import { Pagination } from "@/components/ui/pagination";
-import { Spinner } from "@/components/ui/spinner";
+import { TableSkeleton } from "@/components/ui/Skeleton";
+import { StatusBadge, statusTone } from "@/components/ui/StatusBadge";
 import { api, getErrorMessage } from "@/lib/api";
 import { formatDate, statusLabel } from "@/lib/utils";
 
@@ -82,9 +84,10 @@ export function AdminsPage() {
 
   return (
     <div className="space-y-4">
-      <p className="text-sm text-ireduc-muted">
-        Création de comptes admin et changement de rôle.
-      </p>
+      <PageHeader
+        title="Administrateurs"
+        description="Création de comptes admin et changement de rôle."
+      />
 
       {message ? <Alert tone="success">{message}</Alert> : null}
       {createMutation.error || roleMutation.error ? (
@@ -136,85 +139,107 @@ export function AdminsPage() {
         </CardContent>
       </Card>
 
-      {isLoading ? <Spinner /> : null}
       {error ? <Alert tone="error">{getErrorMessage(error)}</Alert> : null}
 
-      {data ? (
-        <Card>
-          <CardContent className="overflow-x-auto p-0">
-            <table className="min-w-full text-left text-sm">
-              <thead className="border-b border-ireduc-border bg-slate-50 text-slate-600">
-                <tr>
-                  <th className="px-4 py-3 font-medium">Administrateur</th>
-                  <th className="px-4 py-3 font-medium">Rôle</th>
-                  <th className="px-4 py-3 font-medium">Statut</th>
-                  <th className="px-4 py-3 font-medium">Créé le</th>
-                  <th className="px-4 py-3 font-medium">Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {data.data.map((row) => (
-                  <tr key={row.id} className="border-b border-ireduc-border last:border-0">
-                    <td className="px-4 py-3">
-                      <p className="font-medium">{row.fullName}</p>
-                      <p className="text-xs text-slate-500">{row.email}</p>
-                    </td>
-                    <td className="px-4 py-3">{statusLabel(row.systemRole)}</td>
-                    <td className="px-4 py-3">
-                      <Badge tone={statusTone(row.accountStatus)}>
-                        {statusLabel(row.accountStatus)}
-                      </Badge>
-                    </td>
-                    <td className="px-4 py-3">{formatDate(row.createdAt)}</td>
-                    <td className="px-4 py-3">
-                      {row.systemRole === "SUPER_ADMIN" ? (
-                        <span className="text-xs text-slate-500">—</span>
-                      ) : row.systemRole === "ADMIN" ? (
-                        <Button
-                          type="button"
-                          size="sm"
-                          variant="outline"
-                          onClick={() =>
-                            setRoleTarget({
-                              id: row.id,
-                              role: "USER",
-                              name: row.fullName,
-                            })
-                          }
-                        >
-                          Rétrograder en USER
-                        </Button>
-                      ) : (
-                        <Button
-                          type="button"
-                          size="sm"
-                          variant="outline"
-                          onClick={() =>
-                            setRoleTarget({
-                              id: row.id,
-                              role: "ADMIN",
-                              name: row.fullName,
-                            })
-                          }
-                        >
-                          Promouvoir ADMIN
-                        </Button>
-                      )}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </CardContent>
-          <div className="px-4 pb-4">
-            <Pagination
-              page={data.meta.page}
-              totalPages={data.meta.totalPages}
-              onPageChange={setPage}
+      <Card>
+        {isLoading ? <TableSkeleton /> : null}
+        {data ? (
+          <>
+            <DataTable
+              rows={data.data}
+              emptyTitle="Aucun administrateur"
+              emptyDescription="Aucun compte admin pour le moment."
+              columns={[
+                {
+                  key: "admin",
+                  header: "Administrateur",
+                  render: (row) => (
+                    <div className="flex items-center gap-3">
+                      <span className="flex h-9 w-9 items-center justify-center rounded-full bg-brand-gradient text-xs font-extrabold text-white">
+                        {row.fullName
+                          .split(" ")
+                          .map((p) => p[0])
+                          .slice(0, 2)
+                          .join("")
+                          .toUpperCase()}
+                      </span>
+                      <div>
+                        <p className="font-bold">{row.fullName}</p>
+                        <p className="text-xs text-[var(--text-muted)]">
+                          {row.email}
+                        </p>
+                      </div>
+                    </div>
+                  ),
+                },
+                {
+                  key: "role",
+                  header: "Rôle",
+                  render: (row) => statusLabel(row.systemRole),
+                },
+                {
+                  key: "status",
+                  header: "Statut",
+                  render: (row) => (
+                    <StatusBadge tone={statusTone(row.accountStatus)}>
+                      {statusLabel(row.accountStatus)}
+                    </StatusBadge>
+                  ),
+                },
+                {
+                  key: "date",
+                  header: "Créé le",
+                  render: (row) => formatDate(row.createdAt),
+                },
+              ]}
+              rowActions={(row) =>
+                row.systemRole === "SUPER_ADMIN" ? (
+                  <span className="text-xs text-[var(--text-muted)]">—</span>
+                ) : row.systemRole === "ADMIN" ? (
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    onClick={() =>
+                      setRoleTarget({
+                        id: row.id,
+                        role: "USER",
+                        name: row.fullName,
+                      })
+                    }
+                  >
+                    Rétrograder en USER
+                  </Button>
+                ) : (
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    onClick={() =>
+                      setRoleTarget({
+                        id: row.id,
+                        role: "ADMIN",
+                        name: row.fullName,
+                      })
+                    }
+                  >
+                    Promouvoir ADMIN
+                  </Button>
+                )
+              }
             />
-          </div>
-        </Card>
-      ) : null}
+            {data.data.length > 0 ? (
+              <div className="px-4 pb-4">
+                <Pagination
+                  page={data.meta.page}
+                  totalPages={data.meta.totalPages}
+                  onPageChange={setPage}
+                />
+              </div>
+            ) : null}
+          </>
+        ) : null}
+      </Card>
 
       <DecisionDialog
         open={Boolean(roleTarget)}

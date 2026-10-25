@@ -202,35 +202,35 @@ export function ListingDetailPage({
           </CardHeader>
           <CardContent className="space-y-2 text-sm">
             <p>
-              <span className="text-slate-500">Prix :</span>{" "}
+              <span className="text-[var(--text-muted)]">Prix :</span>{" "}
               {formatMoney(data.price, data.currency ?? "USD")}
             </p>
             <p>
-              <span className="text-slate-500">Catégorie :</span>{" "}
+              <span className="text-[var(--text-muted)]">Catégorie :</span>{" "}
               {data.category?.name ?? "—"}
             </p>
             {kind === "properties" ? (
               <p>
-                <span className="text-slate-500">Localisation :</span>{" "}
+                <span className="text-[var(--text-muted)]">Localisation :</span>{" "}
                 {[data.commune?.name, data.neighborhood?.name]
                   .filter(Boolean)
                   .join(" / ") || "—"}
               </p>
             ) : (
               <p>
-                <span className="text-slate-500">Couverture :</span>{" "}
+                <span className="text-[var(--text-muted)]">Couverture :</span>{" "}
                 {data.coverageCommunes?.map((c) => c.name).join(", ") || "—"}
               </p>
             )}
             <p>
-              <span className="text-slate-500">Créé le :</span>{" "}
+              <span className="text-[var(--text-muted)]">Créé le :</span>{" "}
               {formatDate(data.createdAt)}
             </p>
             {data.rejectionReason ? (
               <Alert tone="error">Motif de rejet : {data.rejectionReason}</Alert>
             ) : null}
             {data.description ? (
-              <p className="whitespace-pre-wrap pt-2 text-slate-700">
+              <p className="whitespace-pre-wrap pt-2 text-[var(--text-primary)]">
                 {data.description}
               </p>
             ) : null}
@@ -257,7 +257,7 @@ export function ListingDetailPage({
               </>
             ) : null}
             {!data.owner && !data.providerProfile ? (
-              <p className="text-slate-500">Aucun contact.</p>
+              <p className="text-[var(--text-muted)]">Aucun contact.</p>
             ) : null}
           </CardContent>
         </Card>

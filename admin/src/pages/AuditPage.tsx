@@ -2,10 +2,13 @@ import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { Alert } from "@/components/ui/alert";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { DataTable } from "@/components/ui/DataTable";
 import { Input } from "@/components/ui/input";
+import { PageHeader } from "@/components/ui/PageHeader";
 import { Pagination } from "@/components/ui/pagination";
-import { Spinner } from "@/components/ui/spinner";
+import { TableSkeleton } from "@/components/ui/Skeleton";
 import { api, getErrorMessage } from "@/lib/api";
 import { formatDate } from "@/lib/utils";
 
@@ -64,14 +67,12 @@ export function AuditPage() {
 
   return (
     <div className="space-y-4">
-      <p className="text-sm text-ireduc-muted">
-        Historique des actions administrateur.
-      </p>
+      <PageHeader
+        title="Journal d'audit"
+        description="Historique des actions administrateur."
+      />
 
       <Card>
-        <CardHeader>
-          <CardTitle>Filtres</CardTitle>
-        </CardHeader>
         <CardContent>
           <form
             className="grid gap-3 md:grid-cols-4"
@@ -91,69 +92,83 @@ export function AuditPage() {
               onChange={(e) => setFrom(e.target.value)}
             />
             <Input type="date" value={to} onChange={(e) => setTo(e.target.value)} />
-            <button
-              type="submit"
-              className="rounded-md bg-ireduc-navy px-4 text-sm text-white"
-            >
+            <Button type="submit" variant="navy">
               Filtrer
-            </button>
+            </Button>
           </form>
         </CardContent>
       </Card>
 
-      {isLoading ? <Spinner /> : null}
       {error ? <Alert tone="error">{getErrorMessage(error)}</Alert> : null}
 
-      {data ? (
-        <Card>
-          <CardContent className="overflow-x-auto p-0">
-            <table className="min-w-full text-left text-sm">
-              <thead className="border-b border-ireduc-border bg-slate-50 text-slate-600">
-                <tr>
-                  <th className="px-4 py-3 font-medium">Date</th>
-                  <th className="px-4 py-3 font-medium">Admin</th>
-                  <th className="px-4 py-3 font-medium">Action</th>
-                  <th className="px-4 py-3 font-medium">Cible</th>
-                  <th className="px-4 py-3 font-medium">Motif</th>
-                </tr>
-              </thead>
-              <tbody>
-                {data.data.map((row) => (
-                  <tr key={row.id} className="border-b border-ireduc-border last:border-0">
-                    <td className="px-4 py-3 whitespace-nowrap">
+      <Card>
+        {isLoading ? <TableSkeleton rows={8} /> : null}
+        {data ? (
+          <>
+            <DataTable
+              rows={data.data}
+              emptyTitle="Aucune entrée"
+              emptyDescription="Aucun événement pour ces filtres."
+              columns={[
+                {
+                  key: "date",
+                  header: "Date",
+                  render: (row) => (
+                    <span className="whitespace-nowrap">
                       {formatDate(row.createdAt)}
-                    </td>
-                    <td className="px-4 py-3">
-                      <p>{row.admin.fullName}</p>
-                      <p className="text-xs text-slate-500">{row.admin.email}</p>
-                    </td>
-                    <td className="px-4 py-3 font-medium">{row.action}</td>
-                    <td className="px-4 py-3">
+                    </span>
+                  ),
+                },
+                {
+                  key: "admin",
+                  header: "Admin",
+                  render: (row) => (
+                    <div>
+                      <p className="font-semibold">{row.admin.fullName}</p>
+                      <p className="text-xs text-[var(--text-muted)]">
+                        {row.admin.email}
+                      </p>
+                    </div>
+                  ),
+                },
+                {
+                  key: "action",
+                  header: "Action",
+                  render: (row) => (
+                    <span className="font-bold text-ireduc-navy">{row.action}</span>
+                  ),
+                },
+                {
+                  key: "target",
+                  header: "Cible",
+                  render: (row) => (
+                    <div>
                       {row.targetType}
-                      <p className="text-xs text-slate-500">{row.targetId}</p>
-                    </td>
-                    <td className="px-4 py-3">{row.reason ?? "—"}</td>
-                  </tr>
-                ))}
-                {data.data.length === 0 ? (
-                  <tr>
-                    <td colSpan={5} className="px-4 py-8 text-center text-slate-500">
-                      Aucune entrée.
-                    </td>
-                  </tr>
-                ) : null}
-              </tbody>
-            </table>
-          </CardContent>
-          <div className="px-4 pb-4">
-            <Pagination
-              page={data.meta.page}
-              totalPages={data.meta.totalPages}
-              onPageChange={(p) => update({ page: String(p) })}
+                      <p className="text-xs text-[var(--text-muted)]">
+                        {row.targetId}
+                      </p>
+                    </div>
+                  ),
+                },
+                {
+                  key: "reason",
+                  header: "Motif",
+                  render: (row) => row.reason ?? "—",
+                },
+              ]}
             />
-          </div>
-        </Card>
-      ) : null}
+            {data.data.length > 0 ? (
+              <div className="px-4 pb-4">
+                <Pagination
+                  page={data.meta.page}
+                  totalPages={data.meta.totalPages}
+                  onPageChange={(p) => update({ page: String(p) })}
+                />
+              </div>
+            ) : null}
+          </>
+        ) : null}
+      </Card>
     </div>
   );
 }

@@ -129,7 +129,7 @@ export function PartnerDetailPage() {
             <Badge tone={statusTone(data.reviewStatus)}>
               {statusLabel(data.reviewStatus)}
             </Badge>
-            <span className="text-sm text-slate-500">{data.type}</span>
+            <span className="text-sm text-[var(--text-muted)]">{data.type}</span>
           </div>
         </div>
         {data.reviewStatus === "PENDING" ? (
@@ -171,37 +171,37 @@ export function PartnerDetailPage() {
           </CardHeader>
           <CardContent className="space-y-2 text-sm">
             <p>
-              <span className="text-slate-500">Compte :</span> {data.user.fullName}
+              <span className="text-[var(--text-muted)]">Compte :</span> {data.user.fullName}
             </p>
             <p>
-              <span className="text-slate-500">Téléphone :</span>{" "}
+              <span className="text-[var(--text-muted)]">Téléphone :</span>{" "}
               {data.phone ?? data.user.phone ?? "—"}
             </p>
             <p>
-              <span className="text-slate-500">E-mail :</span>{" "}
+              <span className="text-[var(--text-muted)]">E-mail :</span>{" "}
               {data.user.email ?? "—"}
             </p>
             <p>
-              <span className="text-slate-500">WhatsApp :</span>{" "}
+              <span className="text-[var(--text-muted)]">WhatsApp :</span>{" "}
               {data.whatsapp ?? data.user.whatsapp ?? "—"}
             </p>
             <p>
-              <span className="text-slate-500">E-mail pro :</span>{" "}
+              <span className="text-[var(--text-muted)]">E-mail pro :</span>{" "}
               {data.contactEmail ?? "—"}
             </p>
             <p>
-              <span className="text-slate-500">Site :</span> {data.website ?? "—"}
+              <span className="text-[var(--text-muted)]">Site :</span> {data.website ?? "—"}
             </p>
             <p>
-              <span className="text-slate-500">Adresse :</span> {data.address ?? "—"}
+              <span className="text-[var(--text-muted)]">Adresse :</span> {data.address ?? "—"}
             </p>
             <p>
-              <span className="text-slate-500">Expérience :</span>{" "}
+              <span className="text-[var(--text-muted)]">Expérience :</span>{" "}
               {data.yearsOfExperience != null
                 ? `${data.yearsOfExperience} an(s)`
                 : "—"}
             </p>
-            {data.bio ? <p className="pt-2 text-slate-700">{data.bio}</p> : null}
+            {data.bio ? <p className="pt-2 text-[var(--text-primary)]">{data.bio}</p> : null}
             {data.rejectionReason ? (
               <Alert tone="error">Motif de rejet : {data.rejectionReason}</Alert>
             ) : null}
@@ -214,7 +214,7 @@ export function PartnerDetailPage() {
           </CardHeader>
           <CardContent className="space-y-2">
             {data.documents.length === 0 ? (
-              <p className="text-sm text-slate-500">Aucun document.</p>
+              <p className="text-sm text-[var(--text-muted)]">Aucun document.</p>
             ) : (
               data.documents.map((doc) => {
                 const href = resolveMediaUrl(doc.fileUrl);
@@ -227,7 +227,7 @@ export function PartnerDetailPage() {
                       <p className="font-medium">
                         {docTypeLabel[doc.docType] ?? doc.docType}
                       </p>
-                      <p className="text-xs text-slate-500">
+                      <p className="text-xs text-[var(--text-muted)]">
                         {statusLabel(doc.reviewStatus)}
                       </p>
                     </div>
@@ -256,7 +256,7 @@ export function PartnerDetailPage() {
           </CardHeader>
           <CardContent className="space-y-2 text-sm">
             {data.properties.length === 0 ? (
-              <p className="text-slate-500">Aucune.</p>
+              <p className="text-[var(--text-muted)]">Aucune.</p>
             ) : (
               data.properties.map((p) => (
                 <Link
@@ -276,7 +276,7 @@ export function PartnerDetailPage() {
           </CardHeader>
           <CardContent className="space-y-2 text-sm">
             {data.services.length === 0 ? (
-              <p className="text-slate-500">Aucun.</p>
+              <p className="text-[var(--text-muted)]">Aucun.</p>
             ) : (
               data.services.map((s) => (
                 <Link
@@ -298,15 +298,15 @@ export function PartnerDetailPage() {
         </CardHeader>
         <CardContent className="space-y-2 text-sm">
           {data.history.length === 0 ? (
-            <p className="text-slate-500">Aucune action enregistrée.</p>
+            <p className="text-[var(--text-muted)]">Aucune action enregistrée.</p>
           ) : (
             data.history.map((h) => (
               <div key={h.id} className="rounded-md border border-ireduc-border px-3 py-2">
                 <p className="font-medium">
                   {h.action} — {h.admin.fullName}
                 </p>
-                <p className="text-xs text-slate-500">{formatDate(h.createdAt)}</p>
-                {h.reason ? <p className="mt-1 text-slate-700">{h.reason}</p> : null}
+                <p className="text-xs text-[var(--text-muted)]">{formatDate(h.createdAt)}</p>
+                {h.reason ? <p className="mt-1 text-[var(--text-primary)]">{h.reason}</p> : null}
               </div>
             ))
           )}

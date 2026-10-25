@@ -131,7 +131,7 @@ export function RequestDetailPage() {
             <p>{data.requester.phone}</p>
             <p>{data.requester.email ?? "—"}</p>
             {data.message ? (
-              <p className="pt-2 text-slate-700">{data.message}</p>
+              <p className="pt-2 text-[var(--text-primary)]">{data.message}</p>
             ) : null}
           </CardContent>
         </Card>
@@ -141,15 +141,15 @@ export function RequestDetailPage() {
           </CardHeader>
           <CardContent className="space-y-2 text-sm">
             <p>
-              <span className="text-slate-500">Cible :</span> {targetTitle}
+              <span className="text-[var(--text-muted)]">Cible :</span> {targetTitle}
             </p>
             <p>
-              <span className="text-slate-500">Propriétaire :</span>{" "}
+              <span className="text-[var(--text-muted)]">Propriétaire :</span>{" "}
               {data.owner?.fullName ?? "—"}
             </p>
             <p>{data.owner?.phone ?? ""}</p>
             <p>
-              <span className="text-slate-500">Créée le :</span>{" "}
+              <span className="text-[var(--text-muted)]">Créée le :</span>{" "}
               {formatDate(data.createdAt)}
             </p>
             {data.rejectionReason ? (
@@ -173,8 +173,8 @@ export function RequestDetailPage() {
                 {h.label}
                 {h.admin ? ` — ${h.admin.fullName}` : ""}
               </p>
-              <p className="text-xs text-slate-500">{formatDate(h.at)}</p>
-              {h.reason ? <p className="mt-1 text-slate-700">{h.reason}</p> : null}
+              <p className="text-xs text-[var(--text-muted)]">{formatDate(h.at)}</p>
+              {h.reason ? <p className="mt-1 text-[var(--text-primary)]">{h.reason}</p> : null}
             </div>
           ))}
         </CardContent>
