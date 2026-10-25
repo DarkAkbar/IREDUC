@@ -8,9 +8,12 @@ import { SafeAreaProvider } from "react-native-safe-area-context";
 import { ErrorBoundary } from "../components/ErrorBoundary";
 import { OfflineBanner } from "../components/OfflineBanner";
 import { PublishSheetHost } from "../components/PublishSheetHost";
+import { applyScrollDefaults } from "../lib/scrollDefaults";
 import { useAuthStore } from "../store/authStore";
 import { useFavoritesStore } from "../store/favoritesStore";
 import { colors } from "../theme";
+
+applyScrollDefaults();
 
 const queryClient = new QueryClient({
   defaultOptions: {
