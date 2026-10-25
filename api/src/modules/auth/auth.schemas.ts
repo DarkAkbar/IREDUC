@@ -11,8 +11,11 @@ const passwordSchema = z
 
 export const registerSchema = z.object({
   fullName: z.string().min(2, "Le nom complet est requis"),
-  email: z.string().email("Adresse e-mail invalide"),
+  phone: z.string().min(6, "Numéro de téléphone invalide"),
   password: passwordSchema,
+  email: z
+    .union([z.string().email("Adresse e-mail invalide"), z.literal("")])
+    .optional(),
 });
 
 export const verifyEmailSchema = z
@@ -41,7 +44,7 @@ export const resendVerificationSchema = z.object({
 });
 
 export const loginSchema = z.object({
-  email: z.string().email("Adresse e-mail invalide"),
+  identifier: z.string().min(1, "L'identifiant est requis"),
   password: z.string().min(1, "Le mot de passe est requis"),
 });
 

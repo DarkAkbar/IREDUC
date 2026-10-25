@@ -1,5 +1,5 @@
 import { AccountStatus, TokenPurpose } from "@prisma/client";
-import { AUTH_CONFIG, env } from "../../config/env";
+import { AUTH_CONFIG } from "../../config/env";
 import { prisma } from "../../config/prisma";
 import { getMailService } from "../../mail";
 import {
@@ -16,7 +16,14 @@ import {
 import { signAccessToken } from "../../utils/jwt";
 import { logger } from "../../utils/logger";
 import { hashPassword, verifyPassword } from "../../utils/password";
+import {
+  looksLikeEmail,
+  normalizeOptionalEmail,
+  normalizePhone,
+} from "../../utils/phone";
 import { toPublicUser } from "./auth.mapper";
+
+const INVALID_CREDENTIALS_MESSAGE = "Identifiant ou mot de passe incorrect";
 
 function refreshExpiryDate(): Date {
   const date = new Date();
@@ -50,10 +57,11 @@ async function createUserToken(userId: string, purpose: TokenPurpose) {
 
 async function issueTokenPair(
   userId: string,
-  email: string,
+  phone: string,
+  email: string | null,
   role: Parameters<typeof signAccessToken>[0]["role"]
 ) {
-  const accessToken = signAccessToken({ sub: userId, email, role });
+  const accessToken = signAccessToken({ sub: userId, phone, email, role });
   const refreshToken = generateOpaqueToken();
 
   await prisma.refreshToken.create({
@@ -69,64 +77,51 @@ async function issueTokenPair(
 
 export async function register(input: {
   fullName: string;
-  email: string;
+  phone: string;
   password: string;
+  email?: string | null;
 }) {
-  const email = input.email.toLowerCase().trim();
-  const existing = await prisma.user.findUnique({ where: { email } });
-  if (existing) {
-    throw conflict("Cette adresse e-mail est déjà utilisée", "EMAIL_TAKEN");
+  const phone = normalizePhone(input.phone);
+  const email = normalizeOptionalEmail(input.email ?? null);
+
+  const existingPhone = await prisma.user.findUnique({ where: { phone } });
+  if (existingPhone) {
+    throw conflict("Ce numéro est déjà utilisé", "PHONE_TAKEN");
+  }
+
+  if (email) {
+    const existingEmail = await prisma.user.findUnique({ where: { email } });
+    if (existingEmail) {
+      throw conflict("Cette adresse e-mail est déjà utilisée", "EMAIL_TAKEN");
+    }
   }
 
   const user = await prisma.user.create({
     data: {
       fullName: input.fullName.trim(),
+      phone,
       email,
       passwordHash: await hashPassword(input.password),
-      emailVerified: Boolean(env.DEV_AUTO_VERIFY_EMAIL),
+      whatsapp: phone,
     },
     include: { providerProfile: true },
   });
 
-  if (env.DEV_AUTO_VERIFY_EMAIL) {
-    logger.info(
-      `[DEV_AUTO_VERIFY_EMAIL] Compte ${user.email} marqué comme vérifié automatiquement`
-    );
-    return {
-      message: "Inscription réussie. Compte vérifié automatiquement (dev).",
-      emailSent: false,
-      autoVerified: true,
-      user: toPublicUser(user),
-    };
-  }
-
-  const { token, code } = await createUserToken(
+  const tokens = await issueTokenPair(
     user.id,
-    TokenPurpose.VERIFY_EMAIL
+    user.phone,
+    user.email,
+    user.systemRole
   );
 
-  let emailSent = true;
-  try {
-    await getMailService().sendVerificationEmail(
-      user.email,
-      token,
-      code ?? undefined
-    );
-  } catch (error) {
-    emailSent = false;
-    logger.error("Échec envoi e-mail de vérification après inscription", error);
-  }
-
   return {
-    message: emailSent
-      ? "Inscription réussie. Vérifiez votre e-mail pour activer le compte."
-      : "Compte créé, mais l'e-mail n'a pas pu être envoyé",
-    emailSent,
-    autoVerified: false,
+    message: "Inscription réussie.",
+    ...tokens,
     user: toPublicUser(user),
   };
 }
 
+/** Vérification e-mail conservée (désactivée côté parcours si REQUIRE_ACCOUNT_VERIFICATION=false). */
 export async function verifyEmail(input: {
   token?: string;
   email?: string;
@@ -188,8 +183,7 @@ export async function resendVerification(email: string) {
     where: { email: email.toLowerCase().trim() },
   });
 
-  // Réponse neutre pour éviter l'énumération d'e-mails
-  if (!user || user.emailVerified) {
+  if (!user || user.emailVerified || !user.email) {
     return {
       message: "Si un compte non vérifié existe, un e-mail a été envoyé.",
       emailSent: false,
@@ -230,25 +224,60 @@ export async function resendVerification(email: string) {
   };
 }
 
-export async function login(input: { email: string; password: string }) {
+export async function resolveLoginIdentifier(identifier: string): Promise<{
+  normalizedKey: string;
+  user: Awaited<ReturnType<typeof prisma.user.findFirst>>;
+}> {
+  const raw = identifier.trim();
+  if (looksLikeEmail(raw)) {
+    const email = raw.toLowerCase();
+    const user = await prisma.user.findUnique({
+      where: { email },
+      include: { providerProfile: true },
+    });
+    return { normalizedKey: `email:${email}`, user };
+  }
+
+  const phone = normalizePhone(raw);
   const user = await prisma.user.findUnique({
-    where: { email: input.email.toLowerCase().trim() },
+    where: { phone },
     include: { providerProfile: true },
   });
+  return { normalizedKey: `phone:${phone}`, user };
+}
+
+export async function login(input: { identifier: string; password: string }) {
+  let normalizedKey = input.identifier.trim().toLowerCase();
+  let user = null as Awaited<ReturnType<typeof prisma.user.findFirst>>;
+
+  try {
+    const resolved = await resolveLoginIdentifier(input.identifier);
+    normalizedKey = resolved.normalizedKey;
+    user = resolved.user;
+  } catch {
+    // Numéro invalide → même message que mauvais mot de passe
+    throw unauthorized(INVALID_CREDENTIALS_MESSAGE, "INVALID_CREDENTIALS");
+  }
 
   if (!user || !(await verifyPassword(input.password, user.passwordHash))) {
-    throw unauthorized("E-mail ou mot de passe incorrect", "INVALID_CREDENTIALS");
+    throw unauthorized(INVALID_CREDENTIALS_MESSAGE, "INVALID_CREDENTIALS");
   }
 
   if (user.accountStatus === AccountStatus.SUSPENDED) {
     throw forbidden("Ce compte est suspendu", "ACCOUNT_SUSPENDED");
   }
 
-  const tokens = await issueTokenPair(user.id, user.email, user.systemRole);
+  const tokens = await issueTokenPair(
+    user.id,
+    user.phone,
+    user.email,
+    user.systemRole
+  );
 
   return {
     ...tokens,
     user: toPublicUser(user),
+    _loginKey: normalizedKey,
   };
 }
 
@@ -280,6 +309,7 @@ export async function refresh(refreshToken: string) {
 
   const tokens = await issueTokenPair(
     stored.user.id,
+    stored.user.phone,
     stored.user.email,
     stored.user.systemRole
   );
@@ -305,7 +335,7 @@ export async function forgotPassword(email: string) {
     where: { email: email.toLowerCase().trim() },
   });
 
-  if (user) {
+  if (user?.email) {
     await prisma.userToken.updateMany({
       where: {
         userId: user.id,

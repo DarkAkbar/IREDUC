@@ -5,7 +5,8 @@ import { unauthorized } from "./errors";
 
 export type AccessTokenPayload = {
   sub: string;
-  email: string;
+  phone: string;
+  email: string | null;
   role: SystemRole;
 };
 
@@ -18,12 +19,21 @@ export function signAccessToken(payload: AccessTokenPayload): string {
 export function verifyAccessToken(token: string): AccessTokenPayload {
   try {
     const decoded = jwt.verify(token, env.JWT_SECRET);
-    if (typeof decoded === "string" || !decoded.sub || !decoded.email || !decoded.role) {
+    if (
+      typeof decoded === "string" ||
+      !decoded.sub ||
+      !decoded.phone ||
+      !decoded.role
+    ) {
       throw unauthorized("Jeton d'accès invalide", "INVALID_ACCESS_TOKEN");
     }
     return {
       sub: String(decoded.sub),
-      email: String(decoded.email),
+      phone: String(decoded.phone),
+      email:
+        decoded.email == null || decoded.email === ""
+          ? null
+          : String(decoded.email),
       role: decoded.role as SystemRole,
     };
   } catch (error) {

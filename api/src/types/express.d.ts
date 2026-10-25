@@ -5,7 +5,8 @@ declare global {
     interface Request {
       user?: {
         id: string;
-        email: string;
+        phone: string;
+        email: string | null;
         role: SystemRole;
       };
       providerProfile?: {
