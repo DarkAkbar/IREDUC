@@ -2,7 +2,6 @@ import { Ionicons } from "@expo/vector-icons";
 import { useQuery } from "@tanstack/react-query";
 import { Image } from "expo-image";
 import { useRouter } from "expo-router";
-import { useState } from "react";
 import {
   Alert,
   Pressable,
@@ -13,14 +12,12 @@ import {
   View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { resendVerification } from "../../api/auth";
 import { API_URL, mediaUrl } from "../../api/client";
 import { fetchMyProvider } from "../../api/providers";
 import { GuestPrompt } from "../../components/GuestPrompt";
 import { Button } from "../../components/ui/Button";
 import { useAuthStore } from "../../store/authStore";
 import { colors, radii, spacing, typography } from "../../theme";
-import { getErrorMessage } from "../../utils/errors";
 
 type HealthInfo = {
   database: string;
@@ -70,7 +67,6 @@ export default function ProfileScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const { user, isAuthenticated, isHydrated, logout } = useAuthStore();
-  const [resending, setResending] = useState(false);
 
   const providerQuery = useQuery({
     queryKey: ["provider-me"],
@@ -95,22 +91,6 @@ export default function ProfileScreen() {
   const provider = providerQuery.data;
   const reviewStatus =
     provider?.reviewStatus ?? user?.providerProfile?.reviewStatus;
-
-  async function onResend() {
-    if (!user?.email) return;
-    setResending(true);
-    try {
-      const result = await resendVerification(user.email);
-      Alert.alert("Vérification", result.message);
-    } catch (error) {
-      Alert.alert(
-        "Vérification",
-        getErrorMessage(error, "Impossible de renvoyer l'e-mail.")
-      );
-    } finally {
-      setResending(false);
-    }
-  }
 
   function onLogout() {
     Alert.alert("Déconnexion", "Voulez-vous vous déconnecter ?", [
@@ -165,28 +145,12 @@ export default function ProfileScreen() {
           )}
           <View style={{ flex: 1 }}>
             <Text style={styles.name}>{user?.fullName}</Text>
-            <Text style={styles.email}>{user?.email}</Text>
+            <Text style={styles.email}>{user?.phone}</Text>
+            {user?.email ? (
+              <Text style={styles.emailSecondary}>{user.email}</Text>
+            ) : null}
           </View>
         </View>
-
-        {user && !user.emailVerified ? (
-          <View style={styles.verifyBanner}>
-            <Ionicons name="mail-unread-outline" size={20} color={colors.primary} />
-            <View style={{ flex: 1 }}>
-              <Text style={styles.verifyTitle}>Vérifiez votre e-mail</Text>
-              <Text style={styles.verifyText}>
-                Un e-mail de confirmation est requis pour certaines actions.
-              </Text>
-              <Button
-                label="Renvoyer l'e-mail"
-                variant="outline"
-                loading={resending}
-                onPress={() => void onResend()}
-                style={{ marginTop: spacing.sm }}
-              />
-            </View>
-          </View>
-        ) : null}
 
         <View style={styles.partnerCard}>
           <Text style={styles.partnerTitle}>
@@ -327,18 +291,7 @@ const styles = StyleSheet.create({
   },
   name: { color: colors.navy, fontWeight: "800", fontSize: 18 },
   email: { color: colors.textMuted, marginTop: 2 },
-  verifyBanner: {
-    flexDirection: "row",
-    gap: spacing.md,
-    marginTop: spacing.md,
-    padding: spacing.md,
-    backgroundColor: "#FDECEC",
-    borderRadius: radii.lg,
-    borderWidth: 1,
-    borderColor: "#F5C2C2",
-  },
-  verifyTitle: { color: colors.primary, fontWeight: "800" },
-  verifyText: { color: colors.textMuted, fontSize: 13, marginTop: 2 },
+  emailSecondary: { color: colors.textMuted, marginTop: 2, fontSize: 13 },
   partnerCard: {
     marginTop: spacing.md,
     padding: spacing.md,

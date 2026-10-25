@@ -3,9 +3,11 @@ import { AuthUser } from "./types";
 
 export async function updateProfile(input: {
   fullName?: string;
-  phone?: string | null;
+  phone?: string;
+  email?: string | null;
   whatsapp?: string | null;
   avatarUrl?: string | null;
+  currentPassword?: string;
 }) {
   const { data } = await api.patch<AuthUser>("/users/me", input);
   return data;

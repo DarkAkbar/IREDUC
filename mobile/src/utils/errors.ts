@@ -50,6 +50,14 @@ export function getFieldErrors(
       data.message ?? "Cette adresse e-mail est déjà utilisée";
   }
 
+  if (data?.code === "PHONE_TAKEN") {
+    result.phone = data.message ?? "Ce numéro est déjà utilisé";
+  }
+
+  if (data?.code === "INVALID_PHONE") {
+    result.phone = data.message ?? "Numéro de téléphone invalide";
+  }
+
   if (data?.code === "VALIDATION_ERROR" && Array.isArray(data.details)) {
     for (const issue of data.details) {
       const path = issue.path?.split(".")[0];

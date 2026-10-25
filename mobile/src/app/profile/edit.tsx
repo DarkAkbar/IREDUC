@@ -20,6 +20,7 @@ import { Button } from "../../components/ui/Button";
 import { useAuthStore } from "../../store/authStore";
 import { colors, radii, spacing, typography } from "../../theme";
 import { getErrorMessage } from "../../utils/errors";
+import { normalizePhone } from "../../utils/phone";
 
 export default function EditProfileScreen() {
   const insets = useSafeAreaInsets();
@@ -29,11 +30,15 @@ export default function EditProfileScreen() {
 
   const [fullName, setFullName] = useState(user?.fullName ?? "");
   const [phone, setPhone] = useState(user?.phone ?? "");
-  const [whatsapp, setWhatsapp] = useState(user?.whatsapp ?? "");
+  const [email, setEmail] = useState(user?.email ?? "");
+  const [whatsapp, setWhatsapp] = useState(user?.whatsapp ?? user?.phone ?? "");
+  const [currentPassword, setCurrentPassword] = useState("");
   const [avatarPreview, setAvatarPreview] = useState<string | null>(
     mediaUrl(user?.avatarUrl)
   );
   const [loading, setLoading] = useState(false);
+
+  const phoneChanged = phone.trim() !== (user?.phone ?? "");
 
   async function pickAvatar() {
     const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -74,12 +79,32 @@ export default function EditProfileScreen() {
       Alert.alert("Profil", "Le nom complet est requis.");
       return;
     }
+    if (phoneChanged && !currentPassword) {
+      Alert.alert(
+        "Profil",
+        "Saisissez votre mot de passe actuel pour changer de numéro."
+      );
+      return;
+    }
+
+    let phoneE164 = phone.trim();
+    let whatsappValue: string | null = whatsapp.trim() || null;
+    try {
+      phoneE164 = normalizePhone(phone.trim());
+      if (whatsappValue) whatsappValue = normalizePhone(whatsappValue);
+    } catch {
+      Alert.alert("Profil", "Numéro de téléphone invalide");
+      return;
+    }
+
     setLoading(true);
     try {
       const updated = await updateProfile({
         fullName: fullName.trim(),
-        phone: phone.trim() || null,
-        whatsapp: whatsapp.trim() || null,
+        phone: phoneE164,
+        email: email.trim() || null,
+        whatsapp: whatsappValue,
+        currentPassword: phoneChanged ? currentPassword : undefined,
       });
       setUser(updated);
       Alert.alert("Profil", "Vos informations ont été enregistrées.", [
@@ -132,6 +157,31 @@ export default function EditProfileScreen() {
           onChangeText={setPhone}
           keyboardType="phone-pad"
           placeholder="+243 …"
+          placeholderTextColor={colors.textMuted}
+        />
+
+        {phoneChanged ? (
+          <>
+            <Text style={styles.label}>Mot de passe actuel</Text>
+            <TextInput
+              style={styles.input}
+              value={currentPassword}
+              onChangeText={setCurrentPassword}
+              secureTextEntry
+              placeholder="Requis pour changer de numéro"
+              placeholderTextColor={colors.textMuted}
+            />
+          </>
+        ) : null}
+
+        <Text style={styles.label}>E-mail (facultatif)</Text>
+        <TextInput
+          style={styles.input}
+          value={email}
+          onChangeText={setEmail}
+          keyboardType="email-address"
+          autoCapitalize="none"
+          placeholder="vous@exemple.com"
           placeholderTextColor={colors.textMuted}
         />
 

@@ -149,7 +149,10 @@ export default function ReserveScreen() {
     if (draft.phone.trim().length < 6) {
       errors.phone = "Numéro de téléphone invalide";
     }
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(draft.email.trim())) {
+    if (
+      draft.email.trim() &&
+      !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(draft.email.trim())
+    ) {
       errors.email = "Adresse e-mail invalide";
     }
     if (draft.message.length > 500) {
@@ -183,8 +186,10 @@ export default function ReserveScreen() {
         visitSlot: draft.visitSlot ?? undefined,
         fullName: draft.fullName.trim(),
         phone: draft.phone.trim(),
-        email: draft.email.trim().toLowerCase(),
-        whatsapp: draft.whatsapp.trim() || undefined,
+        email: draft.email.trim()
+          ? draft.email.trim().toLowerCase()
+          : undefined,
+        whatsapp: draft.whatsapp.trim() || draft.phone.trim() || undefined,
         message: draft.message.trim() || undefined,
       };
       const created = await createRequest(payload);
@@ -433,7 +438,7 @@ export default function ReserveScreen() {
             />
             <LabeledInput
               icon="mail-outline"
-              label="E-mail"
+              label="E-mail (facultatif)"
               value={draft.email}
               onChangeText={(email) => patchDraft({ email })}
               keyboardType="email-address"
@@ -442,7 +447,7 @@ export default function ReserveScreen() {
             />
             <LabeledInput
               icon="logo-whatsapp"
-              label="WhatsApp (facultatif)"
+              label="WhatsApp"
               value={draft.whatsapp}
               onChangeText={(whatsapp) => patchDraft({ whatsapp })}
               keyboardType="phone-pad"

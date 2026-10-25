@@ -1,39 +1,25 @@
 import { api, clearStoredTokens, getStoredTokens } from "./client";
 import { AuthUser, LoginResponse } from "./types";
 
-export async function login(email: string, password: string) {
+export async function login(identifier: string, password: string) {
   const { data } = await api.post<LoginResponse>("/auth/login", {
-    email,
+    identifier,
     password,
   });
   return data;
 }
 
-export type RegisterResult = {
+export type RegisterResult = LoginResponse & {
   message: string;
-  emailSent: boolean;
-  autoVerified?: boolean;
-  user: AuthUser;
 };
 
-export async function register(fullName: string, email: string, password: string) {
-  const { data } = await api.post<RegisterResult>("/auth/register", {
-    fullName,
-    email,
-    password,
-  });
-  return data;
-}
-
-export async function verifyEmail(input: {
-  token?: string;
+export async function register(input: {
+  fullName: string;
+  phone: string;
+  password: string;
   email?: string;
-  code?: string;
 }) {
-  const { data } = await api.post<{ message: string }>(
-    "/auth/verify-email",
-    input
-  );
+  const { data } = await api.post<RegisterResult>("/auth/register", input);
   return data;
 }
 

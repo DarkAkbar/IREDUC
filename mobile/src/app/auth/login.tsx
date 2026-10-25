@@ -22,6 +22,12 @@ import {
   getFieldErrors,
   isNetworkError,
 } from "../../utils/errors";
+import {
+  formatCdNationalDisplay,
+  looksLikeEmail,
+  nationalDigitsFromInput,
+  toE164FromCdNational,
+} from "../../utils/phone";
 
 type Mode = "login" | "register";
 
@@ -39,7 +45,9 @@ export default function AuthScreen() {
     params.mode === "register" ? "register" : "login"
   );
   const [fullName, setFullName] = useState("");
-  const [email, setEmail] = useState("");
+  const [identifier, setIdentifier] = useState("");
+  const [nationalPhone, setNationalPhone] = useState("");
+  const [emailOptional, setEmailOptional] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -67,56 +75,71 @@ export default function AuthScreen() {
     setFieldErrors({});
   }
 
+  function afterAuth() {
+    if (params.returnTo) {
+      router.replace(params.returnTo as never);
+    } else {
+      router.back();
+    }
+  }
+
   async function onSubmit() {
     clearErrors();
 
-    if (!email.trim() || !password) {
-      setFormError("Saisissez votre e-mail et votre mot de passe.");
-      return;
-    }
-
-    if (mode === "register" && fullName.trim().length < 2) {
-      setFieldErrors({ fullName: "Le nom complet est requis" });
-      return;
+    if (mode === "login") {
+      if (!identifier.trim() || !password) {
+        setFormError("Saisissez votre identifiant et votre mot de passe.");
+        return;
+      }
+    } else {
+      if (fullName.trim().length < 2) {
+        setFieldErrors({ fullName: "Le nom complet est requis" });
+        return;
+      }
+      if (nationalPhone.replace(/\D/g, "").length < 9) {
+        setFieldErrors({ phone: "Numéro de téléphone invalide" });
+        return;
+      }
+      if (!password) {
+        setFieldErrors({
+          password:
+            "Le mot de passe doit contenir au moins 8 caractères et un chiffre",
+        });
+        return;
+      }
     }
 
     setLoading(true);
     try {
       if (mode === "login") {
-        await login(email, password);
-        if (params.returnTo) {
-          router.replace(params.returnTo as never);
-        } else {
-          router.back();
-        }
+        await login(identifier.trim(), password);
+        afterAuth();
       } else {
-        const result = await register(fullName, email, password);
-        if (result.autoVerified) {
-          Alert.alert("Compte créé", result.message, [
-            {
-              text: "Se connecter",
-              onPress: () => setMode("login"),
-            },
-          ]);
+        let phoneE164: string;
+        try {
+          phoneE164 = toE164FromCdNational(nationalPhone);
+        } catch {
+          setFieldErrors({ phone: "Numéro de téléphone invalide" });
           return;
         }
-        router.replace({
-          pathname: "/auth/verify-email",
-          params: {
-            email: email.trim().toLowerCase(),
-            emailSent: result.emailSent ? "1" : "0",
-            message: result.message,
-            returnTo: params.returnTo ?? "",
-          },
-        } as never);
+        await register({
+          fullName,
+          phone: phoneE164,
+          password,
+          email: emailOptional.trim() || undefined,
+        });
+        afterAuth();
       }
     } catch (error) {
       if (isNetworkError(error)) {
         setFormError("Impossible de joindre le serveur");
       } else {
         const fields = getFieldErrors(error);
-        if (Object.keys(fields).length > 0) {
-          setFieldErrors(fields);
+        if (fields.phone || fields.email || fields.password || fields.fullName) {
+          setFieldErrors({
+            ...fields,
+            phone: fields.phone,
+          });
         } else {
           setFormError(
             getErrorMessage(
@@ -134,17 +157,19 @@ export default function AuthScreen() {
   }
 
   async function onForgotPassword() {
-    if (!email.trim()) {
-      setFieldErrors({ email: "Saisissez votre e-mail" });
+    const value = identifier.trim();
+    if (!value || !looksLikeEmail(value)) {
+      setFieldErrors({
+        identifier:
+          "Saisissez l'e-mail associé au compte pour réinitialiser le mot de passe.",
+      });
       return;
     }
     try {
-      const data = await forgotPassword(email.trim().toLowerCase());
+      const data = await forgotPassword(value.toLowerCase());
       Alert.alert("E-mail envoyé", data.message);
     } catch (error) {
-      setFormError(
-        getErrorMessage(error, "Impossible d'envoyer l'e-mail.")
-      );
+      setFormError(getErrorMessage(error, "Impossible d'envoyer l'e-mail."));
     }
   }
 
@@ -167,8 +192,8 @@ export default function AuthScreen() {
         </Text>
         <Text style={styles.subtitle}>
           {mode === "login"
-            ? "Connectez-vous pour suivre vos demandes et publier vos annonces."
-            : "Inscrivez-vous pour réserver un bien ou devenir partenaire."}
+            ? "Connectez-vous avec votre numéro ou votre e-mail."
+            : "Inscrivez-vous avec votre numéro de téléphone."}
         </Text>
 
         <View style={styles.tabs}>
@@ -206,12 +231,7 @@ export default function AuthScreen() {
             <TextInput
               style={[styles.input, fieldErrors.fullName && styles.inputError]}
               value={fullName}
-              onChangeText={(v) => {
-                setFullName(v);
-                if (fieldErrors.fullName) {
-                  setFieldErrors((e) => ({ ...e, fullName: undefined }));
-                }
-              }}
+              onChangeText={setFullName}
               placeholder="Jean Mukendi"
               placeholderTextColor={colors.textMuted}
               autoCapitalize="words"
@@ -222,27 +242,75 @@ export default function AuthScreen() {
           </View>
         ) : null}
 
-        <View style={styles.field}>
-          <Text style={styles.label}>E-mail</Text>
-          <TextInput
-            style={[styles.input, fieldErrors.email && styles.inputError]}
-            value={email}
-            onChangeText={(v) => {
-              setEmail(v);
-              if (fieldErrors.email) {
-                setFieldErrors((e) => ({ ...e, email: undefined }));
-              }
-            }}
-            placeholder="vous@exemple.com"
-            placeholderTextColor={colors.textMuted}
-            keyboardType="email-address"
-            autoCapitalize="none"
-            autoCorrect={false}
-          />
-          {fieldErrors.email ? (
-            <Text style={styles.fieldError}>{fieldErrors.email}</Text>
-          ) : null}
-        </View>
+        {mode === "login" ? (
+          <View style={styles.field}>
+            <Text style={styles.label}>Téléphone ou e-mail</Text>
+            <TextInput
+              style={[
+                styles.input,
+                (fieldErrors.identifier || fieldErrors.phone || fieldErrors.email) &&
+                  styles.inputError,
+              ]}
+              value={identifier}
+              onChangeText={setIdentifier}
+              placeholder="+243… ou vous@exemple.com"
+              placeholderTextColor={colors.textMuted}
+              autoCapitalize="none"
+              autoCorrect={false}
+              keyboardType="email-address"
+            />
+            {fieldErrors.identifier || fieldErrors.phone || fieldErrors.email ? (
+              <Text style={styles.fieldError}>
+                {fieldErrors.identifier ||
+                  fieldErrors.phone ||
+                  fieldErrors.email}
+              </Text>
+            ) : null}
+          </View>
+        ) : (
+          <>
+            <View style={styles.field}>
+              <Text style={styles.label}>Numéro de téléphone</Text>
+              <View
+                style={[
+                  styles.phoneRow,
+                  fieldErrors.phone && styles.inputError,
+                ]}
+              >
+                <Text style={styles.prefix}>+243</Text>
+                <TextInput
+                  style={styles.phoneInput}
+                  value={formatCdNationalDisplay(nationalPhone)}
+                  onChangeText={(v) =>
+                    setNationalPhone(nationalDigitsFromInput(v))
+                  }
+                  placeholder="81 234 56 78"
+                  placeholderTextColor={colors.textMuted}
+                  keyboardType="phone-pad"
+                />
+              </View>
+              {fieldErrors.phone ? (
+                <Text style={styles.fieldError}>{fieldErrors.phone}</Text>
+              ) : null}
+            </View>
+            <View style={styles.field}>
+              <Text style={styles.label}>E-mail (facultatif)</Text>
+              <TextInput
+                style={[styles.input, fieldErrors.email && styles.inputError]}
+                value={emailOptional}
+                onChangeText={setEmailOptional}
+                placeholder="vous@exemple.com"
+                placeholderTextColor={colors.textMuted}
+                keyboardType="email-address"
+                autoCapitalize="none"
+                autoCorrect={false}
+              />
+              {fieldErrors.email ? (
+                <Text style={styles.fieldError}>{fieldErrors.email}</Text>
+              ) : null}
+            </View>
+          </>
+        )}
 
         <View style={styles.field}>
           <Text style={styles.label}>Mot de passe</Text>
@@ -254,12 +322,7 @@ export default function AuthScreen() {
                 fieldErrors.password && styles.inputError,
               ]}
               value={password}
-              onChangeText={(v) => {
-                setPassword(v);
-                if (fieldErrors.password) {
-                  setFieldErrors((e) => ({ ...e, password: undefined }));
-                }
-              }}
+              onChangeText={setPassword}
               placeholder="••••••••"
               placeholderTextColor={colors.textMuted}
               secureTextEntry={!showPassword}
@@ -297,12 +360,11 @@ export default function AuthScreen() {
                 • Au moins un chiffre
               </Text>
             </View>
-          ) : null}
-          {mode === "login" ? (
+          ) : (
             <Pressable onPress={() => void onForgotPassword()}>
               <Text style={styles.forgot}>Mot de passe oublié ?</Text>
             </Pressable>
-          ) : null}
+          )}
         </View>
 
         <Button
@@ -357,10 +419,7 @@ export default function AuthScreen() {
 
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.background },
-  content: {
-    paddingHorizontal: 20,
-    paddingBottom: spacing.xxl,
-  },
+  content: { paddingHorizontal: 20, paddingBottom: spacing.xxl },
   subtitle: { ...typography.body, marginTop: spacing.sm, marginBottom: spacing.xl },
   tabs: {
     flexDirection: "row",
@@ -392,6 +451,29 @@ const styles = StyleSheet.create({
     borderColor: colors.border,
     borderRadius: radii.md,
     paddingHorizontal: spacing.lg,
+    paddingVertical: Platform.OS === "ios" ? 14 : 12,
+    color: colors.navy,
+    fontSize: 15,
+  },
+  phoneRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: colors.white,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: radii.md,
+    overflow: "hidden",
+  },
+  prefix: {
+    paddingHorizontal: spacing.md,
+    paddingVertical: Platform.OS === "ios" ? 14 : 12,
+    backgroundColor: "#E8EEF9",
+    color: colors.navy,
+    fontWeight: "800",
+  },
+  phoneInput: {
+    flex: 1,
+    paddingHorizontal: spacing.md,
     paddingVertical: Platform.OS === "ios" ? 14 : 12,
     color: colors.navy,
     fontSize: 15,

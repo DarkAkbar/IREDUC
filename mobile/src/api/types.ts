@@ -1,12 +1,13 @@
 export type AuthUser = {
   id: string;
   fullName: string;
-  email: string;
-  phone: string | null;
+  email: string | null;
+  phone: string;
   whatsapp: string | null;
   systemRole: "USER" | "ADMIN" | "SUPER_ADMIN";
   accountStatus: "ACTIVE" | "SUSPENDED";
   emailVerified: boolean;
+  phoneVerified: boolean;
   avatarUrl: string | null;
   providerProfile: {
     id: string;
