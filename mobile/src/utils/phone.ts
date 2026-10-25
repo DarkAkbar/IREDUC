@@ -59,3 +59,22 @@ export function phoneDigitsForWhatsApp(e164OrRaw: string): string {
     return e164OrRaw.replace(/\D/g, "");
   }
 }
+
+/** Affiche +243812345678 → +243 81 234 56 78 */
+export function formatPhoneDisplay(e164: string): string {
+  try {
+    const parsed = parsePhoneNumberFromString(e164);
+    if (parsed) {
+      const intl = parsed.formatInternational();
+      return intl;
+    }
+  } catch {
+    /* fallback */
+  }
+  const digits = e164.replace(/\D/g, "");
+  if (digits.startsWith("243") && digits.length >= 12) {
+    const national = digits.slice(3);
+    return `+243 ${formatCdNationalDisplay(national)}`;
+  }
+  return e164;
+}
