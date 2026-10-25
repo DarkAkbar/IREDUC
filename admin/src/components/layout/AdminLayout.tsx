@@ -1,5 +1,6 @@
 import { AnimatePresence, motion } from "framer-motion";
 import {
+  Activity,
   Bell,
   Building2,
   ChevronLeft,
@@ -80,6 +81,7 @@ const navGroups = [
       { to: "/categories", label: "Catégories", icon: FolderTree, roles: ["SUPER_ADMIN"] },
       { to: "/audit", label: "Journal d'audit", icon: ClipboardList, roles: ["SUPER_ADMIN"] },
       { to: "/auth-events", label: "Sécurité (auth)", icon: Shield, roles: ["SUPER_ADMIN"] },
+      { to: "/system", label: "État du système", icon: Activity, roles: ["ADMIN", "SUPER_ADMIN"] },
       { to: "/help", label: "Aide", icon: Search, roles: ["ADMIN", "SUPER_ADMIN"] },
     ],
   },
@@ -98,6 +100,12 @@ const pageTitles: Record<string, string> = {
   "/categories": "Catégories",
   "/audit": "Journal d'audit",
   "/admins": "Administrateurs",
+  "/system": "État du système",
+  "/help": "Aide",
+  "/profile": "Mon profil",
+  "/announcements": "Annonces",
+  "/inbox": "Boîte admin",
+  "/auth-events": "Sécurité (auth)",
 };
 
 function resolveTitle(pathname: string) {

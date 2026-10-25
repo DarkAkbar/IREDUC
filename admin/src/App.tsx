@@ -22,6 +22,7 @@ import { ReferentialsPage } from "@/pages/ReferentialsPage";
 import { ReportsPage } from "@/pages/ReportsPage";
 import { AnnouncementsPage } from "@/pages/AnnouncementsPage";
 import { HelpPage } from "@/pages/HelpPage";
+import { SystemHealthPage } from "@/pages/SystemHealthPage";
 import { InboxPage } from "@/pages/InboxPage";
 import { SettingsPage } from "@/pages/SettingsPage";
 import { UserDetailPage } from "@/pages/UserDetailPage";
@@ -75,6 +76,7 @@ export default function App() {
                   <Route path="profile" element={<MyProfilePage />} />
                   <Route path="announcements" element={<AnnouncementsPage />} />
                   <Route path="inbox" element={<InboxPage />} />
+                  <Route path="system" element={<SystemHealthPage />} />
                   <Route path="help" element={<HelpPage />} />
                   <Route element={<ProtectedRoute superAdminOnly />}>
                     <Route path="settings" element={<SettingsPage />} />
