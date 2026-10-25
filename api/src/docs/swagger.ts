@@ -29,18 +29,31 @@ export const swaggerSpec = swaggerJsdoc({
         },
         RegisterRequest: {
           type: "object",
-          required: ["fullName", "email", "password"],
+          required: ["fullName", "phone", "password"],
           properties: {
             fullName: { type: "string", example: "Jean Mukendi" },
-            email: { type: "string", format: "email" },
+            phone: {
+              type: "string",
+              example: "+243812345678",
+              description: "Numéro E.164 (formats locaux CD acceptés)",
+            },
             password: { type: "string", minLength: 8, example: "Password123!" },
+            email: {
+              type: "string",
+              format: "email",
+              description: "Facultatif",
+            },
           },
         },
         LoginRequest: {
           type: "object",
-          required: ["email", "password"],
+          required: ["identifier", "password"],
           properties: {
-            email: { type: "string", format: "email", example: "admin@ireduc.cd" },
+            identifier: {
+              type: "string",
+              example: "+243810000002",
+              description: "Numéro de téléphone ou e-mail",
+            },
             password: { type: "string", example: "Admin123!" },
           },
         },
@@ -68,15 +81,15 @@ export const swaggerSpec = swaggerJsdoc({
             },
           },
           responses: {
-            "201": { description: "Compte créé" },
-            "409": { description: "E-mail déjà utilisé" },
+            "201": { description: "Compte créé et connecté (jetons renvoyés)" },
+            "409": { description: "Numéro ou e-mail déjà utilisé" },
           },
         },
       },
       "/api/v1/auth/verify-email": {
         post: {
           tags: ["Auth"],
-          summary: "Vérifier l'e-mail",
+          summary: "Vérifier l'e-mail (optionnel, si activé plus tard)",
           requestBody: {
             required: true,
             content: {

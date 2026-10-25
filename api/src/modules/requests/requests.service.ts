@@ -20,6 +20,7 @@ import {
   buildPaginatedResult,
   getPagination,
 } from "../../utils/pagination";
+import { normalizePhone } from "../../utils/phone";
 import { mapPropertyListItem } from "../properties/properties.mapper";
 import { mapRequestListItem } from "./requests.mapper";
 
@@ -242,9 +243,13 @@ export async function createRequest(
         visitDate: input.visitDate ?? null,
         visitSlot: input.visitSlot ?? null,
         fullName: input.fullName.trim(),
-        phone: input.phone,
-        email: input.email.toLowerCase().trim(),
-        whatsapp: input.whatsapp ?? null,
+        phone: normalizePhone(input.phone),
+        email: input.email
+          ? input.email.toLowerCase().trim() || null
+          : null,
+        whatsapp: input.whatsapp
+          ? normalizePhone(input.whatsapp)
+          : null,
         message: input.message ?? null,
         status: RequestStatus.PENDING,
         paymentStatus: PaymentStatus.UNPAID,

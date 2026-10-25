@@ -68,11 +68,16 @@ export const updateUserStatusSchema = z
 
 export const createAdminSchema = z.object({
   fullName: z.string().min(2, "Le nom complet est requis"),
-  email: z.string().email("Adresse e-mail invalide"),
+  phone: z.string().min(6, "Numéro de téléphone invalide"),
+  email: z
+    .union([z.string().email("Adresse e-mail invalide"), z.literal("")])
+    .optional(),
   temporaryPassword: z
     .string()
-    .min(8, "Le mot de passe doit contenir au moins 8 caractères")
-    .regex(/\d/, "Le mot de passe doit contenir au moins un chiffre"),
+    .refine((value) => value.length >= 8 && /\d/.test(value), {
+      message:
+        "Le mot de passe doit contenir au moins 8 caractères et un chiffre",
+    }),
 });
 
 export const updateAdminRoleSchema = z.object({

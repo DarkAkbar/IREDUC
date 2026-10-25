@@ -21,7 +21,9 @@ export const createRequestSchema = z
     visitSlot: z.string().min(1).max(50).optional(),
     fullName: z.string().min(2, "Le nom complet est requis"),
     phone: z.string().min(6, "Numéro de téléphone invalide"),
-    email: z.string().email("Adresse e-mail invalide"),
+    email: z
+      .union([z.string().email("Adresse e-mail invalide"), z.literal("")])
+      .optional(),
     whatsapp: z.string().min(6).optional(),
     message: z.string().max(500, "Le message ne peut pas dépasser 500 caractères").optional(),
   })

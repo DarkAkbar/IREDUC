@@ -6,6 +6,10 @@ import {
   getPagination,
 } from "../../utils/pagination";
 import { hashPassword } from "../../utils/password";
+import {
+  normalizeOptionalEmail,
+  normalizePhone,
+} from "../../utils/phone";
 import { logAdminAction } from "./admin.shared";
 
 export async function listAdmins(query: { page: number; limit: number }) {
@@ -37,25 +41,41 @@ export async function listAdmins(query: { page: number; limit: number }) {
 
 export async function createAdmin(
   actorId: string,
-  input: { fullName: string; email: string; temporaryPassword: string }
+  input: {
+    fullName: string;
+    phone: string;
+    email?: string;
+    temporaryPassword: string;
+  }
 ) {
-  const email = input.email.toLowerCase().trim();
-  const existing = await prisma.user.findUnique({ where: { email } });
-  if (existing) {
-    throw conflict("Un compte existe déjà avec cet e-mail");
+  const phone = normalizePhone(input.phone);
+  const email = normalizeOptionalEmail(input.email ?? null);
+
+  const existingPhone = await prisma.user.findUnique({ where: { phone } });
+  if (existingPhone) {
+    throw conflict("Ce numéro est déjà utilisé", "PHONE_TAKEN");
+  }
+  if (email) {
+    const existingEmail = await prisma.user.findUnique({ where: { email } });
+    if (existingEmail) {
+      throw conflict("Cette adresse e-mail est déjà utilisée", "EMAIL_TAKEN");
+    }
   }
 
   const user = await prisma.user.create({
     data: {
       fullName: input.fullName.trim(),
+      phone,
       email,
       passwordHash: await hashPassword(input.temporaryPassword),
       systemRole: SystemRole.ADMIN,
-      emailVerified: true,
+      emailVerified: Boolean(email),
+      phoneVerified: true,
     },
     select: {
       id: true,
       fullName: true,
+      phone: true,
       email: true,
       systemRole: true,
       accountStatus: true,

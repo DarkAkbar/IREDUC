@@ -143,6 +143,7 @@ export async function listPendingProviders(query: {
           OR: [
             { displayName: { contains: query.q, mode: "insensitive" } },
             { user: { email: { contains: query.q, mode: "insensitive" } } },
+            { user: { phone: { contains: query.q, mode: "insensitive" } } },
             { user: { fullName: { contains: query.q, mode: "insensitive" } } },
           ],
         }
