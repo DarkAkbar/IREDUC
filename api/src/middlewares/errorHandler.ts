@@ -43,6 +43,14 @@ export function errorHandler(
     return;
   }
 
+  if (err instanceof SyntaxError) {
+    res.status(400).json({
+      message: "Corps JSON invalide",
+      code: "INVALID_JSON",
+    });
+    return;
+  }
+
   logger.error("Erreur non gérée", err);
   res.status(500).json({
     message: "Erreur interne du serveur",
