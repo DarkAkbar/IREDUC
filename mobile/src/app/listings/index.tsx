@@ -28,8 +28,13 @@ import { ListingStatus, PropertyDetail, ServiceDetail } from "../../api/types";
 import { EmptyState } from "../../components/list/EmptyState";
 import { ErrorState } from "../../components/list/ErrorState";
 import { ListScreenHeader } from "../../components/list/ListScreenHeader";
+import {
+  PublishFab,
+  usePublishFabScroll,
+} from "../../components/PublishFab";
 import { Button } from "../../components/ui/Button";
 import { ListSkeleton } from "../../components/ui/SkeletonLoader";
+import { useOpenPublish } from "../../hooks/useOpenPublish";
 import { useRequireAuth } from "../../hooks/useRequireAuth";
 import { usePublishStore } from "../../store/publishStore";
 import { colors, radii, spacing, typography } from "../../theme";
@@ -69,6 +74,8 @@ export default function MyListingsScreen() {
   const router = useRouter();
   const queryClient = useQueryClient();
   const { isAuthenticated, requireAuth } = useRequireAuth();
+  const { openPublish } = useOpenPublish();
+  const { onScroll: onFabScroll } = usePublishFabScroll();
   const resetPublish = usePublishStore((s) => s.reset);
   const [tab, setTab] = useState<TabKey>("DRAFT");
 
@@ -186,11 +193,8 @@ export default function MyListingsScreen() {
         <Text style={typography.title}>Mes annonces</Text>
         <Button
           label="Publier"
-          onPress={() => {
-            resetPublish();
-            router.push("/publish" as never);
-          }}
-          style={{ paddingHorizontal: spacing.md, minHeight: 40 }}
+          onPress={() => openPublish("/listings")}
+          style={{ paddingHorizontal: spacing.md, minHeight: 48 }}
         />
       </View>
       <Pressable
@@ -219,7 +223,12 @@ export default function MyListingsScreen() {
         <FlatList
           data={items}
           keyExtractor={(item) => `${item.kind}-${item.data.id}`}
-          contentContainerStyle={{ paddingBottom: spacing.xxl, paddingTop: spacing.md }}
+          contentContainerStyle={{
+            paddingBottom: spacing.xxl + 72,
+            paddingTop: spacing.md,
+          }}
+          scrollEventThrottle={16}
+          onScroll={(e) => onFabScroll(e.nativeEvent.contentOffset.y)}
           refreshControl={
             <RefreshControl
               refreshing={
@@ -234,10 +243,7 @@ export default function MyListingsScreen() {
               title="Aucune annonce"
               message="Publiez un bien ou un service pour le voir ici."
               actionLabel="Publier une annonce"
-              onAction={() => {
-                resetPublish();
-                router.push("/publish" as never);
-              }}
+              onAction={() => openPublish("/listings")}
             />
           }
           renderItem={({ item }) => {
@@ -328,6 +334,7 @@ export default function MyListingsScreen() {
           }}
         />
       ) : null}
+      <PublishFab aboveTabs={false} />
     </View>
   );
 }

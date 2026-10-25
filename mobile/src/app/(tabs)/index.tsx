@@ -2,7 +2,6 @@ import { Ionicons } from "@expo/vector-icons";
 import { useQuery } from "@tanstack/react-query";
 import { Image } from "expo-image";
 import { useRouter } from "expo-router";
-import { pushPath } from "../../utils/navigation";
 import {
   Pressable,
   RefreshControl,
@@ -17,12 +16,19 @@ import { fetchConversations } from "../../api/conversations";
 import { fetchHome } from "../../api/home";
 import { fetchNotifications } from "../../api/notifications";
 import { IreducLogo } from "../../components/IreducLogo";
-import { PropertyCard } from "../../components/PropertyCard";
-import { ServiceCard } from "../../components/ServiceCard";
 import { PartnerHomeBanner } from "../../components/PartnerHomeBanner";
+import { PropertyCard } from "../../components/PropertyCard";
+import {
+  PublishFab,
+  PUBLISH_FAB_BOTTOM_INSET,
+  usePublishFabScroll,
+} from "../../components/PublishFab";
+import { ServiceCard } from "../../components/ServiceCard";
+import { Button } from "../../components/ui/Button";
 import { SearchBar } from "../../components/ui/SearchBar";
 import { SectionHeader } from "../../components/ui/SectionHeader";
 import { HomeSkeleton } from "../../components/ui/SkeletonLoader";
+import { useOpenPublish } from "../../hooks/useOpenPublish";
 import { useRequireAuth } from "../../hooks/useRequireAuth";
 import { useAuthStore } from "../../store/authStore";
 import { colors, radii, spacing, typography } from "../../theme";
@@ -34,6 +40,8 @@ export default function HomeScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const { requireAuth } = useRequireAuth();
+  const { openPublish } = useOpenPublish();
+  const { onScroll: onFabScroll } = usePublishFabScroll();
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
 
   const { data, isLoading, isError, refetch, isFetching } = useQuery({
@@ -71,7 +79,10 @@ export default function HomeScreen() {
   return (
     <View style={[styles.screen, { paddingTop: insets.top }]}>
       <ScrollView
-        contentContainerStyle={styles.content}
+        contentContainerStyle={[
+          styles.content,
+          { paddingBottom: PUBLISH_FAB_BOTTOM_INSET },
+        ]}
         refreshControl={
           <RefreshControl
             refreshing={isFetching && !isLoading}
@@ -80,6 +91,8 @@ export default function HomeScreen() {
           />
         }
         showsVerticalScrollIndicator={false}
+        scrollEventThrottle={16}
+        onScroll={(e) => onFabScroll(e.nativeEvent.contentOffset.y)}
       >
         <View style={styles.header}>
           <IreducLogo tagline="Trouvez. Comparez. Réalisez." compact />
@@ -88,6 +101,15 @@ export default function HomeScreen() {
               <Ionicons name="location" size={14} color={colors.primary} />
               <Text style={styles.cityText}>Kinshasa</Text>
               <Ionicons name="chevron-down" size={14} color={colors.navy} />
+            </Pressable>
+            <Pressable
+              style={styles.publishPill}
+              onPress={() => openPublish()}
+              accessibilityRole="button"
+              accessibilityLabel="+ Publier"
+            >
+              <Ionicons name="add" size={16} color={colors.white} />
+              <Text style={styles.publishPillText}>Publier</Text>
             </Pressable>
             <Pressable
               style={styles.bell}
@@ -178,6 +200,8 @@ export default function HomeScreen() {
                 />
               </View>
             </View>
+
+            <PartnerHomeBanner />
 
             <View style={styles.section}>
               <SectionHeader
@@ -277,24 +301,17 @@ export default function HomeScreen() {
                 )}
               </View>
             ))}
-
-            <View style={styles.ctaBanner}>
-              <Text style={styles.ctaTitle}>Voulez-vous proposer un bien ou un service ?</Text>
-              <Text style={styles.ctaText}>
-                Devenez partenaire IREDUC et publiez vos annonces à Kinshasa.
-              </Text>
-              <PartnerHomeBanner />
-            </View>
           </>
         ) : null}
       </ScrollView>
+      <PublishFab />
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.background },
-  content: { paddingBottom: spacing.xxl },
+  content: {},
   header: {
     flexDirection: "row",
     justifyContent: "space-between",
@@ -315,7 +332,26 @@ const styles = StyleSheet.create({
     borderColor: colors.border,
   },
   cityText: { color: colors.navy, fontWeight: "700", fontSize: 13 },
-  bell: { padding: spacing.sm, position: "relative" },
+  publishPill: {
+    minHeight: 48,
+    minWidth: 48,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 2,
+    backgroundColor: colors.primary,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: radii.pill,
+  },
+  publishPillText: { color: colors.white, fontWeight: "800", fontSize: 13 },
+  bell: {
+    minWidth: 48,
+    minHeight: 48,
+    alignItems: "center",
+    justifyContent: "center",
+    position: "relative",
+  },
   bellBadge: {
     position: "absolute",
     top: 4,
@@ -338,7 +374,7 @@ const styles = StyleSheet.create({
   },
   heroImage: { width: "100%", height: "100%" },
   heroOverlay: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
     backgroundColor: colors.overlay,
     justifyContent: "center",
     paddingHorizontal: spacing.xl,
@@ -381,18 +417,6 @@ const styles = StyleSheet.create({
     textAlign: "center",
     lineHeight: 14,
   },
-  ctaBanner: {
-    margin: spacing.lg,
-    marginTop: spacing.xxl,
-    backgroundColor: colors.white,
-    borderRadius: radii.lg,
-    padding: spacing.xl,
-    gap: spacing.md,
-    borderWidth: 1,
-    borderColor: colors.border,
-  },
-  ctaTitle: { ...typography.section },
-  ctaText: { ...typography.body },
   stateBox: {
     margin: spacing.lg,
     padding: spacing.xl,

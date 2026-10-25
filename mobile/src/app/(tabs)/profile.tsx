@@ -28,6 +28,7 @@ import {
 import { GuestPrompt } from "../../components/GuestPrompt";
 import { Button } from "../../components/ui/Button";
 import { SkeletonLoader } from "../../components/ui/SkeletonLoader";
+import { useOpenPublish } from "../../hooks/useOpenPublish";
 import { useAuthStore } from "../../store/authStore";
 import { colors, radii, spacing, typography } from "../../theme";
 import { getErrorMessage } from "../../utils/errors";
@@ -138,6 +139,7 @@ export default function ProfileScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const queryClient = useQueryClient();
+  const { openPublish } = useOpenPublish();
   const { user, isAuthenticated, isHydrated, logout, setUser } = useAuthStore();
 
   const summaryQuery = useQuery({
@@ -482,27 +484,32 @@ export default function ProfileScreen() {
             </Text>
           </Pressable>
         ) : null}
-        {reviewStatus === "APPROVED" ? (
-          <View style={styles.menu}>
-            <MenuRow
-              icon="add-circle-outline"
-              label="Publier une annonce"
-              onPress={() => router.push("/publish" as never)}
-            />
-            <MenuRow
-              icon="home-outline"
-              label="Mes annonces"
-              onPress={() => router.push("/listings" as never)}
-            />
-            <MenuRow
-              icon="mail-unread-outline"
-              label="Demandes reçues"
-              badge={partner?.pendingReceivedRequests}
-              onPress={() => router.push("/listings/received" as never)}
-              last
-            />
-          </View>
-        ) : null}
+        <View style={styles.menu}>
+          <MenuRow
+            icon="add-circle-outline"
+            label={
+              reviewStatus === "APPROVED" ? "Publier une annonce" : "Publier"
+            }
+            onPress={() => openPublish("/(tabs)/profile")}
+            last={reviewStatus !== "APPROVED"}
+          />
+          {reviewStatus === "APPROVED" ? (
+            <>
+              <MenuRow
+                icon="home-outline"
+                label="Mes annonces"
+                onPress={() => router.push("/listings" as never)}
+              />
+              <MenuRow
+                icon="mail-unread-outline"
+                label="Demandes reçues"
+                badge={partner?.pendingReceivedRequests}
+                onPress={() => router.push("/listings/received" as never)}
+                last
+              />
+            </>
+          ) : null}
+        </View>
         {!reviewStatus ? (
           <View style={styles.becomeCard}>
             <Text style={styles.becomeTitle}>Devenir partenaire</Text>
@@ -691,6 +698,7 @@ const styles = StyleSheet.create({
     overflow: "hidden",
   },
   menuRow: {
+    minHeight: 52,
     flexDirection: "row",
     alignItems: "center",
     gap: spacing.md,

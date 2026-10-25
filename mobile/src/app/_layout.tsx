@@ -7,6 +7,7 @@ import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { ErrorBoundary } from "../components/ErrorBoundary";
 import { OfflineBanner } from "../components/OfflineBanner";
+import { PublishSheetHost } from "../components/PublishSheetHost";
 import { useAuthStore } from "../store/authStore";
 import { useFavoritesStore } from "../store/favoritesStore";
 import { colors } from "../theme";
@@ -91,6 +92,7 @@ export default function RootLayout() {
             <Stack.Screen name="request/[id]" />
             <Stack.Screen name="request/similar" />
               </Stack>
+              <PublishSheetHost />
             </View>
           </QueryClientProvider>
         </ErrorBoundary>

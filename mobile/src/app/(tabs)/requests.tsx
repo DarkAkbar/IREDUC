@@ -16,6 +16,11 @@ import { RequestStatus } from "../../api/types";
 import { GuestPrompt } from "../../components/GuestPrompt";
 import { EmptyState } from "../../components/list/EmptyState";
 import { ErrorState } from "../../components/list/ErrorState";
+import {
+  PublishFab,
+  PUBLISH_FAB_BOTTOM_INSET,
+  usePublishFabScroll,
+} from "../../components/PublishFab";
 import { RequestCard } from "../../components/requests/RequestCard";
 import { ListSkeleton } from "../../components/ui/SkeletonLoader";
 import { IreducLogo } from "../../components/IreducLogo";
@@ -34,6 +39,7 @@ const TABS: { key: TabKey; label: string }[] = [
 export default function RequestsScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
+  const { onScroll: onFabScroll } = usePublishFabScroll();
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   const isHydrated = useAuthStore((s) => s.isHydrated);
   const [tab, setTab] = useState<TabKey>("ALL");
@@ -128,7 +134,12 @@ export default function RequestsScreen() {
           removeClippedSubviews
           keyExtractor={(item) => item.id}
           renderItem={({ item }) => <RequestCard item={item} />}
-          contentContainerStyle={{ paddingBottom: spacing.xxl, paddingTop: spacing.md }}
+          contentContainerStyle={{
+            paddingBottom: PUBLISH_FAB_BOTTOM_INSET,
+            paddingTop: spacing.md,
+          }}
+          scrollEventThrottle={16}
+          onScroll={(e) => onFabScroll(e.nativeEvent.contentOffset.y)}
           onEndReached={() => {
             if (query.hasNextPage && !query.isFetchingNextPage) {
               void query.fetchNextPage();
@@ -152,6 +163,7 @@ export default function RequestsScreen() {
           }
         />
       ) : null}
+      <PublishFab />
     </View>
   );
 }
