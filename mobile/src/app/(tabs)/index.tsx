@@ -21,6 +21,7 @@ import { PropertyCard } from "../../components/PropertyCard";
 import {
   PublishFab,
   PUBLISH_FAB_BOTTOM_INSET,
+  PUBLISH_FAB_SIDE_INSET,
   usePublishFabScroll,
 } from "../../components/PublishFab";
 import { ServiceCard } from "../../components/ServiceCard";
@@ -374,7 +375,11 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.lg,
   },
   section: { marginTop: spacing.xl },
-  carousel: { paddingHorizontal: spacing.lg, paddingBottom: spacing.sm },
+  carousel: {
+    paddingLeft: spacing.lg,
+    paddingRight: PUBLISH_FAB_SIDE_INSET,
+    paddingBottom: spacing.sm,
+  },
   trust: {
     marginTop: spacing.xl,
     marginHorizontal: spacing.lg,

@@ -1,6 +1,14 @@
 import { Ionicons } from "@expo/vector-icons";
-import { useEffect, useRef } from "react";
-import { Animated, Pressable, StyleSheet, View } from "react-native";
+import { useFocusEffect } from "expo-router";
+import { useCallback, useEffect, useRef, useState } from "react";
+import {
+  Animated,
+  Keyboard,
+  Platform,
+  Pressable,
+  StyleSheet,
+  View,
+} from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useOpenPublish } from "../hooks/useOpenPublish";
 import { usePublishSheetStore } from "../store/publishSheetStore";
@@ -9,11 +17,21 @@ import { colors, spacing } from "../theme";
 type Props = {
   /** Masquer le FAB sur cet écran. */
   hidden?: boolean;
-  /** Positionné au-dessus de la barre d'onglets (défaut : true). */
+  /** Au-dessus de la barre d'onglets (écrans tabs). Sinon : stack sans tabs. */
   aboveTabs?: boolean;
 };
 
-const TAB_BAR_OFFSET = 72;
+/** Hauteur visuelle du bouton (pastille ou étendu). */
+export const PUBLISH_FAB_SIZE = 56;
+/** Écart au-dessus de la barre d'onglets / du bas d'écran. */
+export const PUBLISH_FAB_GAP = 16;
+/**
+ * Marge basse des listes / contenus scrollables pour ne pas passer sous le FAB.
+ * (hauteur bouton + gap + marge de confort)
+ */
+export const PUBLISH_FAB_BOTTOM_INSET = PUBLISH_FAB_SIZE + PUBLISH_FAB_GAP + 12;
+/** Marge droite des carrousels horizontaux (évite cœurs / prix sous le FAB). */
+export const PUBLISH_FAB_SIDE_INSET = PUBLISH_FAB_SIZE + spacing.lg;
 
 export function PublishFab({ hidden = false, aboveTabs = true }: Props) {
   const insets = useSafeAreaInsets();
@@ -21,40 +39,75 @@ export function PublishFab({ hidden = false, aboveTabs = true }: Props) {
   const sheetVisible = usePublishSheetStore((s) => s.visible);
   const collapsed = usePublishSheetStore((s) => s.fabCollapsed);
   const storeHidden = usePublishSheetStore((s) => s.fabHidden);
+  const [keyboardOpen, setKeyboardOpen] = useState(false);
   const widthAnim = useRef(new Animated.Value(collapsed ? 0 : 1)).current;
+
+  useEffect(() => {
+    const showEvt =
+      Platform.OS === "ios" ? "keyboardWillShow" : "keyboardDidShow";
+    const hideEvt =
+      Platform.OS === "ios" ? "keyboardWillHide" : "keyboardDidHide";
+    const showSub = Keyboard.addListener(showEvt, () => setKeyboardOpen(true));
+    const hideSub = Keyboard.addListener(hideEvt, () => setKeyboardOpen(false));
+    return () => {
+      showSub.remove();
+      hideSub.remove();
+    };
+  }, []);
+
+  useFocusEffect(
+    useCallback(() => {
+      usePublishSheetStore.getState().setFabCollapsed(false);
+      return () => {
+        setKeyboardOpen(false);
+      };
+    }, [])
+  );
 
   useEffect(() => {
     Animated.timing(widthAnim, {
       toValue: collapsed ? 0 : 1,
-      duration: 180,
+      duration: 160,
       useNativeDriver: false,
     }).start();
   }, [collapsed, widthAnim]);
 
-  if (hidden || storeHidden || sheetVisible) return null;
+  if (hidden || storeHidden || sheetVisible || keyboardOpen) return null;
 
   const labelOpacity = widthAnim;
   const extraWidth = widthAnim.interpolate({
     inputRange: [0, 1],
-    outputRange: [0, 78],
+    outputRange: [0, 82],
   });
+
+  /* L'écran tabs est déjà au-dessus de la barre : bottom 16 = 16 px au-dessus. */
   const bottom = aboveTabs
-    ? TAB_BAR_OFFSET + Math.max(insets.bottom - 8, 0)
-    : Math.max(insets.bottom, 16) + 8;
+    ? PUBLISH_FAB_GAP
+    : Math.max(insets.bottom, 8) + PUBLISH_FAB_GAP;
 
   return (
-    <View pointerEvents="box-none" style={[styles.wrap, { bottom }]}>
+    <View
+      pointerEvents="box-none"
+      style={[styles.wrap, { bottom, right: spacing.md }]}
+    >
       <Pressable
         onPress={() => openPublish()}
         accessibilityRole="button"
         accessibilityLabel="+ Publier"
         accessibilityHint="Ouvre le choix du type d'annonce"
         hitSlop={4}
-        style={({ pressed }) => [styles.fab, pressed && styles.fabPressed]}
+        style={({ pressed }) => [
+          styles.fab,
+          collapsed && styles.fabCollapsed,
+          pressed && styles.fabPressed,
+        ]}
       >
-        <Ionicons name="add" size={26} color={colors.white} />
+        <Ionicons name="add" size={28} color={colors.white} />
         <Animated.View style={{ width: extraWidth, overflow: "hidden" }}>
-          <Animated.Text style={[styles.label, { opacity: labelOpacity }]}>
+          <Animated.Text
+            numberOfLines={1}
+            style={[styles.label, { opacity: labelOpacity }]}
+          >
             Publier
           </Animated.Text>
         </Animated.View>
@@ -63,56 +116,50 @@ export function PublishFab({ hidden = false, aboveTabs = true }: Props) {
   );
 }
 
-/** À brancher sur onScroll des listes pour réduire / étendre le FAB. */
+/**
+ * Réduit le FAB dès qu'on quitte le sommet ; le rétablit uniquement en haut.
+ */
 export function usePublishFabScroll() {
   const setFabCollapsed = usePublishSheetStore((s) => s.setFabCollapsed);
-  const lastY = useRef(0);
 
   function onScroll(offsetY: number) {
-    const delta = offsetY - lastY.current;
-    if (offsetY < 16) {
-      setFabCollapsed(false);
-    } else if (delta > 10) {
-      setFabCollapsed(true);
-    } else if (delta < -10) {
-      setFabCollapsed(false);
-    }
-    lastY.current = offsetY;
+    setFabCollapsed(offsetY > 20);
   }
 
   return { onScroll };
 }
 
-/** Marge basse pour que les listes ne passent pas sous le FAB. */
-export const PUBLISH_FAB_BOTTOM_INSET = 56 + TAB_BAR_OFFSET;
-
 const styles = StyleSheet.create({
   wrap: {
     position: "absolute",
-    right: spacing.lg,
     zIndex: 40,
+    elevation: 40,
   },
   fab: {
-    minHeight: 52,
-    minWidth: 52,
+    height: PUBLISH_FAB_SIZE,
+    minWidth: PUBLISH_FAB_SIZE,
     paddingHorizontal: 14,
-    borderRadius: 26,
+    borderRadius: PUBLISH_FAB_SIZE / 2,
     backgroundColor: colors.primary,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    gap: 4,
-    shadowColor: "#000",
-    shadowOpacity: 0.18,
-    shadowRadius: 8,
-    shadowOffset: { width: 0, height: 3 },
-    elevation: 5,
+    gap: 2,
+    shadowColor: "#0B2A8A",
+    shadowOpacity: 0.2,
+    shadowRadius: 6,
+    shadowOffset: { width: 0, height: 2 },
+    elevation: 4,
+  },
+  fabCollapsed: {
+    width: PUBLISH_FAB_SIZE,
+    paddingHorizontal: 0,
   },
   fabPressed: { opacity: 0.92 },
   label: {
     color: colors.white,
     fontWeight: "800",
     fontSize: 15,
-    paddingRight: 4,
+    paddingRight: 6,
   },
 });

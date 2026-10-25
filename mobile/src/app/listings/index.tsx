@@ -30,6 +30,7 @@ import { ErrorState } from "../../components/list/ErrorState";
 import { ListScreenHeader } from "../../components/list/ListScreenHeader";
 import {
   PublishFab,
+  PUBLISH_FAB_BOTTOM_INSET,
   usePublishFabScroll,
 } from "../../components/PublishFab";
 import { Button } from "../../components/ui/Button";
@@ -191,11 +192,6 @@ export default function MyListingsScreen() {
       <ListScreenHeader showBack />
       <View style={styles.header}>
         <Text style={typography.title}>Mes annonces</Text>
-        <Button
-          label="Publier"
-          onPress={() => openPublish("/listings")}
-          style={{ paddingHorizontal: spacing.md, minHeight: 48 }}
-        />
       </View>
       <Pressable
         style={styles.partnerBanner}
@@ -224,7 +220,7 @@ export default function MyListingsScreen() {
           data={items}
           keyExtractor={(item) => `${item.kind}-${item.data.id}`}
           contentContainerStyle={{
-            paddingBottom: spacing.xxl + 72,
+            paddingBottom: PUBLISH_FAB_BOTTOM_INSET,
             paddingTop: spacing.md,
           }}
           scrollEventThrottle={16}
