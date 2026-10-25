@@ -1,7 +1,11 @@
-import { PrismaClient, OfferType, PropertyKind, RequestStatus, RequestTarget, ProjectType, VisitMode, MediaType, ListingStatus, ProviderType, SystemRole, PaymentStatus } from "@prisma/client";
+import { PrismaClient, OfferType, PropertyKind, RequestStatus, RequestTarget, ProjectType, VisitMode, MediaType, ListingStatus, ProviderType, SystemRole, PaymentStatus, Prisma } from "@prisma/client";
 import * as bcrypt from "bcrypt";
 import dotenv from "dotenv";
 import { confirmSeedTruncate } from "./seed-confirm";
+import {
+  DEFAULT_SETTINGS,
+  SETTING_KEYS,
+} from "../src/modules/admin/admin.settings.defaults";
 
 // Ne pas écraser DATABASE_URL déjà définie (ex. Vitest → .env.test / ireduc_test)
 dotenv.config({ override: false });
@@ -739,6 +743,17 @@ async function main() {
       handledById: superAdmin.id,
     },
   });
+
+  for (const key of SETTING_KEYS) {
+    await prisma.setting.upsert({
+      where: { key },
+      create: {
+        key,
+        value: DEFAULT_SETTINGS[key] as Prisma.InputJsonValue,
+      },
+      update: {},
+    });
+  }
 
   console.log("Seed IREDUC terminé avec succès.");
 }

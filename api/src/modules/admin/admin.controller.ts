@@ -7,6 +7,7 @@ import * as auditService from "./admin.audit.service";
 import * as categoriesService from "./admin.categories.service";
 import * as moderationService from "./admin.moderation.service";
 import * as requestsService from "./admin.requests.service";
+import * as settingsService from "./admin.settings.service";
 import * as statsService from "./admin.stats.service";
 import * as usersService from "./admin.users.service";
 
@@ -333,6 +334,73 @@ export async function reviewService(
     );
     const nextPending = await moderationService.getNextPendingService(id);
     res.status(200).json({ ...result, nextPendingId: nextPending?.id ?? null });
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function listSettings(
+  req: Request,
+  res: Response,
+  next: NextFunction
+) {
+  try {
+    requireAdmin(req);
+    const result = await settingsService.listSettings();
+    res.status(200).json({ data: result });
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function getSetting(
+  req: Request,
+  res: Response,
+  next: NextFunction
+) {
+  try {
+    requireAdmin(req);
+    const result = await settingsService.getSetting(getParam(req, "key"));
+    res.status(200).json(result);
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function updateSetting(
+  req: Request,
+  res: Response,
+  next: NextFunction
+) {
+  try {
+    const admin = requireSuperAdmin(req);
+    const result = await settingsService.updateSetting(
+      admin.id,
+      getParam(req, "key"),
+      req.body.value,
+      req.body.reason
+    );
+    res.status(200).json(result);
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function getSettingHistory(
+  req: Request,
+  res: Response,
+  next: NextFunction
+) {
+  try {
+    requireSuperAdmin(req);
+    const page = Number(req.query.page ?? 1);
+    const limit = Number(req.query.limit ?? 20);
+    const result = await settingsService.getSettingHistory(
+      getParam(req, "key"),
+      page,
+      limit
+    );
+    res.status(200).json(result);
   } catch (error) {
     next(error);
   }

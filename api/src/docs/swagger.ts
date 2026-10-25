@@ -232,7 +232,8 @@ export const swaggerSpec = swaggerJsdoc({
       "/api/v1/config": {
         get: {
           tags: ["Config"],
-          summary: "Configuration publique (support, version min, liens légaux)",
+          summary:
+            "Configuration publique (alimentée par les paramètres Setting, fallback env)",
           responses: {
             "200": {
               description: "Configuration",
@@ -241,8 +242,15 @@ export const swaggerSpec = swaggerJsdoc({
                   schema: {
                     type: "object",
                     properties: {
+                      platformName: { type: "string" },
+                      slogan: { type: "string" },
+                      defaultCurrency: { type: "string", example: "USD" },
+                      launchCity: { type: "string" },
+                      contactEmail: { type: "string" },
                       supportWhatsapp: { type: "string", example: "+243810000000" },
                       minAppVersion: { type: "string", example: "1.0.0" },
+                      maintenanceMode: { type: "boolean" },
+                      maintenanceMessage: { type: "string" },
                       legal: {
                         type: "object",
                         properties: {
@@ -256,6 +264,80 @@ export const swaggerSpec = swaggerJsdoc({
               },
             },
           },
+        },
+      },
+      "/api/v1/admin/settings": {
+        get: {
+          tags: ["Admin"],
+          summary: "Lister tous les paramètres (ADMIN+)",
+          security: [{ bearerAuth: [] }],
+          responses: { "200": { description: "Liste clé/valeur" } },
+        },
+      },
+      "/api/v1/admin/settings/{key}": {
+        get: {
+          tags: ["Admin"],
+          summary: "Lire un paramètre",
+          security: [{ bearerAuth: [] }],
+          parameters: [
+            {
+              name: "key",
+              in: "path",
+              required: true,
+              schema: {
+                type: "string",
+                enum: [
+                  "general",
+                  "mobile",
+                  "validation",
+                  "security",
+                  "home",
+                  "notifications",
+                ],
+              },
+            },
+          ],
+          responses: { "200": { description: "Paramètre" } },
+        },
+        patch: {
+          tags: ["Admin"],
+          summary: "Modifier un paramètre (SUPER_ADMIN, journalisé)",
+          security: [{ bearerAuth: [] }],
+          parameters: [
+            {
+              name: "key",
+              in: "path",
+              required: true,
+              schema: { type: "string" },
+            },
+          ],
+          requestBody: {
+            required: true,
+            content: {
+              "application/json": {
+                schema: {
+                  type: "object",
+                  required: ["value"],
+                  properties: {
+                    value: { type: "object" },
+                    reason: { type: "string" },
+                  },
+                },
+              },
+            },
+          },
+          responses: {
+            "200": { description: "Mis à jour" },
+            "403": { description: "Réservé SUPER_ADMIN" },
+          },
+        },
+      },
+      "/api/v1/admin/settings/{key}/history": {
+        get: {
+          tags: ["Admin"],
+          summary: "Historique des modifications d'un paramètre (SUPER_ADMIN)",
+          security: [{ bearerAuth: [] }],
+          responses: { "200": { description: "Journal AdminAction" } },
         },
       },
       "/api/v1/users/me": {

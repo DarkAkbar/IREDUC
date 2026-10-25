@@ -138,3 +138,21 @@ export const updateCategorySchema = z
   .refine((data) => Object.keys(data).length > 0, {
     message: "Aucun champ à mettre à jour",
   });
+
+export const settingKeyParamsSchema = z.object({
+  key: z.enum([
+    "general",
+    "mobile",
+    "validation",
+    "security",
+    "home",
+    "notifications",
+  ]),
+});
+
+export const updateSettingSchema = z.object({
+  value: z.record(z.string(), z.unknown()),
+  reason: z.string().trim().min(3).optional(),
+});
+
+export const settingHistoryQuerySchema = paginationQuerySchema;

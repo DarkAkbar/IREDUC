@@ -18,8 +18,11 @@ import {
   createCategorySchema,
   featureSchema,
   reviewDecisionSchema,
+  settingHistoryQuerySchema,
+  settingKeyParamsSchema,
   updateAdminRoleSchema,
   updateCategorySchema,
+  updateSettingSchema,
   updateUserStatusSchema,
 } from "./admin.schemas";
 import { paginationQuerySchema } from "../../utils/pagination";
@@ -174,4 +177,23 @@ adminRouter.patch(
   validate(adminIdParamsSchema, "params"),
   validate(updateCategorySchema),
   adminController.updateCategory
+);
+
+adminRouter.get("/settings", adminController.listSettings);
+adminRouter.get(
+  "/settings/:key",
+  validate(settingKeyParamsSchema, "params"),
+  adminController.getSetting
+);
+adminRouter.patch(
+  "/settings/:key",
+  validate(settingKeyParamsSchema, "params"),
+  validate(updateSettingSchema),
+  adminController.updateSetting
+);
+adminRouter.get(
+  "/settings/:key/history",
+  validate(settingKeyParamsSchema, "params"),
+  validate(settingHistoryQuerySchema, "query"),
+  adminController.getSettingHistory
 );

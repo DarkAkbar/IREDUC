@@ -12,6 +12,7 @@ import {
   Menu,
   Moon,
   Search,
+  Settings,
   Shield,
   Store,
   Sun,
@@ -62,6 +63,7 @@ const navGroups = [
   {
     label: "Système",
     items: [
+      { to: "/settings", label: "Paramètres", icon: Settings, roles: ["SUPER_ADMIN"] },
       { to: "/categories", label: "Catégories", icon: FolderTree, roles: ["SUPER_ADMIN"] },
       { to: "/audit", label: "Journal d'audit", icon: ClipboardList, roles: ["SUPER_ADMIN"] },
     ],
@@ -75,6 +77,7 @@ const pageTitles: Record<string, string> = {
   "/services": "Services",
   "/requests": "Demandes",
   "/users": "Utilisateurs",
+  "/settings": "Paramètres",
   "/categories": "Catégories",
   "/audit": "Journal d'audit",
   "/admins": "Administrateurs",

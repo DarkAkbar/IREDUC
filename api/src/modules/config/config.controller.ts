@@ -7,7 +7,8 @@ export async function getConfig(
   next: NextFunction
 ) {
   try {
-    res.status(200).json(configService.getPublicConfig());
+    const config = await configService.getPublicConfig();
+    res.status(200).json(config);
   } catch (error) {
     next(error);
   }
