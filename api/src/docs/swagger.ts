@@ -769,6 +769,30 @@ export const swaggerSpec = swaggerJsdoc({
           responses: { "200": { description: "Statut mis à jour" } },
         },
       },
+      "/api/v1/admin/users/export.csv": {
+        get: {
+          tags: ["Admin"],
+          summary: "Export CSV des utilisateurs (filtres courants)",
+          security: [{ bearerAuth: [] }],
+          responses: { "200": { description: "Fichier CSV" } },
+        },
+      },
+      "/api/v1/admin/users/{id}/force-logout": {
+        post: {
+          tags: ["Admin"],
+          summary: "Révoquer toutes les sessions",
+          security: [{ bearerAuth: [] }],
+          responses: { "200": { description: "Sessions révoquées" } },
+        },
+      },
+      "/api/v1/admin/users/{id}/reset-password": {
+        post: {
+          tags: ["Admin"],
+          summary: "Mot de passe temporaire (SUPER_ADMIN)",
+          security: [{ bearerAuth: [] }],
+          responses: { "200": { description: "Mot de passe généré" } },
+        },
+      },
       "/api/v1/admin/admins": {
         get: {
           tags: ["Admin"],

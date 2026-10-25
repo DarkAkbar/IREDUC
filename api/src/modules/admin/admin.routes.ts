@@ -143,6 +143,11 @@ adminRouter.get(
   adminController.listUsers
 );
 adminRouter.get(
+  "/users/export.csv",
+  validate(adminUsersQuerySchema, "query"),
+  adminController.exportUsersCsv
+);
+adminRouter.get(
   "/users/:id",
   validate(adminIdParamsSchema, "params"),
   adminController.getUser
@@ -153,7 +158,16 @@ adminRouter.patch(
   validate(updateUserStatusSchema),
   adminController.updateUserStatus
 );
-
+adminRouter.post(
+  "/users/:id/force-logout",
+  validate(adminIdParamsSchema, "params"),
+  adminController.forceLogoutUser
+);
+adminRouter.post(
+  "/users/:id/reset-password",
+  validate(adminIdParamsSchema, "params"),
+  adminController.resetUserPassword
+);
 adminRouter.get(
   "/admins",
   validate(paginationQuerySchema, "query"),

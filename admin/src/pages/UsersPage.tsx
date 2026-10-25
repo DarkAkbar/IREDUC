@@ -75,6 +75,30 @@ export function UsersPage() {
       <PageHeader
         title="Utilisateurs"
         description="Recherche, consultation et suspension des comptes."
+        actions={
+          <Button
+            variant="outline"
+            onClick={async () => {
+              const { data } = await api.get<string>("/admin/users/export.csv", {
+                params: {
+                  role: role || undefined,
+                  status: status || undefined,
+                  search: params.get("search") || undefined,
+                },
+                responseType: "text",
+              });
+              const blob = new Blob([data], { type: "text/csv;charset=utf-8" });
+              const url = URL.createObjectURL(blob);
+              const link = document.createElement("a");
+              link.href = url;
+              link.download = "utilisateurs.csv";
+              link.click();
+              URL.revokeObjectURL(url);
+            }}
+          >
+            Exporter CSV
+          </Button>
+        }
       />
 
       <Card>

@@ -75,6 +75,53 @@ export async function updateUserStatus(
   }
 }
 
+export async function forceLogoutUser(
+  req: Request,
+  res: Response,
+  next: NextFunction
+) {
+  try {
+    const admin = requireAdmin(req);
+    const result = await usersService.forceLogoutUser(admin.id, getParam(req, "id"));
+    res.status(200).json(result);
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function resetUserPassword(
+  req: Request,
+  res: Response,
+  next: NextFunction
+) {
+  try {
+    const admin = requireSuperAdmin(req);
+    const result = await usersService.resetUserPassword(admin.id, getParam(req, "id"));
+    res.status(200).json(result);
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function exportUsersCsv(
+  req: Request,
+  res: Response,
+  next: NextFunction
+) {
+  try {
+    requireAdmin(req);
+    const csv = await usersService.exportUsersCsv(req.query as never);
+    res.setHeader("Content-Type", "text/csv; charset=utf-8");
+    res.setHeader(
+      "Content-Disposition",
+      'attachment; filename="utilisateurs.csv"'
+    );
+    res.status(200).send(csv);
+  } catch (error) {
+    next(error);
+  }
+}
+
 export async function listAdmins(req: Request, res: Response, next: NextFunction) {
   try {
     requireSuperAdmin(req);

@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { Spinner } from "@/components/ui/spinner";
+import { isSuperAdmin } from "@/lib/auth-storage";
 import { api, getErrorMessage } from "@/lib/api";
 import { formatDate, statusLabel } from "@/lib/utils";
 
@@ -24,6 +25,19 @@ type UserDetail = {
   providerProfile?: { displayName: string; reviewStatus: string } | null;
   ownedProperties?: Array<{ id: string; title: string; status: string }>;
   requests?: Array<{ id: string; number: string; status: string }>;
+  activity?: {
+    propertiesCount: number;
+    requestsCount: number;
+    reportsAgainstUser: number;
+    reportsFiledCount: number;
+  };
+  sessions?: Array<{
+    id: string;
+    deviceName: string | null;
+    ipAddress: string | null;
+    lastUsedAt: string | null;
+    createdAt: string;
+  }>;
 };
 
 export function UserDetailPage() {
@@ -38,6 +52,30 @@ export function UserDetailPage() {
     queryFn: async () => {
       const { data: body } = await api.get<UserDetail>(`/admin/users/${id}`);
       return body;
+    },
+  });
+
+  const superAdmin = isSuperAdmin();
+
+  const forceLogoutMutation = useMutation({
+    mutationFn: async () => {
+      await api.post(`/admin/users/${id}/force-logout`);
+    },
+    onSuccess: async () => {
+      setMessage("Sessions révoquées.");
+      await queryClient.invalidateQueries({ queryKey: ["admin-user", id] });
+    },
+  });
+
+  const resetPasswordMutation = useMutation({
+    mutationFn: async () => {
+      const { data: body } = await api.post<{ temporaryPassword: string }>(
+        `/admin/users/${id}/reset-password`
+      );
+      return body.temporaryPassword;
+    },
+    onSuccess: (temp) => {
+      setMessage(`Mot de passe temporaire : ${temp}`);
     },
   });
 
@@ -122,6 +160,58 @@ export function UserDetailPage() {
           ) : null}
         </CardContent>
       </Card>
+
+      {data.activity ? (
+        <Card>
+          <CardHeader>
+            <CardTitle>Activité</CardTitle>
+          </CardHeader>
+          <CardContent className="grid gap-2 text-sm sm:grid-cols-2">
+            <p>Annonces : {data.activity.propertiesCount}</p>
+            <p>Demandes : {data.activity.requestsCount}</p>
+            <p>Signalements reçus : {data.activity.reportsAgainstUser}</p>
+            <p>Signalements émis : {data.activity.reportsFiledCount}</p>
+          </CardContent>
+        </Card>
+      ) : null}
+
+      {data.sessions ? (
+        <Card>
+          <CardHeader>
+            <CardTitle>Sessions actives ({data.sessions.length})</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-2 text-sm">
+            {data.sessions.length === 0 ? (
+              <p className="text-[var(--text-muted)]">Aucune session active.</p>
+            ) : (
+              data.sessions.map((s) => (
+                <p key={s.id}>
+                  {s.deviceName ?? "Appareil inconnu"} — {s.ipAddress ?? "IP inconnue"} —{" "}
+                  {formatDate(s.lastUsedAt ?? s.createdAt)}
+                </p>
+              ))
+            )}
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={forceLogoutMutation.isPending}
+              onClick={() => forceLogoutMutation.mutate()}
+            >
+              Forcer la déconnexion
+            </Button>
+          </CardContent>
+        </Card>
+      ) : null}
+
+      {superAdmin ? (
+        <Button
+          variant="outline"
+          disabled={resetPasswordMutation.isPending}
+          onClick={() => resetPasswordMutation.mutate()}
+        >
+          Réinitialiser le mot de passe
+        </Button>
+      ) : null}
 
       <DecisionDialog
         open={dialog === "suspend"}
