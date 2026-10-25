@@ -1,5 +1,5 @@
 import { useRouter } from "expo-router";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import {
   Alert,
   ScrollView,
@@ -15,6 +15,23 @@ import { Button } from "../../components/ui/Button";
 import { colors, radii, spacing, typography } from "../../theme";
 import { getErrorMessage } from "../../utils/errors";
 
+function passwordStrength(password: string): {
+  score: number;
+  label: string;
+  color: string;
+} {
+  let score = 0;
+  if (password.length >= 8) score += 1;
+  if (password.length >= 12) score += 1;
+  if (/\d/.test(password)) score += 1;
+  if (/[A-Z]/.test(password) && /[a-z]/.test(password)) score += 1;
+  if (/[^A-Za-z0-9]/.test(password)) score += 1;
+
+  if (score <= 1) return { score, label: "Faible", color: colors.primary };
+  if (score <= 3) return { score, label: "Moyen", color: "#D97706" };
+  return { score, label: "Fort", color: "#16A34A" };
+}
+
 export default function ChangePasswordScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
@@ -23,12 +40,21 @@ export default function ChangePasswordScreen() {
   const [confirm, setConfirm] = useState("");
   const [loading, setLoading] = useState(false);
 
+  const rules = useMemo(
+    () => ({
+      length: newPassword.length >= 8,
+      digit: /\d/.test(newPassword),
+    }),
+    [newPassword]
+  );
+  const strength = useMemo(() => passwordStrength(newPassword), [newPassword]);
+
   async function onSubmit() {
     if (!currentPassword || !newPassword) {
       Alert.alert("Mot de passe", "Renseignez tous les champs.");
       return;
     }
-    if (newPassword.length < 8 || !/\d/.test(newPassword)) {
+    if (!rules.length || !rules.digit) {
       Alert.alert(
         "Mot de passe",
         "Le nouveau mot de passe doit contenir au moins 8 caractères et un chiffre."
@@ -61,7 +87,7 @@ export default function ChangePasswordScreen() {
       <ScrollView contentContainerStyle={styles.content}>
         <Text style={typography.title}>Changer le mot de passe</Text>
         <Text style={styles.hint}>
-          Après modification, vous pourrez rester connecté sur cet appareil.
+          Après modification, vous serez déconnecté des autres appareils.
         </Text>
 
         <Text style={styles.label}>Mot de passe actuel</Text>
@@ -79,6 +105,32 @@ export default function ChangePasswordScreen() {
           onChangeText={setNewPassword}
           secureTextEntry
         />
+
+        {newPassword.length > 0 ? (
+          <View style={styles.strengthBox}>
+            <View style={styles.strengthTrack}>
+              <View
+                style={[
+                  styles.strengthFill,
+                  {
+                    width: `${Math.min(100, (strength.score / 5) * 100)}%`,
+                    backgroundColor: strength.color,
+                  },
+                ]}
+              />
+            </View>
+            <Text style={[styles.strengthLabel, { color: strength.color }]}>
+              Force : {strength.label}
+            </Text>
+          </View>
+        ) : null}
+
+        <Text style={[styles.rule, rules.length && styles.ruleOk]}>
+          {rules.length ? "✓" : "○"} Au moins 8 caractères
+        </Text>
+        <Text style={[styles.rule, rules.digit && styles.ruleOk]}>
+          {rules.digit ? "✓" : "○"} Au moins un chiffre
+        </Text>
 
         <Text style={styles.label}>Confirmer</Text>
         <TextInput
@@ -101,7 +153,7 @@ export default function ChangePasswordScreen() {
 
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.background },
-  content: { padding: spacing.lg },
+  content: { paddingHorizontal: 20, paddingBottom: spacing.xxl },
   hint: { ...typography.body, marginTop: spacing.sm, marginBottom: spacing.md },
   label: {
     color: colors.navy,
@@ -118,4 +170,20 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.md,
     color: colors.navy,
   },
+  strengthBox: { marginTop: spacing.sm },
+  strengthTrack: {
+    height: 6,
+    backgroundColor: colors.skeleton,
+    borderRadius: 3,
+    overflow: "hidden",
+  },
+  strengthFill: { height: "100%", borderRadius: 3 },
+  strengthLabel: { fontSize: 12, fontWeight: "700", marginTop: 6 },
+  rule: {
+    color: colors.textMuted,
+    fontSize: 13,
+    fontWeight: "600",
+    marginTop: 6,
+  },
+  ruleOk: { color: "#16A34A" },
 });
