@@ -3,6 +3,7 @@ import {
   ClipboardList,
   FolderTree,
   Home,
+  Inbox,
   LogOut,
   Menu,
   Shield,
@@ -44,6 +45,12 @@ const navItems = [
     to: "/services",
     label: "Services",
     icon: Wrench,
+    roles: ["ADMIN", "SUPER_ADMIN"],
+  },
+  {
+    to: "/requests",
+    label: "Demandes",
+    icon: Inbox,
     roles: ["ADMIN", "SUPER_ADMIN"],
   },
   {

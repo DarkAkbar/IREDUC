@@ -27,6 +27,8 @@ export function statusLabel(status: string) {
     PENDING: "En attente",
     APPROVED: "Approuvé",
     REJECTED: "Rejeté",
+    CANCELLED: "Annulée",
+    COMPLETED: "Terminée",
     DRAFT: "Brouillon",
     ARCHIVED: "Archivé",
     ACTIVE: "Actif",
