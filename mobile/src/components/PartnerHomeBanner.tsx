@@ -125,8 +125,8 @@ export function PartnerHomeBanner() {
 const styles = StyleSheet.create({
   ctaBanner: {
     marginHorizontal: spacing.lg,
-    marginTop: spacing.md,
-    marginBottom: spacing.sm,
+    marginTop: spacing.xxl,
+    marginBottom: spacing.md,
     padding: spacing.lg,
     borderRadius: radii.lg,
     backgroundColor: colors.white,
