@@ -1,4 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
+import { useState } from "react";
+import { Input } from "@/components/ui/input";
 import { motion } from "framer-motion";
 import {
   Building2,
@@ -48,6 +50,15 @@ type AdminStats = {
     registrationsLast30Days: Array<{ date: string; count: number }>;
     requestsLast30Days: Array<{ date: string; count: number }>;
   };
+  moderation?: {
+    avgValidationDelayHours: number | null;
+    approvalRatePercent: number | null;
+    topRatedPartners: Array<{
+      displayName: string;
+      averageRating: number | null;
+      reviewsCount: number;
+    }>;
+  };
 };
 
 function firstName(fullName?: string) {
@@ -57,10 +68,14 @@ function firstName(fullName?: string) {
 export function DashboardPage() {
   const { user } = useAuth();
   const reduced = usePrefersReducedMotion();
+  const [from, setFrom] = useState("");
+  const [to, setTo] = useState("");
   const { data, isLoading, error, refetch, isFetching } = useQuery({
-    queryKey: ["admin-stats"],
+    queryKey: ["admin-stats", from, to],
     queryFn: async () => {
-      const { data: body } = await api.get<AdminStats>("/admin/stats");
+      const { data: body } = await api.get<AdminStats>("/admin/stats", {
+        params: { from: from || undefined, to: to || undefined },
+      });
       return body;
     },
   });
@@ -143,6 +158,29 @@ export function DashboardPage() {
             <RefreshCw size={14} className={isFetching ? "animate-spin" : undefined} />
             Actualiser
           </Button>
+        </div>
+        <div className="mt-4 flex flex-wrap gap-2">
+          <Input
+            type="date"
+            className="max-w-[180px] border-white/30 bg-white/10 text-white"
+            value={from}
+            onChange={(e) => setFrom(e.target.value)}
+            aria-label="Date de début"
+          />
+          <Input
+            type="date"
+            className="max-w-[180px] border-white/30 bg-white/10 text-white"
+            value={to}
+            onChange={(e) => setTo(e.target.value)}
+            aria-label="Date de fin"
+          />
+          {data.moderation ? (
+            <p className="self-center text-xs text-white/80">
+              Délai moyen validation :{" "}
+              {data.moderation.avgValidationDelayHours ?? "—"} h · Taux approbation :{" "}
+              {data.moderation.approvalRatePercent ?? "—"} %
+            </p>
+          ) : null}
         </div>
       </motion.section>
 
