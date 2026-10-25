@@ -1,6 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
-import { Pressable, ScrollView, StyleSheet, Text } from "react-native";
+import { Pressable, StyleSheet, Text } from "react-native";
 import { colors, radii, spacing } from "../../theme";
+import { HorizontalChipScroll } from "../ui/HorizontalChipScroll";
 
 export type CategoryTab = {
   key: string;
@@ -22,11 +23,7 @@ export function CategoryTabs({
   activeColor = colors.primary,
 }: Props) {
   return (
-    <ScrollView
-      horizontal
-      showsHorizontalScrollIndicator={false}
-      contentContainerStyle={styles.row}
-    >
+    <HorizontalChipScroll>
       {tabs.map((tab) => {
         const active = tab.key === activeKey;
         return (
@@ -35,7 +32,10 @@ export function CategoryTabs({
             onPress={() => onChange(tab.key)}
             style={[
               styles.tab,
-              active && { backgroundColor: activeColor, borderColor: activeColor },
+              active && {
+                backgroundColor: activeColor,
+                borderColor: activeColor,
+              },
             ]}
           >
             <Ionicons
@@ -43,25 +43,22 @@ export function CategoryTabs({
               size={16}
               color={active ? colors.white : colors.navy}
             />
-            <Text style={[styles.label, active && styles.labelActive]}>{tab.label}</Text>
+            <Text style={[styles.label, active && styles.labelActive]}>
+              {tab.label}
+            </Text>
           </Pressable>
         );
       })}
-    </ScrollView>
+    </HorizontalChipScroll>
   );
 }
 
 const styles = StyleSheet.create({
-  row: {
-    paddingHorizontal: spacing.lg,
-    gap: spacing.sm,
-    paddingBottom: spacing.sm,
-  },
   tab: {
     flexDirection: "row",
     alignItems: "center",
     gap: 6,
-    paddingHorizontal: spacing.md,
+    paddingHorizontal: spacing.sm + 2,
     paddingVertical: spacing.sm,
     borderRadius: radii.pill,
     backgroundColor: colors.white,

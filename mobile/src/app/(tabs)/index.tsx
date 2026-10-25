@@ -208,6 +208,7 @@ export default function HomeScreen() {
               ) : (
                 <ScrollView
                   horizontal
+                  style={styles.carouselScroll}
                   showsHorizontalScrollIndicator={false}
                   contentContainerStyle={styles.carousel}
                 >
@@ -270,6 +271,7 @@ export default function HomeScreen() {
                 ) : (
                   <ScrollView
                     horizontal
+                    style={styles.carouselScroll}
                     showsHorizontalScrollIndicator={false}
                     contentContainerStyle={styles.carousel}
                   >
@@ -375,7 +377,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.lg,
   },
   section: { marginTop: spacing.xl },
+  carouselScroll: { flexGrow: 0, flexShrink: 0 },
   carousel: {
+    flexGrow: 0,
     paddingLeft: spacing.lg,
     paddingRight: PUBLISH_FAB_SIDE_INSET,
     paddingBottom: spacing.sm,

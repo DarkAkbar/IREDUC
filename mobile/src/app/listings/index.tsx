@@ -34,6 +34,7 @@ import {
   usePublishFabScroll,
 } from "../../components/PublishFab";
 import { Button } from "../../components/ui/Button";
+import { HorizontalChipScroll } from "../../components/ui/HorizontalChipScroll";
 import { ListSkeleton } from "../../components/ui/SkeletonLoader";
 import { useOpenPublish } from "../../hooks/useOpenPublish";
 import { useRequireAuth } from "../../hooks/useRequireAuth";
@@ -219,10 +220,13 @@ export default function MyListingsScreen() {
         <FlatList
           data={items}
           keyExtractor={(item) => `${item.kind}-${item.data.id}`}
-          contentContainerStyle={{
-            paddingBottom: PUBLISH_FAB_BOTTOM_INSET,
-            paddingTop: spacing.md,
-          }}
+          contentContainerStyle={[
+            {
+              paddingBottom: PUBLISH_FAB_BOTTOM_INSET,
+              paddingTop: spacing.md,
+            },
+            items.length === 0 && { flexGrow: 1 },
+          ]}
           scrollEventThrottle={16}
           onScroll={(e) => onFabScroll(e.nativeEvent.contentOffset.y)}
           refreshControl={
@@ -236,6 +240,7 @@ export default function MyListingsScreen() {
           }
           ListEmptyComponent={
             <EmptyState
+              fill
               title="Aucune annonce"
               message="Publiez un bien ou un service pour le voir ici."
               actionLabel="Publier une annonce"
@@ -343,7 +348,7 @@ function ScrollTabs({
   onChange: (t: TabKey) => void;
 }) {
   return (
-    <View style={styles.tabs}>
+    <HorizontalChipScroll>
       {TABS.map((t) => {
         const active = tab === t.key;
         return (
@@ -358,7 +363,7 @@ function ScrollTabs({
           </Pressable>
         );
       })}
-    </View>
+    </HorizontalChipScroll>
   );
 }
 
@@ -399,14 +404,8 @@ const styles = StyleSheet.create({
     borderColor: colors.border,
   },
   receivedText: { flex: 1, color: colors.navy, fontWeight: "700" },
-  tabs: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: spacing.sm,
-    paddingHorizontal: spacing.lg,
-  },
   tab: {
-    paddingHorizontal: spacing.md,
+    paddingHorizontal: spacing.sm + 2,
     paddingVertical: spacing.sm,
     borderRadius: radii.pill,
     borderWidth: 1,

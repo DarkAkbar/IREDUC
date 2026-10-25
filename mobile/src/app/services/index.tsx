@@ -117,7 +117,7 @@ export default function ServicesListScreen() {
         onFilterPress={() => router.push("/filters" as never)}
       />
 
-      <View style={{ marginTop: spacing.md }}>
+      <View style={styles.tabsBlock}>
         {categoryTabs.length > 0 ? (
           <CategoryTabs
             tabs={categoryTabs}
@@ -129,7 +129,7 @@ export default function ServicesListScreen() {
             activeColor={colors.primary}
           />
         ) : null}
-        <View style={{ marginTop: spacing.sm }}>
+        <View style={styles.subTabs}>
           <CategoryTabs
             tabs={SUB_TABS}
             activeKey={sub}
@@ -198,6 +198,16 @@ export default function ServicesListScreen() {
 
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.background },
+  tabsBlock: {
+    marginTop: spacing.md,
+    flexGrow: 0,
+    flexShrink: 0,
+  },
+  subTabs: {
+    marginTop: spacing.sm,
+    flexGrow: 0,
+    flexShrink: 0,
+  },
   heading: {
     paddingHorizontal: spacing.lg,
     marginBottom: spacing.md,

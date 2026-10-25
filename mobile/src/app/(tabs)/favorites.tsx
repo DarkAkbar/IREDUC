@@ -18,6 +18,7 @@ import { FavoriteButton } from "../../components/FavoriteButton";
 import { GuestPrompt } from "../../components/GuestPrompt";
 import { EmptyState } from "../../components/list/EmptyState";
 import { ErrorState } from "../../components/list/ErrorState";
+import { HorizontalChipScroll } from "../../components/ui/HorizontalChipScroll";
 import { ListSkeleton } from "../../components/ui/SkeletonLoader";
 import { useAuthStore } from "../../store/authStore";
 import { useFavoritesStore } from "../../store/favoritesStore";
@@ -83,10 +84,11 @@ export default function FavoritesTabScreen() {
         Vos biens et services sauvegardés.
       </Text>
 
-      <View style={styles.tabs}>
+      <HorizontalChipScroll contentContainerStyle={styles.tabsContent}>
         {TABS.map((t) => {
           const count = t.key === "PROPERTY" ? propertyCount : serviceCount;
           const active = tab === t.key;
+          const label = count > 0 ? `${t.label} (${count})` : t.label;
           return (
             <Pressable
               key={t.key}
@@ -94,12 +96,12 @@ export default function FavoritesTabScreen() {
               onPress={() => setTab(t.key)}
             >
               <Text style={[styles.tabText, active && styles.tabTextActive]}>
-                {t.label} ({count})
+                {label}
               </Text>
             </Pressable>
           );
         })}
-      </View>
+      </HorizontalChipScroll>
 
       {query.isLoading && items.length === 0 ? <ListSkeleton /> : null}
       {query.isError && items.length === 0 ? (
@@ -125,9 +127,13 @@ export default function FavoritesTabScreen() {
               tintColor={colors.primary}
             />
           }
-          contentContainerStyle={{ paddingBottom: spacing.xxl }}
+          contentContainerStyle={[
+            { paddingBottom: spacing.xxl },
+            filtered.length === 0 && { flexGrow: 1 },
+          ]}
           ListEmptyComponent={
             <EmptyState
+              fill
               title={
                 tab === "PROPERTY" ? "Aucun bien favori" : "Aucun service favori"
               }
@@ -227,14 +233,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.lg,
     marginBottom: spacing.md,
   },
-  tabs: {
-    flexDirection: "row",
-    gap: spacing.sm,
-    paddingHorizontal: spacing.lg,
-    marginBottom: spacing.md,
-  },
+  tabsContent: { marginBottom: spacing.md },
   tab: {
-    paddingHorizontal: spacing.md,
+    paddingHorizontal: spacing.sm + 2,
     paddingVertical: spacing.sm,
     borderRadius: radii.pill,
     backgroundColor: colors.white,

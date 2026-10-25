@@ -6,7 +6,6 @@ import {
   FlatList,
   Pressable,
   RefreshControl,
-  ScrollView,
   StyleSheet,
   Text,
   View,
@@ -18,6 +17,7 @@ import { GuestPrompt } from "../../components/GuestPrompt";
 import { EmptyState } from "../../components/list/EmptyState";
 import { ErrorState } from "../../components/list/ErrorState";
 import { RequestCard } from "../../components/requests/RequestCard";
+import { HorizontalChipScroll } from "../../components/ui/HorizontalChipScroll";
 import { ListSkeleton } from "../../components/ui/SkeletonLoader";
 import { useAuthStore } from "../../store/authStore";
 import { colors, radii, spacing, typography } from "../../theme";
@@ -30,6 +30,23 @@ const TABS: { key: TabKey; label: string }[] = [
   { key: "APPROVED", label: "Approuvées" },
   { key: "REJECTED", label: "Rejetées" },
 ];
+
+function tabCount(
+  key: TabKey,
+  counters?: {
+    all: number;
+    pending: number;
+    approved: number;
+    rejected: number;
+  }
+) {
+  if (!counters) return undefined;
+  if (key === "ALL") return counters.all;
+  if (key === "PENDING") return counters.pending;
+  if (key === "APPROVED") return counters.approved;
+  if (key === "REJECTED") return counters.rejected;
+  return undefined;
+}
 
 export default function RequestsScreen() {
   const insets = useSafeAreaInsets();
@@ -54,6 +71,7 @@ export default function RequestsScreen() {
 
   const items = query.data?.pages.flatMap((p) => p.data) ?? [];
   const counters = query.data?.pages[0]?.counters;
+  const isEmpty = !query.isLoading && !query.isError && items.length === 0;
 
   if (isHydrated && !isAuthenticated) {
     return (
@@ -70,7 +88,9 @@ export default function RequestsScreen() {
     <View style={[styles.screen, { paddingTop: insets.top }]}>
       <View style={styles.header}>
         <View style={styles.titleRow}>
-          <Text style={typography.title}>Mes demandes</Text>
+          <Text style={styles.headerTitle} numberOfLines={1}>
+            Mes demandes
+          </Text>
           {counters && counters.all > 0 ? (
             <View style={styles.countBadge}>
               <Text style={styles.countBadgeText}>{counters.all}</Text>
@@ -82,25 +102,17 @@ export default function RequestsScreen() {
           <Text style={styles.cityText}>Kinshasa</Text>
         </View>
       </View>
+
       <Text style={styles.subtitle}>
         Suivez l'état de toutes vos demandes de réservation.
       </Text>
 
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        contentContainerStyle={styles.tabs}
-      >
+      <HorizontalChipScroll contentContainerStyle={styles.tabsContent}>
         {TABS.map((t) => {
-          const count =
-            t.key === "ALL"
-              ? counters?.all
-              : t.key === "PENDING"
-                ? counters?.pending
-                : t.key === "APPROVED"
-                  ? counters?.approved
-                  : counters?.rejected;
+          const count = tabCount(t.key, counters);
           const active = tab === t.key;
+          const label =
+            count != null && count > 0 ? `${t.label} (${count})` : t.label;
           return (
             <Pressable
               key={t.key}
@@ -108,29 +120,31 @@ export default function RequestsScreen() {
               onPress={() => setTab(t.key)}
             >
               <Text style={[styles.tabText, active && styles.tabTextActive]}>
-                {t.label}
-                {count != null ? ` (${count})` : ""}
+                {label}
               </Text>
             </Pressable>
           );
         })}
-      </ScrollView>
+      </HorizontalChipScroll>
 
       {query.isLoading ? <ListSkeleton /> : null}
-      {query.isError ? <ErrorState onRetry={() => void query.refetch()} /> : null}
+      {query.isError ? (
+        <ErrorState onRetry={() => void query.refetch()} />
+      ) : null}
 
       {!query.isLoading && !query.isError ? (
         <FlatList
           data={items}
+          style={styles.list}
           initialNumToRender={10}
           windowSize={7}
           removeClippedSubviews
           keyExtractor={(item) => item.id}
           renderItem={({ item }) => <RequestCard item={item} />}
-          contentContainerStyle={{
-            paddingBottom: spacing.xxl,
-            paddingTop: spacing.md,
-          }}
+          contentContainerStyle={[
+            styles.listContent,
+            isEmpty && styles.listContentEmpty,
+          ]}
           onEndReached={() => {
             if (query.hasNextPage && !query.isFetchingNextPage) {
               void query.fetchNextPage();
@@ -146,6 +160,7 @@ export default function RequestsScreen() {
           }
           ListEmptyComponent={
             <EmptyState
+              fill
               title="Aucune demande"
               message="Découvrez des biens et services, puis lancez une réservation."
               actionLabel="Découvrir les biens"
@@ -167,6 +182,18 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.lg,
     paddingVertical: spacing.sm,
     minHeight: 48,
+    gap: spacing.sm,
+  },
+  titleRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.sm,
+    flexShrink: 1,
+  },
+  headerTitle: {
+    color: colors.navy,
+    fontWeight: "800",
+    fontSize: 17,
   },
   city: {
     flexDirection: "row",
@@ -180,12 +207,6 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.sm,
   },
   cityText: { color: colors.navy, fontWeight: "700", fontSize: 13 },
-  titleRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.sm,
-    flexShrink: 1,
-  },
   countBadge: {
     backgroundColor: colors.primary,
     minWidth: 22,
@@ -202,16 +223,11 @@ const styles = StyleSheet.create({
     marginTop: spacing.md,
     marginBottom: spacing.md,
   },
-  tabs: {
-    flexDirection: "row",
-    flexWrap: "nowrap",
-    alignItems: "center",
-    gap: spacing.sm,
-    paddingHorizontal: spacing.lg,
-    paddingBottom: spacing.sm,
+  tabsContent: {
+    paddingBottom: 0,
   },
   tab: {
-    paddingHorizontal: spacing.md,
+    paddingHorizontal: spacing.sm + 2,
     paddingVertical: spacing.sm,
     borderRadius: radii.pill,
     borderWidth: 1,
@@ -221,4 +237,12 @@ const styles = StyleSheet.create({
   tabActive: { backgroundColor: colors.navy },
   tabText: { color: colors.navy, fontWeight: "700", fontSize: 12 },
   tabTextActive: { color: colors.white },
+  list: { flex: 1 },
+  listContent: {
+    paddingBottom: spacing.xxl,
+    paddingTop: spacing.md,
+  },
+  listContentEmpty: {
+    flexGrow: 1,
+  },
 });

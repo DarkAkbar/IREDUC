@@ -111,7 +111,10 @@ export default function ReceivedRequestsScreen() {
         <FlatList
           data={query.data?.data ?? []}
           keyExtractor={(item) => item.id}
-          contentContainerStyle={{ paddingBottom: spacing.xxl }}
+          contentContainerStyle={[
+            { paddingBottom: spacing.xxl },
+            !(query.data?.data?.length) && { flexGrow: 1 },
+          ]}
           refreshControl={
             <RefreshControl
               refreshing={query.isRefetching}
@@ -121,6 +124,7 @@ export default function ReceivedRequestsScreen() {
           }
           ListEmptyComponent={
             <EmptyState
+              fill
               title="Aucune demande reçue"
               message="Les demandes concernant vos annonces apparaîtront ici."
             />

@@ -88,10 +88,13 @@ export default function MessagesScreen() {
         <FlatList
           data={query.data ?? []}
           keyExtractor={(item) => item.id}
-          contentContainerStyle={{
-            paddingBottom: spacing.xxl,
-            paddingHorizontal: spacing.lg,
-          }}
+          contentContainerStyle={[
+            {
+              paddingBottom: spacing.xxl,
+              paddingHorizontal: spacing.lg,
+            },
+            !(query.data?.length) && { flexGrow: 1 },
+          ]}
           initialNumToRender={12}
           windowSize={7}
           removeClippedSubviews
@@ -104,6 +107,7 @@ export default function MessagesScreen() {
           }
           ListEmptyComponent={
             <EmptyState
+              fill
               title="Aucune conversation"
               message="Discutez depuis une fiche bien, un service ou une demande approuvée."
               actionLabel="Découvrir les biens"

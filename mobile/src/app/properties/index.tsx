@@ -23,6 +23,7 @@ import { InfoBanner } from "../../components/list/InfoBanner";
 import { ListScreenHeader } from "../../components/list/ListScreenHeader";
 import { RemovableChip } from "../../components/list/RemovableChip";
 import { PropertyListCard } from "../../components/PropertyListCard";
+import { HorizontalChipScroll } from "../../components/ui/HorizontalChipScroll";
 import { ListSkeleton } from "../../components/ui/SkeletonLoader";
 import { SearchInput } from "../../components/ui/SearchInput";
 import { useDebouncedValue } from "../../hooks/useDebouncedValue";
@@ -147,12 +148,12 @@ export default function PropertiesListScreen() {
         onFilterPress={() => router.push("/filters")}
         activeFilterCount={activeChips.length}
       />
-      <View style={{ marginTop: spacing.md }}>
+      <View style={styles.kindTabs}>
         <CategoryTabs tabs={KIND_TABS} activeKey={kind} onChange={setKind} />
       </View>
 
       {activeChips.length > 0 ? (
-        <View style={styles.chips}>
+        <HorizontalChipScroll contentContainerStyle={styles.chips}>
           {activeChips.map((chip) => (
             <RemovableChip
               key={chip.key}
@@ -171,10 +172,10 @@ export default function PropertiesListScreen() {
               }}
             />
           ))}
-          <Pressable onPress={resetFilters}>
+          <Pressable onPress={resetFilters} style={styles.resetBtn}>
             <Text style={styles.reset}>Réinitialiser</Text>
           </Pressable>
-        </View>
+        </HorizontalChipScroll>
       ) : null}
 
       <View style={styles.heading}>
@@ -258,14 +259,15 @@ const styles = StyleSheet.create({
   count: { color: colors.textMuted, fontWeight: "600" },
   sortBtn: { flexDirection: "row", alignItems: "center", gap: 4 },
   sortText: { color: colors.navy, fontWeight: "700", fontSize: 13 },
-  chips: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: spacing.sm,
-    paddingHorizontal: spacing.lg,
-    marginTop: spacing.sm,
-    alignItems: "center",
+  kindTabs: {
+    marginTop: spacing.md,
+    flexGrow: 0,
+    flexShrink: 0,
   },
+  chips: {
+    marginTop: spacing.sm,
+  },
+  resetBtn: { justifyContent: "center", paddingVertical: spacing.sm },
   reset: { color: colors.primary, fontWeight: "700", fontSize: 12 },
   loadingMore: {
     textAlign: "center",
