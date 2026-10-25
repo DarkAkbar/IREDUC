@@ -16,6 +16,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { resendVerification } from "../../api/auth";
 import { API_URL, mediaUrl } from "../../api/client";
 import { fetchMyProvider } from "../../api/providers";
+import { GuestPrompt } from "../../components/GuestPrompt";
 import { Button } from "../../components/ui/Button";
 import { useAuthStore } from "../../store/authStore";
 import { colors, radii, spacing, typography } from "../../theme";
@@ -126,34 +127,12 @@ export default function ProfileScreen() {
 
   if (isHydrated && !isAuthenticated) {
     return (
-      <View style={[styles.screen, { paddingTop: insets.top + spacing.xl }]}>
-        <Text style={typography.title}>Profil</Text>
-        <Text style={styles.subtitle}>
-          Connectez-vous ou créez un compte pour gérer vos favoris, alertes et
-          demandes.
-        </Text>
-        <Button
-          label="Se connecter"
-          style={{ marginTop: spacing.lg }}
-          onPress={() =>
-            router.push({
-              pathname: "/auth/login",
-              params: { returnTo: "/(tabs)/profile" },
-            } as never)
-          }
-        />
-        <Button
-          label="Créer un compte"
-          variant="outline"
-          style={{ marginTop: spacing.sm }}
-          onPress={() =>
-            router.push({
-              pathname: "/auth/login",
-              params: { returnTo: "/(tabs)/profile" },
-            } as never)
-          }
-        />
-      </View>
+      <GuestPrompt
+        icon="person-outline"
+        title="Votre espace IREDUC"
+        message="Connectez-vous pour gérer votre profil, vos alertes et vos demandes."
+        returnTo="/(tabs)/profile"
+      />
     );
   }
 
@@ -325,7 +304,7 @@ const styles = StyleSheet.create({
   screen: {
     flex: 1,
     backgroundColor: colors.background,
-    paddingHorizontal: spacing.lg,
+    paddingHorizontal: 20,
   },
   content: { paddingBottom: spacing.xxl, paddingTop: spacing.md },
   subtitle: { ...typography.body, marginTop: spacing.md },

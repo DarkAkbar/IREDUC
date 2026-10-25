@@ -15,9 +15,9 @@ import { mediaUrl } from "../../api/client";
 import { fetchFavorites } from "../../api/favorites";
 import { Favorite } from "../../api/types";
 import { FavoriteButton } from "../../components/FavoriteButton";
+import { GuestPrompt } from "../../components/GuestPrompt";
 import { EmptyState } from "../../components/list/EmptyState";
 import { ErrorState } from "../../components/list/ErrorState";
-import { Button } from "../../components/ui/Button";
 import { ListSkeleton } from "../../components/ui/SkeletonLoader";
 import { useAuthStore } from "../../store/authStore";
 import { useFavoritesStore } from "../../store/favoritesStore";
@@ -67,22 +67,12 @@ export default function FavoritesTabScreen() {
 
   if (isHydrated && !isAuthenticated) {
     return (
-      <View style={[styles.screen, { paddingTop: insets.top + spacing.xl }]}>
-        <Text style={[typography.title, styles.titlePad]}>Favoris</Text>
-        <Text style={styles.subtitle}>
-          Connectez-vous pour retrouver les biens et services que vous aimez.
-        </Text>
-        <Button
-          label="Se connecter"
-          style={{ marginTop: spacing.lg, marginHorizontal: spacing.lg }}
-          onPress={() =>
-            router.push({
-              pathname: "/auth/login",
-              params: { returnTo: "/(tabs)/favorites" },
-            } as never)
-          }
-        />
-      </View>
+      <GuestPrompt
+        icon="heart-outline"
+        title="Retrouvez vos favoris"
+        message="Connectez-vous pour retrouver les biens et services que vous aimez."
+        returnTo="/(tabs)/favorites"
+      />
     );
   }
 
@@ -228,20 +218,19 @@ export default function FavoritesTabScreen() {
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.background },
   title: {
-    paddingHorizontal: spacing.lg,
+    paddingHorizontal: 20,
     marginTop: spacing.md,
     marginBottom: spacing.xs,
   },
-  titlePad: { paddingHorizontal: spacing.lg },
   subtitle: {
     ...typography.body,
-    paddingHorizontal: spacing.lg,
+    paddingHorizontal: 20,
     marginBottom: spacing.md,
   },
   tabs: {
     flexDirection: "row",
     gap: spacing.sm,
-    paddingHorizontal: spacing.lg,
+    paddingHorizontal: 20,
     marginBottom: spacing.md,
   },
   tab: {
@@ -262,7 +251,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     backgroundColor: colors.white,
-    marginHorizontal: spacing.lg,
+    marginHorizontal: 20,
     marginBottom: spacing.md,
     borderRadius: radii.lg,
     overflow: "hidden",

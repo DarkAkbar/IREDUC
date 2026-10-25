@@ -13,10 +13,10 @@ import {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { fetchMyRequests } from "../../api/requests";
 import { RequestStatus } from "../../api/types";
+import { GuestPrompt } from "../../components/GuestPrompt";
 import { EmptyState } from "../../components/list/EmptyState";
 import { ErrorState } from "../../components/list/ErrorState";
 import { RequestCard } from "../../components/requests/RequestCard";
-import { Button } from "../../components/ui/Button";
 import { ListSkeleton } from "../../components/ui/SkeletonLoader";
 import { IreducLogo } from "../../components/IreducLogo";
 import { useAuthStore } from "../../store/authStore";
@@ -57,22 +57,12 @@ export default function RequestsScreen() {
 
   if (isHydrated && !isAuthenticated) {
     return (
-      <View style={[styles.screen, { paddingTop: insets.top + spacing.xl }]}>
-        <Text style={typography.title}>Mes demandes</Text>
-        <Text style={styles.subtitle}>
-          Connectez-vous pour suivre l'état de toutes vos demandes de réservation.
-        </Text>
-        <Button
-          label="Se connecter"
-          style={{ marginTop: spacing.lg }}
-          onPress={() =>
-            router.push({
-              pathname: "/auth/login",
-              params: { returnTo: "/(tabs)/requests" },
-            } as never)
-          }
-        />
-      </View>
+      <GuestPrompt
+        icon="document-text-outline"
+        title="Suivez vos demandes"
+        message="Connectez-vous pour suivre l'état de toutes vos demandes de réservation."
+        returnTo="/(tabs)/requests"
+      />
     );
   }
 
@@ -192,7 +182,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: spacing.sm,
-    paddingHorizontal: spacing.lg,
+    paddingHorizontal: 20,
   },
   countBadge: {
     backgroundColor: colors.primary,
@@ -206,7 +196,7 @@ const styles = StyleSheet.create({
   countBadgeText: { color: colors.white, fontWeight: "800", fontSize: 12 },
   subtitle: {
     ...typography.body,
-    paddingHorizontal: spacing.lg,
+    paddingHorizontal: 20,
     marginTop: spacing.xs,
     marginBottom: spacing.md,
   },
@@ -214,7 +204,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     flexWrap: "wrap",
     gap: spacing.sm,
-    paddingHorizontal: spacing.lg,
+    paddingHorizontal: 20,
   },
   tab: {
     paddingHorizontal: spacing.md,

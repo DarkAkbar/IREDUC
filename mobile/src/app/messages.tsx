@@ -14,10 +14,10 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { mediaUrl } from "../api/client";
 import { fetchConversations } from "../api/conversations";
 import { ConversationListItem } from "../api/types";
+import { GuestPrompt } from "../components/GuestPrompt";
 import { EmptyState } from "../components/list/EmptyState";
 import { ErrorState } from "../components/list/ErrorState";
 import { ListScreenHeader } from "../components/list/ListScreenHeader";
-import { Button } from "../components/ui/Button";
 import { ListSkeleton } from "../components/ui/SkeletonLoader";
 import { useAuthStore } from "../store/authStore";
 import { colors, radii, spacing, typography } from "../theme";
@@ -61,25 +61,13 @@ export default function MessagesScreen() {
 
   if (isHydrated && !isAuthenticated) {
     return (
-      <View style={[styles.screen, { paddingTop: insets.top }]}>
-        <ListScreenHeader showBack />
-        <View style={styles.padded}>
-          <Text style={typography.title}>Messages</Text>
-          <Text style={styles.subtitle}>
-            Connectez-vous pour échanger avec les propriétaires et prestataires.
-          </Text>
-          <Button
-            label="Se connecter"
-            style={{ marginTop: spacing.lg }}
-            onPress={() =>
-              router.push({
-                pathname: "/auth/login",
-                params: { returnTo: "/messages" },
-              } as never)
-            }
-          />
-        </View>
-      </View>
+      <GuestPrompt
+        icon="chatbubble-ellipses-outline"
+        title="Vos conversations"
+        message="Connectez-vous pour échanger avec les propriétaires et prestataires."
+        returnTo="/messages"
+        showBack
+      />
     );
   }
 
@@ -181,7 +169,7 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: colors.background,
   },
-  padded: { paddingHorizontal: spacing.lg },
+  padded: { paddingHorizontal: 20 },
   title: { marginTop: spacing.sm },
   subtitle: {
     ...typography.body,
