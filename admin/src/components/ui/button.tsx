@@ -11,8 +11,8 @@ const buttonVariants = cva(
         navy: "bg-ireduc-navy text-white hover:opacity-90",
         danger: "bg-ireduc-red text-white hover:opacity-90",
         outline:
-          "border-[1.5px] border-ireduc-navy bg-white text-ireduc-navy hover:bg-ireduc-navy-soft",
-        ghost: "text-ireduc-navy hover:bg-ireduc-navy-soft",
+          "border-[1.5px] border-ireduc-navy bg-[var(--bg-surface)] text-ireduc-navy hover:bg-ireduc-navy-soft dark:text-[#9eb6ff] dark:border-[#9eb6ff]",
+        ghost: "text-ireduc-navy hover:bg-ireduc-navy-soft dark:text-[#9eb6ff]",
         success: "bg-ireduc-success text-white hover:opacity-90",
       },
       size: {
