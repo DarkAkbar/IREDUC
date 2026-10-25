@@ -237,6 +237,7 @@ async function main() {
       phone: "+243810000001",
       systemRole: SystemRole.SUPER_ADMIN,
       emailVerified: true,
+      phoneVerified: true,
     },
   });
   const admin = await prisma.user.create({
@@ -247,6 +248,7 @@ async function main() {
       phone: "+243810000002",
       systemRole: SystemRole.ADMIN,
       emailVerified: true,
+      phoneVerified: true,
     },
   });
 
@@ -265,6 +267,7 @@ async function main() {
           whatsapp: u.phone,
           systemRole: SystemRole.USER,
           emailVerified: true,
+      phoneVerified: true,
         },
       })
     )
@@ -391,6 +394,7 @@ async function main() {
         passwordHash: providerHash,
         systemRole: SystemRole.USER,
         emailVerified: true,
+        phoneVerified: true,
         providerProfile: {
           create: {
             type: p.type,

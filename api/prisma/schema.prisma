@@ -110,13 +110,14 @@ enum TokenPurpose {
 model User {
   id            String        @id @default(uuid()) @db.Uuid
   fullName      String
-  email         String        @unique
+  email         String?       @unique
   passwordHash  String
-  phone         String?
+  phone         String        @unique
   whatsapp      String?
   systemRole    SystemRole    @default(USER)
   accountStatus AccountStatus @default(ACTIVE)
   emailVerified Boolean       @default(false)
+  phoneVerified Boolean       @default(false)
   avatarUrl     String?
   createdAt     DateTime      @default(now())
   updatedAt     DateTime      @updatedAt
@@ -136,6 +137,7 @@ model User {
   userTokens    UserToken[]
 
   @@index([email])
+  @@index([phone])
   @@index([systemRole])
   @@index([accountStatus])
 }
@@ -372,7 +374,7 @@ model Request {
   visitSlot      String?
   fullName       String
   phone          String
-  email          String
+  email          String?
   whatsapp       String?
   message        String?       @db.VarChar(500)
   status         RequestStatus @default(PENDING)
