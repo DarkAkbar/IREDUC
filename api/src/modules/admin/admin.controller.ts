@@ -6,6 +6,7 @@ import * as adminsService from "./admin.admins.service";
 import * as auditService from "./admin.audit.service";
 import * as categoriesService from "./admin.categories.service";
 import * as moderationService from "./admin.moderation.service";
+import * as requestsService from "./admin.requests.service";
 import * as statsService from "./admin.stats.service";
 import * as usersService from "./admin.users.service";
 
@@ -239,6 +240,52 @@ export async function requestComplement(
   try {
     const admin = requireAdmin(req);
     const result = await moderationService.requestProviderComplement(
+      admin.id,
+      getParam(req, "id"),
+      req.body.reason
+    );
+    res.status(200).json(result);
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function listRequests(
+  req: Request,
+  res: Response,
+  next: NextFunction
+) {
+  try {
+    requireAdmin(req);
+    const result = await requestsService.listRequests(req.query as never);
+    res.status(200).json(result);
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function getRequest(
+  req: Request,
+  res: Response,
+  next: NextFunction
+) {
+  try {
+    requireAdmin(req);
+    const result = await requestsService.getRequest(getParam(req, "id"));
+    res.status(200).json(result);
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function cancelRequest(
+  req: Request,
+  res: Response,
+  next: NextFunction
+) {
+  try {
+    const admin = requireAdmin(req);
+    const result = await requestsService.cancelRequestAsAdmin(
       admin.id,
       getParam(req, "id"),
       req.body.reason

@@ -9,8 +9,10 @@ import {
   adminIdParamsSchema,
   adminListQuerySchema,
   adminProvidersQuerySchema,
+  adminRequestsQuerySchema,
   adminUsersQuerySchema,
   auditLogQuerySchema,
+  cancelRequestSchema,
   complementSchema,
   createAdminSchema,
   createCategorySchema,
@@ -102,6 +104,23 @@ adminRouter.patch(
   validate(adminIdParamsSchema, "params"),
   validate(complementSchema),
   adminController.requestComplement
+);
+
+adminRouter.get(
+  "/requests",
+  validate(adminRequestsQuerySchema, "query"),
+  adminController.listRequests
+);
+adminRouter.get(
+  "/requests/:id",
+  validate(adminIdParamsSchema, "params"),
+  adminController.getRequest
+);
+adminRouter.patch(
+  "/requests/:id/cancel",
+  validate(adminIdParamsSchema, "params"),
+  validate(cancelRequestSchema),
+  adminController.cancelRequest
 );
 
 adminRouter.get(
