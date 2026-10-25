@@ -2,6 +2,8 @@ import {
   AccountStatus,
   CategoryKind,
   ListingStatus,
+  RequestStatus,
+  RequestTarget,
   ReviewStatus,
   SystemRole,
 } from "@prisma/client";
@@ -18,13 +20,24 @@ export const adminProvidersQuerySchema = paginationQuerySchema.extend({
   q: z.string().trim().min(1).optional(),
 });
 
+/** "" / espaces → undefined (évite de bloquer APPROVED avec un motif vide). */
+const optionalReasonSchema = z.preprocess(
+  (value) => {
+    if (value == null) return undefined;
+    if (typeof value !== "string") return value;
+    const trimmed = value.trim();
+    return trimmed.length === 0 ? undefined : trimmed;
+  },
+  z.string().min(3, "Le motif doit contenir au moins 3 caractères").optional()
+);
+
 export const reviewDecisionSchema = z
   .object({
     decision: z.enum(["APPROVED", "REJECTED"]),
-    reason: z.string().min(3, "Le motif est requis en cas de rejet").optional(),
+    reason: optionalReasonSchema,
   })
   .superRefine((data, ctx) => {
-    if (data.decision === "REJECTED" && !data.reason?.trim()) {
+    if (data.decision === "REJECTED" && !data.reason) {
       ctx.addIssue({
         code: "custom",
         path: ["reason"],
@@ -49,6 +62,18 @@ export const adminUsersQuerySchema = paginationQuerySchema.extend({
   search: z.string().trim().min(1).optional(),
   role: z.nativeEnum(SystemRole).optional(),
   status: z.nativeEnum(AccountStatus).optional(),
+});
+
+export const adminRequestsQuerySchema = paginationQuerySchema.extend({
+  status: z.nativeEnum(RequestStatus).optional(),
+  type: z.nativeEnum(RequestTarget).optional(),
+  search: z.string().trim().min(1).optional(),
+  dateFrom: z.string().min(4).optional(),
+  dateTo: z.string().min(4).optional(),
+});
+
+export const cancelRequestSchema = z.object({
+  reason: z.string().min(3, "Le motif est obligatoire (3 caractères minimum)"),
 });
 
 export const updateUserStatusSchema = z
