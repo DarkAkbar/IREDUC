@@ -27,9 +27,20 @@ enum ProviderType {
 }
 
 enum ReviewStatus {
+  DRAFT
   PENDING
   APPROVED
   REJECTED
+}
+
+enum ProviderEventType {
+  CREATED
+  SUBMITTED
+  UNDER_REVIEW
+  COMPLEMENT_REQUESTED
+  APPROVED
+  REJECTED
+  WITHDRAWN
 }
 
 enum ListingStatus {
@@ -180,20 +191,38 @@ model ProviderProfile {
   website           String?
   address           String?
   isRegistered      Boolean      @default(false)
-  reviewStatus      ReviewStatus @default(PENDING)
+  reviewStatus      ReviewStatus @default(DRAFT)
   rejectionReason   String?
+  reviewNote        String?
   yearsOfExperience Int?
+  submittedAt       DateTime?
+  decidedAt         DateTime?
   createdAt         DateTime     @default(now())
   updatedAt         DateTime     @updatedAt
 
-  user       User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user       User                  @relation(fields: [userId], references: [id], onDelete: Cascade)
   documents  ProviderDocument[]
+  events     ProviderReviewEvent[]
   properties Property[]
   services   Service[]
 
   @@index([displayName])
   @@index([type])
   @@index([reviewStatus])
+}
+
+model ProviderReviewEvent {
+  id        String            @id @default(uuid()) @db.Uuid
+  profileId String            @db.Uuid
+  type      ProviderEventType
+  message   String?
+  createdAt DateTime          @default(now())
+
+  profile ProviderProfile @relation(fields: [profileId], references: [id], onDelete: Cascade)
+
+  @@index([profileId])
+  @@index([type])
+  @@index([createdAt])
 }
 
 model ProviderDocument {

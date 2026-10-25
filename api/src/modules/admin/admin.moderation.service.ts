@@ -1,7 +1,15 @@
-import { ListingStatus, Prisma, ReviewStatus } from "@prisma/client";
+import {
+  ListingStatus,
+  Prisma,
+  ProviderEventType,
+  ReviewStatus,
+} from "@prisma/client";
 import { prisma } from "../../config/prisma";
-import { createNotification } from "../../services/notification.service";
 import { badRequest, conflict, notFound } from "../../utils/errors";
+import {
+  addEvent,
+  notifyPartner,
+} from "../providers/providers.service";
 import {
   buildPaginatedResult,
   getPagination,
@@ -267,8 +275,30 @@ export async function reviewProvider(
       reviewStatus:
         decision === "APPROVED" ? ReviewStatus.APPROVED : ReviewStatus.REJECTED,
       rejectionReason: decision === "REJECTED" ? reason!.trim() : null,
+      reviewNote: null,
+      decidedAt: new Date(),
     },
   });
+
+  if (decision === "APPROVED") {
+    await addEvent(providerId, ProviderEventType.APPROVED, "Dossier approuvé");
+    await notifyPartner(
+      provider.userId,
+      "PROVIDER_APPROVED",
+      "Dossier approuvé",
+      "Félicitations ! Votre dossier partenaire a été approuvé.",
+      { providerId }
+    );
+  } else {
+    await addEvent(providerId, ProviderEventType.REJECTED, reason!.trim());
+    await notifyPartner(
+      provider.userId,
+      "PROVIDER_REJECTED",
+      "Dossier rejeté",
+      reason!.trim(),
+      { providerId }
+    );
+  }
 
   await logAdminAction(
     adminId,
@@ -298,25 +328,42 @@ export async function requestProviderComplement(
     );
   }
 
-  await createNotification({
-    userId: provider.userId,
-    type: "PROVIDER_COMPLEMENT_REQUESTED",
-    title: "Complément de dossier demandé",
-    body: reason.trim(),
-    data: { providerId },
+  const note = reason.trim();
+  if (note.length < 3) {
+    throw badRequest("Le message de complément est obligatoire (3 caractères min.)");
+  }
+
+  const updated = await prisma.providerProfile.update({
+    where: { id: providerId },
+    data: {
+      reviewStatus: ReviewStatus.PENDING,
+      reviewNote: note,
+    },
   });
+
+  await addEvent(providerId, ProviderEventType.COMPLEMENT_REQUESTED, note);
+
+  await notifyPartner(
+    provider.userId,
+    "PROVIDER_COMPLEMENT_REQUESTED",
+    "Complément de dossier demandé",
+    note,
+    { providerId }
+  );
 
   await logAdminAction(
     adminId,
     "PROVIDER",
     providerId,
     "REQUEST_PROVIDER_COMPLEMENT",
-    reason
+    note
   );
 
   return {
     message: "Demande de complément enregistrée.",
     providerId,
+    reviewNote: updated.reviewNote,
+    reviewStatus: updated.reviewStatus,
   };
 }
 
@@ -449,6 +496,7 @@ export async function getProviderAdmin(providerId: string) {
         },
       },
       documents: { orderBy: { createdAt: "desc" } },
+      events: { orderBy: { createdAt: "asc" } },
       properties: {
         select: { id: true, title: true, status: true, createdAt: true },
         orderBy: { createdAt: "desc" },
@@ -472,7 +520,7 @@ export async function getProviderAdmin(providerId: string) {
     },
   });
 
-  return { ...provider, history };
+  return { ...provider, timeline: provider.events, history };
 }
 
 export async function getNextPendingProperty(excludeId?: string) {

@@ -21,6 +21,8 @@ providersRouter.patch(
   validate(updateProviderSchema),
   providersController.updateMyProvider
 );
+providersRouter.post("/me/submit", providersController.submitMyProvider);
+providersRouter.post("/me/withdraw", providersController.withdrawMyProvider);
 providersRouter.post(
   "/me/logo",
   documentUpload.single("file"),
