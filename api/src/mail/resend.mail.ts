@@ -38,12 +38,19 @@ export class ResendMailService implements MailService {
     }
   }
 
-  async sendVerificationEmail(to: string, token: string): Promise<void> {
+  async sendVerificationEmail(
+    to: string,
+    token: string,
+    code?: string
+  ): Promise<void> {
     const link = `${env.APP_URL}/api/v1/auth/verify-email?token=${token}`;
+    const codeLine = code
+      ? `\nCode à 6 chiffres (valable 24 h) : ${code}\n`
+      : "";
     await this.send({
       to,
       subject: "Vérifiez votre adresse e-mail — IREDUC",
-      text: `Bienvenue sur IREDUC.\n\nPour vérifier votre e-mail, utilisez ce jeton : ${token}\nOu ouvrez : ${link}\n\nCe lien expire dans 24 heures.`,
+      text: `Bienvenue sur IREDUC.\n${codeLine}\nPour vérifier votre e-mail, saisissez le code dans l'application ou ouvrez : ${link}\n\nCe lien et le code expirent dans 24 heures.`,
     });
   }
 

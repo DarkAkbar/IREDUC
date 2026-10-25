@@ -1,8 +1,12 @@
 import { AccountStatus, TokenPurpose } from "@prisma/client";
-import { AUTH_CONFIG } from "../../config/env";
+import { AUTH_CONFIG, env } from "../../config/env";
 import { prisma } from "../../config/prisma";
 import { getMailService } from "../../mail";
-import { generateOpaqueToken, hashToken } from "../../utils/crypto";
+import {
+  generateEmailCode,
+  generateOpaqueToken,
+  hashToken,
+} from "../../utils/crypto";
 import {
   badRequest,
   conflict,
@@ -10,6 +14,7 @@ import {
   unauthorized,
 } from "../../utils/errors";
 import { signAccessToken } from "../../utils/jwt";
+import { logger } from "../../utils/logger";
 import { hashPassword, verifyPassword } from "../../utils/password";
 import { toPublicUser } from "./auth.mapper";
 
@@ -27,18 +32,27 @@ function userTokenExpiryDate(): Date {
 
 async function createUserToken(userId: string, purpose: TokenPurpose) {
   const token = generateOpaqueToken();
+  const code =
+    purpose === TokenPurpose.VERIFY_EMAIL ? generateEmailCode() : null;
+
   await prisma.userToken.create({
     data: {
       userId,
       purpose,
       tokenHash: hashToken(token),
+      codeHash: code ? hashToken(code) : null,
       expiresAt: userTokenExpiryDate(),
     },
   });
-  return token;
+
+  return { token, code };
 }
 
-async function issueTokenPair(userId: string, email: string, role: Parameters<typeof signAccessToken>[0]["role"]) {
+async function issueTokenPair(
+  userId: string,
+  email: string,
+  role: Parameters<typeof signAccessToken>[0]["role"]
+) {
   const accessToken = signAccessToken({ sub: userId, email, role });
   const refreshToken = generateOpaqueToken();
 
@@ -61,7 +75,7 @@ export async function register(input: {
   const email = input.email.toLowerCase().trim();
   const existing = await prisma.user.findUnique({ where: { email } });
   if (existing) {
-    throw conflict("Un compte existe déjà avec cet e-mail", "EMAIL_TAKEN");
+    throw conflict("Cette adresse e-mail est déjà utilisée", "EMAIL_TAKEN");
   }
 
   const user = await prisma.user.create({
@@ -69,32 +83,90 @@ export async function register(input: {
       fullName: input.fullName.trim(),
       email,
       passwordHash: await hashPassword(input.password),
+      emailVerified: Boolean(env.DEV_AUTO_VERIFY_EMAIL),
     },
     include: { providerProfile: true },
   });
 
-  const token = await createUserToken(user.id, TokenPurpose.VERIFY_EMAIL);
-  await getMailService().sendVerificationEmail(user.email, token);
+  if (env.DEV_AUTO_VERIFY_EMAIL) {
+    logger.info(
+      `[DEV_AUTO_VERIFY_EMAIL] Compte ${user.email} marqué comme vérifié automatiquement`
+    );
+    return {
+      message: "Inscription réussie. Compte vérifié automatiquement (dev).",
+      emailSent: false,
+      autoVerified: true,
+      user: toPublicUser(user),
+    };
+  }
+
+  const { token, code } = await createUserToken(
+    user.id,
+    TokenPurpose.VERIFY_EMAIL
+  );
+
+  let emailSent = true;
+  try {
+    await getMailService().sendVerificationEmail(
+      user.email,
+      token,
+      code ?? undefined
+    );
+  } catch (error) {
+    emailSent = false;
+    logger.error("Échec envoi e-mail de vérification après inscription", error);
+  }
 
   return {
-    message: "Inscription réussie. Vérifiez votre e-mail pour activer le compte.",
+    message: emailSent
+      ? "Inscription réussie. Vérifiez votre e-mail pour activer le compte."
+      : "Compte créé, mais l'e-mail n'a pas pu être envoyé",
+    emailSent,
+    autoVerified: false,
     user: toPublicUser(user),
   };
 }
 
-export async function verifyEmail(token: string) {
-  const tokenHash = hashToken(token);
-  const record = await prisma.userToken.findFirst({
-    where: {
-      tokenHash,
-      purpose: TokenPurpose.VERIFY_EMAIL,
-      usedAt: null,
-      expiresAt: { gt: new Date() },
-    },
-  });
+export async function verifyEmail(input: {
+  token?: string;
+  email?: string;
+  code?: string;
+}) {
+  let record =
+    input.token != null
+      ? await prisma.userToken.findFirst({
+          where: {
+            tokenHash: hashToken(input.token),
+            purpose: TokenPurpose.VERIFY_EMAIL,
+            usedAt: null,
+            expiresAt: { gt: new Date() },
+          },
+        })
+      : null;
+
+  if (!record && input.email && input.code) {
+    const user = await prisma.user.findUnique({
+      where: { email: input.email.toLowerCase().trim() },
+    });
+    if (user) {
+      record = await prisma.userToken.findFirst({
+        where: {
+          userId: user.id,
+          purpose: TokenPurpose.VERIFY_EMAIL,
+          codeHash: hashToken(input.code),
+          usedAt: null,
+          expiresAt: { gt: new Date() },
+        },
+      });
+    }
+  }
 
   if (!record) {
-    throw badRequest("Jeton de vérification invalide ou expiré", undefined, "INVALID_TOKEN");
+    throw badRequest(
+      "Code ou jeton de vérification invalide ou expiré",
+      undefined,
+      "INVALID_TOKEN"
+    );
   }
 
   await prisma.$transaction([
@@ -120,6 +192,7 @@ export async function resendVerification(email: string) {
   if (!user || user.emailVerified) {
     return {
       message: "Si un compte non vérifié existe, un e-mail a été envoyé.",
+      emailSent: false,
     };
   }
 
@@ -132,11 +205,28 @@ export async function resendVerification(email: string) {
     data: { usedAt: new Date() },
   });
 
-  const token = await createUserToken(user.id, TokenPurpose.VERIFY_EMAIL);
-  await getMailService().sendVerificationEmail(user.email, token);
+  const { token, code } = await createUserToken(
+    user.id,
+    TokenPurpose.VERIFY_EMAIL
+  );
+
+  let emailSent = true;
+  try {
+    await getMailService().sendVerificationEmail(
+      user.email,
+      token,
+      code ?? undefined
+    );
+  } catch (error) {
+    emailSent = false;
+    logger.error("Échec renvoi e-mail de vérification", error);
+  }
 
   return {
-    message: "Si un compte non vérifié existe, un e-mail a été envoyé.",
+    message: emailSent
+      ? "Si un compte non vérifié existe, un e-mail a été envoyé."
+      : "Impossible d'envoyer l'e-mail de vérification pour le moment.",
+    emailSent,
   };
 }
 
@@ -225,7 +315,10 @@ export async function forgotPassword(email: string) {
       data: { usedAt: new Date() },
     });
 
-    const token = await createUserToken(user.id, TokenPurpose.RESET_PASSWORD);
+    const { token } = await createUserToken(
+      user.id,
+      TokenPurpose.RESET_PASSWORD
+    );
     await getMailService().sendPasswordResetEmail(user.email, token);
   }
 

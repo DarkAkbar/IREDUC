@@ -12,7 +12,7 @@ export async function register(req: Request, res: Response, next: NextFunction) 
 
 export async function verifyEmail(req: Request, res: Response, next: NextFunction) {
   try {
-    const result = await authService.verifyEmail(req.body.token);
+    const result = await authService.verifyEmail(req.body);
     res.status(200).json(result);
   } catch (error) {
     next(error);

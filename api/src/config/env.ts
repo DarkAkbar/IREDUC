@@ -12,6 +12,11 @@ const envSchema = z.object({
   NODE_ENV: z
     .enum(["development", "test", "production"])
     .default("development"),
+  /** Développement uniquement : marque les nouveaux comptes comme vérifiés. */
+  DEV_AUTO_VERIFY_EMAIL: z
+    .string()
+    .optional()
+    .transform((value) => value === "true" || value === "1"),
   MAIL_DRIVER: z.enum(["console", "resend", "smtp"]).default("console"),
   MAIL_FROM: z.string().default("IREDUC <noreply@ireduc.cd>"),
   RESEND_API_KEY: z.string().optional(),
@@ -28,6 +33,12 @@ if (!parsed.success) {
     .map((issue) => `${issue.path.join(".")}: ${issue.message}`)
     .join("; ");
   throw new Error(`Configuration invalide: ${details}`);
+}
+
+if (parsed.data.NODE_ENV === "production" && parsed.data.DEV_AUTO_VERIFY_EMAIL) {
+  throw new Error(
+    "DEV_AUTO_VERIFY_EMAIL est interdit lorsque NODE_ENV=production"
+  );
 }
 
 export const env = parsed.data;

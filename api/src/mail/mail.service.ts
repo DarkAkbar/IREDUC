@@ -7,6 +7,10 @@ export type MailPayload = {
 
 export interface MailService {
   send(payload: MailPayload): Promise<void>;
-  sendVerificationEmail(to: string, token: string): Promise<void>;
+  sendVerificationEmail(
+    to: string,
+    token: string,
+    code?: string
+  ): Promise<void>;
   sendPasswordResetEmail(to: string, token: string): Promise<void>;
 }

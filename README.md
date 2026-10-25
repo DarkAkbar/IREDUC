@@ -48,6 +48,9 @@ npm run dev
 
 Variables d’environnement : voir `api/.env.example` (JWT, mail console/resend/smtp, `APP_URL`, `NODE_ENV`).
 
+- `DEV_AUTO_VERIFY_EMAIL=true` : en **développement** uniquement, les nouveaux comptes sont marqués `emailVerified` sans envoyer d’e-mail. **Interdit** si `NODE_ENV=production` (l’API refuse de démarrer).
+- En mode `MAIL_DRIVER=console`, le code à 6 chiffres de vérification s’affiche dans le terminal de l’API (`[VERIFY_EMAIL_CODE]`).
+
 ### Comptes de test
 
 | Rôle | E-mail | Mot de passe |
