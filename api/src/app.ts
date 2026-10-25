@@ -22,6 +22,7 @@ import { providersRouter } from "./modules/providers/providers.routes";
 import { requestsRouter } from "./modules/requests/requests.routes";
 import { reviewsRouter } from "./modules/reviews/reviews.routes";
 import { servicesRouter } from "./modules/services/services.routes";
+import { configRouter } from "./modules/config/config.routes";
 import { usersRouter } from "./modules/users/users.routes";
 import { healthRouter } from "./routes/health";
 
@@ -55,6 +56,7 @@ export function createApp() {
   });
 
   app.use("/api/v1/auth", authRouter);
+  app.use("/api/v1/config", configRouter);
   app.use("/api/v1/users", usersRouter);
   app.use("/api/v1/providers", providersRouter);
   app.use("/api/v1/categories", categoriesRouter);

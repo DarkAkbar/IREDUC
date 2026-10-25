@@ -34,3 +34,7 @@ export const changePasswordSchema = z.object({
         "Le mot de passe doit contenir au moins 8 caractères et un chiffre",
     }),
 });
+
+export const deleteAccountSchema = z.object({
+  password: z.string().min(1, "Le mot de passe est requis"),
+});

@@ -229,6 +229,35 @@ export const swaggerSpec = swaggerJsdoc({
           responses: { "200": { description: "Mot de passe mis à jour" } },
         },
       },
+      "/api/v1/config": {
+        get: {
+          tags: ["Config"],
+          summary: "Configuration publique (support, version min, liens légaux)",
+          responses: {
+            "200": {
+              description: "Configuration",
+              content: {
+                "application/json": {
+                  schema: {
+                    type: "object",
+                    properties: {
+                      supportWhatsapp: { type: "string", example: "+243810000000" },
+                      minAppVersion: { type: "string", example: "1.0.0" },
+                      legal: {
+                        type: "object",
+                        properties: {
+                          termsUrl: { type: "string" },
+                          privacyUrl: { type: "string" },
+                        },
+                      },
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
       "/api/v1/users/me": {
         get: {
           tags: ["Users"],
@@ -242,6 +271,83 @@ export const swaggerSpec = swaggerJsdoc({
           security: [{ bearerAuth: [] }],
           responses: { "200": { description: "Profil mis à jour" } },
         },
+        delete: {
+          tags: ["Users"],
+          summary: "Supprimer / anonymiser mon compte (mot de passe requis)",
+          security: [{ bearerAuth: [] }],
+          requestBody: {
+            required: true,
+            content: {
+              "application/json": {
+                schema: {
+                  type: "object",
+                  required: ["password"],
+                  properties: { password: { type: "string" } },
+                },
+              },
+            },
+          },
+          responses: {
+            "200": { description: "Compte anonymisé" },
+            "403": { description: "SUPER_ADMIN non supprimable" },
+          },
+        },
+      },
+      "/api/v1/users/me/summary": {
+        get: {
+          tags: ["Users"],
+          summary: "Résumé profil (compteurs demandes, favoris, messages, partenaire)",
+          security: [{ bearerAuth: [] }],
+          responses: { "200": { description: "Résumé" } },
+        },
+      },
+      "/api/v1/users/me/sessions": {
+        get: {
+          tags: ["Users"],
+          summary: "Liste des sessions actives (header X-Refresh-Token pour marquer la courante)",
+          security: [{ bearerAuth: [] }],
+          parameters: [
+            {
+              name: "X-Refresh-Token",
+              in: "header",
+              schema: { type: "string" },
+              description: "Refresh token de la session courante",
+            },
+          ],
+          responses: { "200": { description: "Sessions" } },
+        },
+      },
+      "/api/v1/users/me/sessions/others": {
+        delete: {
+          tags: ["Users"],
+          summary: "Déconnecter tous les autres appareils",
+          security: [{ bearerAuth: [] }],
+          parameters: [
+            {
+              name: "X-Refresh-Token",
+              in: "header",
+              required: true,
+              schema: { type: "string" },
+            },
+          ],
+          responses: { "200": { description: "Autres sessions révoquées" } },
+        },
+      },
+      "/api/v1/users/me/sessions/{id}": {
+        delete: {
+          tags: ["Users"],
+          summary: "Déconnecter un appareil",
+          security: [{ bearerAuth: [] }],
+          parameters: [
+            { name: "id", in: "path", required: true, schema: { type: "string", format: "uuid" } },
+            {
+              name: "X-Refresh-Token",
+              in: "header",
+              schema: { type: "string" },
+            },
+          ],
+          responses: { "200": { description: "Session révoquée" } },
+        },
       },
       "/api/v1/users/me/password": {
         patch: {
@@ -249,6 +355,14 @@ export const swaggerSpec = swaggerJsdoc({
           summary: "Changer le mot de passe",
           security: [{ bearerAuth: [] }],
           responses: { "200": { description: "Mot de passe modifié" } },
+        },
+      },
+      "/api/v1/users/me/avatar": {
+        post: {
+          tags: ["Users"],
+          summary: "Uploader un avatar (multipart)",
+          security: [{ bearerAuth: [] }],
+          responses: { "200": { description: "Profil mis à jour" } },
         },
       },
       "/api/v1/providers": {
