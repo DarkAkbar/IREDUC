@@ -24,6 +24,9 @@ type ProviderDetail = {
   address?: string | null;
   reviewStatus: string;
   rejectionReason?: string | null;
+  reviewNote?: string | null;
+  submittedAt?: string | null;
+  decidedAt?: string | null;
   yearsOfExperience?: number | null;
   user: {
     fullName: string;
@@ -39,6 +42,12 @@ type ProviderDetail = {
   }>;
   properties: Array<{ id: string; title: string; status: string }>;
   services: Array<{ id: string; title: string; status: string }>;
+  timeline?: Array<{
+    id: string;
+    type: string;
+    message?: string | null;
+    createdAt: string;
+  }>;
   history: Array<{
     id: string;
     action: string;
@@ -292,6 +301,35 @@ export function PartnerDetailPage() {
         </Card>
       </div>
 
+      {data.reviewNote ? (
+        <Alert tone="info">
+          Complément demandé : {data.reviewNote}
+        </Alert>
+      ) : null}
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Chronologie du dossier</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-2 text-sm">
+          {(data.timeline ?? []).length === 0 ? (
+            <p className="text-[var(--text-muted)]">Aucun événement.</p>
+          ) : (
+            (data.timeline ?? []).map((e) => (
+              <div key={e.id} className="rounded-md border border-ireduc-border px-3 py-2">
+                <p className="font-medium">{e.type}</p>
+                <p className="text-xs text-[var(--text-muted)]">
+                  {formatDate(e.createdAt)}
+                </p>
+                {e.message ? (
+                  <p className="mt-1 text-[var(--text-primary)]">{e.message}</p>
+                ) : null}
+              </div>
+            ))
+          )}
+        </CardContent>
+      </Card>
+
       <Card>
         <CardHeader>
           <CardTitle>Historique de modération</CardTitle>
@@ -345,7 +383,7 @@ export function PartnerDetailPage() {
       <DecisionDialog
         open={dialog === "complement"}
         title="Demander un complément"
-        description="Le partenaire recevra une notification."
+        description="Le message est obligatoire. Le dossier reste en attente et le partenaire est notifié."
         requireReason
         confirmLabel="Envoyer"
         onClose={() => setDialog(null)}
