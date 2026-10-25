@@ -66,6 +66,8 @@ export default function PublishScreen() {
   const params = useLocalSearchParams<{
     id?: string;
     type?: string;
+    listingType?: string;
+    resume?: string;
   }>();
   const { requireAuth, isAuthenticated } = useRequireAuth();
   const {
@@ -88,8 +90,19 @@ export default function PublishScreen() {
   }, [isAuthenticated, requireAuth]);
 
   useEffect(() => {
-    if (!params.id) reset();
-  }, [params.id, reset]);
+    if (params.id || params.resume === "1") return;
+    reset();
+  }, [params.id, params.resume, reset]);
+
+  useEffect(() => {
+    const lt = params.listingType;
+    if (
+      !params.id &&
+      (lt === "RENT" || lt === "SALE" || lt === "LAND" || lt === "SERVICE")
+    ) {
+      setListingType(lt);
+    }
+  }, [params.id, params.listingType, setListingType]);
 
   const providerQuery = useQuery({
     queryKey: ["provider-me"],
