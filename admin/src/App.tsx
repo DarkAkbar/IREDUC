@@ -4,6 +4,7 @@ import { AdminLayout } from "@/components/layout/AdminLayout";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { ToastProvider } from "@/components/ui/toast";
 import { AuthProvider } from "@/context/AuthContext";
+import { ThemeProvider } from "@/context/ThemeContext";
 import { AdminsPage } from "@/pages/AdminsPage";
 import { AuditPage } from "@/pages/AuditPage";
 import { CategoriesPage } from "@/pages/CategoriesPage";
@@ -31,6 +32,7 @@ const queryClient = new QueryClient({
 export default function App() {
   return (
     <QueryClientProvider client={queryClient}>
+      <ThemeProvider>
       <AuthProvider>
         <ToastProvider>
           <BrowserRouter>
@@ -73,6 +75,7 @@ export default function App() {
           </BrowserRouter>
         </ToastProvider>
       </AuthProvider>
+      </ThemeProvider>
     </QueryClientProvider>
   );
 }
