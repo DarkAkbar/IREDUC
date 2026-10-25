@@ -60,6 +60,10 @@ export default function RootLayout() {
               options={{ presentation: "modal", headerShown: false }}
             />
             <Stack.Screen
+              name="auth/verify-email"
+              options={{ headerShown: false }}
+            />
+            <Stack.Screen
               name="filters"
               options={{ presentation: "modal", headerShown: false }}
             />
