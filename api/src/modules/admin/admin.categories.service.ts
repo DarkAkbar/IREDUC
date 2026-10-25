@@ -12,9 +12,27 @@ function slugify(value: string) {
     .replace(/^-|-$/g, "");
 }
 
-export async function listAdminCategories() {
+export async function listAdminCategories(filters?: {
+  parentId?: string | null;
+  kind?: CategoryKind;
+}) {
+  const parentFilter =
+    filters?.parentId === undefined
+      ? undefined
+      : filters.parentId === null
+        ? { parentId: null }
+        : { parentId: filters.parentId };
+
   return prisma.category.findMany({
+    where: {
+      ...parentFilter,
+      ...(filters?.kind ? { kind: filters.kind } : {}),
+    },
     orderBy: [{ kind: "asc" }, { sortOrder: "asc" }, { name: "asc" }],
+    include: {
+      parent: { select: { id: true, name: true } },
+      _count: { select: { children: true } },
+    },
   });
 }
 

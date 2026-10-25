@@ -22,8 +22,16 @@ import {
   settingKeyParamsSchema,
   updateAdminRoleSchema,
   updateCategorySchema,
+  updateCommuneSchema,
+  updateNeighborhoodSchema,
+  updateRejectionReasonSchema,
   updateSettingSchema,
   updateUserStatusSchema,
+  adminCategoriesQuerySchema,
+  createCommuneSchema,
+  createNeighborhoodSchema,
+  createRejectionReasonSchema,
+  referentialsIncludeInactiveSchema,
 } from "./admin.schemas";
 import { paginationQuerySchema } from "../../utils/pagination";
 
@@ -166,7 +174,63 @@ adminRouter.get(
   adminController.listAuditLog
 );
 
-adminRouter.get("/categories", adminController.listCategories);
+adminRouter.get(
+  "/communes",
+  validate(referentialsIncludeInactiveSchema, "query"),
+  adminController.listCommunes
+);
+adminRouter.post(
+  "/communes",
+  validate(createCommuneSchema),
+  adminController.createCommune
+);
+adminRouter.patch(
+  "/communes/:id",
+  validate(adminIdParamsSchema, "params"),
+  validate(updateCommuneSchema),
+  adminController.updateCommune
+);
+adminRouter.get(
+  "/communes/:id/neighborhoods",
+  validate(adminIdParamsSchema, "params"),
+  validate(referentialsIncludeInactiveSchema, "query"),
+  adminController.listCommuneNeighborhoods
+);
+adminRouter.post(
+  "/communes/:id/neighborhoods",
+  validate(adminIdParamsSchema, "params"),
+  validate(createNeighborhoodSchema),
+  adminController.createNeighborhood
+);
+adminRouter.patch(
+  "/neighborhoods/:id",
+  validate(adminIdParamsSchema, "params"),
+  validate(updateNeighborhoodSchema),
+  adminController.updateNeighborhood
+);
+
+adminRouter.get(
+  "/rejection-reasons",
+  validate(referentialsIncludeInactiveSchema, "query"),
+  adminController.listRejectionReasons
+);
+adminRouter.post(
+  "/rejection-reasons",
+  validate(createRejectionReasonSchema),
+  adminController.createRejectionReason
+);
+adminRouter.patch(
+  "/rejection-reasons/:id",
+  validate(adminIdParamsSchema, "params"),
+  validate(updateRejectionReasonSchema),
+  adminController.updateRejectionReason
+);
+
+adminRouter.get(
+  "/categories",
+  validate(adminCategoriesQuerySchema, "query"),
+  adminController.listCategories
+);
 adminRouter.post(
   "/categories",
   validate(createCategorySchema),

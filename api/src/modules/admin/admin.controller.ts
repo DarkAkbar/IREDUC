@@ -1,10 +1,11 @@
-import { SystemRole } from "@prisma/client";
+import { CategoryKind, SystemRole } from "@prisma/client";
 import { NextFunction, Request, Response } from "express";
 import { forbidden, unauthorized } from "../../utils/errors";
 import { getParam } from "../../utils/params";
 import * as adminsService from "./admin.admins.service";
 import * as auditService from "./admin.audit.service";
 import * as categoriesService from "./admin.categories.service";
+import * as referentialsService from "./admin.referentials.service";
 import * as moderationService from "./admin.moderation.service";
 import * as requestsService from "./admin.requests.service";
 import * as settingsService from "./admin.settings.service";
@@ -128,8 +129,151 @@ export async function listCategories(
 ) {
   try {
     requireSuperAdmin(req);
-    const result = await categoriesService.listAdminCategories();
+    const query = req.query as {
+      parentId?: string | null;
+      kind?: CategoryKind;
+    };
+    const result = await categoriesService.listAdminCategories({
+      ...(query.parentId !== undefined ? { parentId: query.parentId } : {}),
+      ...(query.kind ? { kind: query.kind } : {}),
+    });
     res.status(200).json({ data: result });
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function listCommunes(req: Request, res: Response, next: NextFunction) {
+  try {
+    requireAdmin(req);
+    const includeInactive = req.query.includeInactive === "true";
+    const data = await referentialsService.listCommunes(includeInactive);
+    res.status(200).json({ data });
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function createCommune(req: Request, res: Response, next: NextFunction) {
+  try {
+    const admin = requireAdmin(req);
+    const result = await referentialsService.createCommune(admin.id, req.body.name);
+    res.status(201).json(result);
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function updateCommune(req: Request, res: Response, next: NextFunction) {
+  try {
+    const admin = requireAdmin(req);
+    const result = await referentialsService.updateCommune(
+      admin.id,
+      getParam(req, "id"),
+      req.body
+    );
+    res.status(200).json(result);
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function listCommuneNeighborhoods(
+  req: Request,
+  res: Response,
+  next: NextFunction
+) {
+  try {
+    requireAdmin(req);
+    const includeInactive = req.query.includeInactive === "true";
+    const result = await referentialsService.listNeighborhoodsByCommune(
+      getParam(req, "id"),
+      includeInactive
+    );
+    res.status(200).json(result);
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function createNeighborhood(
+  req: Request,
+  res: Response,
+  next: NextFunction
+) {
+  try {
+    const admin = requireAdmin(req);
+    const result = await referentialsService.createNeighborhood(
+      admin.id,
+      getParam(req, "id"),
+      req.body.name
+    );
+    res.status(201).json(result);
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function updateNeighborhood(
+  req: Request,
+  res: Response,
+  next: NextFunction
+) {
+  try {
+    const admin = requireAdmin(req);
+    const result = await referentialsService.updateNeighborhood(
+      admin.id,
+      getParam(req, "id"),
+      req.body
+    );
+    res.status(200).json(result);
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function listRejectionReasons(
+  req: Request,
+  res: Response,
+  next: NextFunction
+) {
+  try {
+    requireAdmin(req);
+    const includeInactive = req.query.includeInactive === "true";
+    const data = await referentialsService.listRejectionReasons(includeInactive);
+    res.status(200).json({ data });
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function createRejectionReason(
+  req: Request,
+  res: Response,
+  next: NextFunction
+) {
+  try {
+    const admin = requireAdmin(req);
+    const result = await referentialsService.createRejectionReason(admin.id, req.body);
+    res.status(201).json(result);
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function updateRejectionReason(
+  req: Request,
+  res: Response,
+  next: NextFunction
+) {
+  try {
+    const admin = requireAdmin(req);
+    const result = await referentialsService.updateRejectionReason(
+      admin.id,
+      getParam(req, "id"),
+      req.body
+    );
+    res.status(200).json(result);
   } catch (error) {
     next(error);
   }

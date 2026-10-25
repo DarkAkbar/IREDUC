@@ -6,6 +6,7 @@ import {
   ChevronRight,
   ClipboardList,
   FolderTree,
+  MapPin,
   Home,
   Inbox,
   LogOut,
@@ -64,6 +65,7 @@ const navGroups = [
     label: "Système",
     items: [
       { to: "/settings", label: "Paramètres", icon: Settings, roles: ["SUPER_ADMIN"] },
+      { to: "/referentials", label: "Référentiels", icon: MapPin, roles: ["ADMIN", "SUPER_ADMIN"] },
       { to: "/categories", label: "Catégories", icon: FolderTree, roles: ["SUPER_ADMIN"] },
       { to: "/audit", label: "Journal d'audit", icon: ClipboardList, roles: ["SUPER_ADMIN"] },
     ],
@@ -78,6 +80,7 @@ const pageTitles: Record<string, string> = {
   "/requests": "Demandes",
   "/users": "Utilisateurs",
   "/settings": "Paramètres",
+  "/referentials": "Référentiels",
   "/categories": "Catégories",
   "/audit": "Journal d'audit",
   "/admins": "Administrateurs",

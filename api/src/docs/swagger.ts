@@ -799,10 +799,76 @@ export const swaggerSpec = swaggerJsdoc({
           responses: { "200": { description: "Liste paginée" } },
         },
       },
+      "/api/v1/admin/communes": {
+        get: {
+          tags: ["Admin"],
+          summary: "Liste des communes (admin)",
+          security: [{ bearerAuth: [] }],
+          responses: { "200": { description: "Liste" } },
+        },
+        post: {
+          tags: ["Admin"],
+          summary: "Créer une commune",
+          security: [{ bearerAuth: [] }],
+          responses: { "201": { description: "Créée" } },
+        },
+      },
+      "/api/v1/admin/communes/{id}": {
+        patch: {
+          tags: ["Admin"],
+          summary: "Modifier une commune",
+          security: [{ bearerAuth: [] }],
+          responses: { "200": { description: "Mise à jour" } },
+        },
+      },
+      "/api/v1/admin/communes/{id}/neighborhoods": {
+        get: {
+          tags: ["Admin"],
+          summary: "Quartiers d'une commune",
+          security: [{ bearerAuth: [] }],
+          responses: { "200": { description: "Liste" } },
+        },
+        post: {
+          tags: ["Admin"],
+          summary: "Créer un quartier",
+          security: [{ bearerAuth: [] }],
+          responses: { "201": { description: "Créé" } },
+        },
+      },
+      "/api/v1/admin/neighborhoods/{id}": {
+        patch: {
+          tags: ["Admin"],
+          summary: "Modifier un quartier",
+          security: [{ bearerAuth: [] }],
+          responses: { "200": { description: "Mise à jour" } },
+        },
+      },
+      "/api/v1/admin/rejection-reasons": {
+        get: {
+          tags: ["Admin"],
+          summary: "Motifs de rejet",
+          security: [{ bearerAuth: [] }],
+          responses: { "200": { description: "Liste" } },
+        },
+        post: {
+          tags: ["Admin"],
+          summary: "Créer un motif de rejet",
+          security: [{ bearerAuth: [] }],
+          responses: { "201": { description: "Créé" } },
+        },
+      },
+      "/api/v1/admin/rejection-reasons/{id}": {
+        patch: {
+          tags: ["Admin"],
+          summary: "Modifier un motif de rejet",
+          security: [{ bearerAuth: [] }],
+          responses: { "200": { description: "Mise à jour" } },
+        },
+      },
       "/api/v1/admin/categories": {
         get: {
           tags: ["Admin"],
-          summary: "Liste des catégories (SUPER_ADMIN)",
+          summary: "Liste des catégories (SUPER_ADMIN, parentId, sous-catégories)",
           security: [{ bearerAuth: [] }],
           responses: { "200": { description: "Liste" } },
         },

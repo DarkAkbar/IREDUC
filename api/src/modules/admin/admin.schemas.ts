@@ -156,3 +156,62 @@ export const updateSettingSchema = z.object({
 });
 
 export const settingHistoryQuerySchema = paginationQuerySchema;
+
+export const referentialsIncludeInactiveSchema = z.object({
+  includeInactive: z
+    .enum(["true", "false"])
+    .optional()
+    .transform((v) => v === "true"),
+});
+
+export const createCommuneSchema = z.object({
+  name: z.string().min(2, "Le nom de la commune est requis"),
+});
+
+export const updateCommuneSchema = z
+  .object({
+    name: z.string().min(2).optional(),
+    isActive: z.boolean().optional(),
+  })
+  .refine((data) => Object.keys(data).length > 0, {
+    message: "Aucun champ à mettre à jour",
+  });
+
+export const createNeighborhoodSchema = z.object({
+  name: z.string().min(2, "Le nom du quartier est requis"),
+});
+
+export const updateNeighborhoodSchema = z
+  .object({
+    name: z.string().min(2).optional(),
+    isActive: z.boolean().optional(),
+  })
+  .refine((data) => Object.keys(data).length > 0, {
+    message: "Aucun champ à mettre à jour",
+  });
+
+export const createRejectionReasonSchema = z.object({
+  label: z.string().min(2, "Le libellé est requis"),
+  code: z.string().min(2).nullable().optional(),
+  sortOrder: z.number().int().optional(),
+  isActive: z.boolean().optional(),
+});
+
+export const updateRejectionReasonSchema = z
+  .object({
+    label: z.string().min(2).optional(),
+    code: z.string().min(2).nullable().optional(),
+    sortOrder: z.number().int().optional(),
+    isActive: z.boolean().optional(),
+  })
+  .refine((data) => Object.keys(data).length > 0, {
+    message: "Aucun champ à mettre à jour",
+  });
+
+export const adminCategoriesQuerySchema = z.object({
+  parentId: z
+    .union([z.string().uuid(), z.literal("null")])
+    .optional()
+    .transform((v) => (v === "null" ? null : v)),
+  kind: z.nativeEnum(CategoryKind).optional(),
+});

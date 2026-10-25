@@ -16,6 +16,7 @@ import { PartnerDetailPage } from "@/pages/PartnerDetailPage";
 import { PartnersPage } from "@/pages/PartnersPage";
 import { RequestDetailPage } from "@/pages/RequestDetailPage";
 import { RequestsPage } from "@/pages/RequestsPage";
+import { ReferentialsPage } from "@/pages/ReferentialsPage";
 import { SettingsPage } from "@/pages/SettingsPage";
 import { UserDetailPage } from "@/pages/UserDetailPage";
 import { UsersPage } from "@/pages/UsersPage";
@@ -66,6 +67,7 @@ export default function App() {
                   <Route path="users/:id" element={<UserDetailPage />} />
                   <Route element={<ProtectedRoute superAdminOnly />}>
                     <Route path="settings" element={<SettingsPage />} />
+                    <Route path="referentials" element={<ReferentialsPage />} />
                     <Route path="categories" element={<CategoriesPage />} />
                     <Route path="audit" element={<AuditPage />} />
                     <Route path="admins" element={<AdminsPage />} />
