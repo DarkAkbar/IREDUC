@@ -1,7 +1,7 @@
 import { ListingStatus, Prisma, ReviewStatus } from "@prisma/client";
 import { prisma } from "../../config/prisma";
 import { createNotification } from "../../services/notification.service";
-import { badRequest, notFound } from "../../utils/errors";
+import { badRequest, conflict, notFound } from "../../utils/errors";
 import {
   buildPaginatedResult,
   getPagination,
@@ -179,7 +179,10 @@ export async function reviewProperty(
     throw notFound("Bien introuvable");
   }
   if (property.status !== ListingStatus.PENDING) {
-    throw badRequest("Seuls les biens en attente peuvent être modérés");
+    throw conflict(
+      "Seuls les biens en attente peuvent être modérés",
+      "INVALID_STATUS_TRANSITION"
+    );
   }
 
   const updated = await prisma.property.update({
@@ -213,7 +216,10 @@ export async function reviewService(
     throw notFound("Service introuvable");
   }
   if (service.status !== ListingStatus.PENDING) {
-    throw badRequest("Seuls les services en attente peuvent être modérés");
+    throw conflict(
+      "Seuls les services en attente peuvent être modérés",
+      "INVALID_STATUS_TRANSITION"
+    );
   }
 
   const updated = await prisma.service.update({
@@ -249,7 +255,10 @@ export async function reviewProvider(
     throw notFound("Profil partenaire introuvable");
   }
   if (provider.reviewStatus !== ReviewStatus.PENDING) {
-    throw badRequest("Seuls les profils en attente peuvent être modérés");
+    throw conflict(
+      "Seuls les profils en attente peuvent être modérés",
+      "INVALID_STATUS_TRANSITION"
+    );
   }
 
   const updated = await prisma.providerProfile.update({
@@ -481,6 +490,17 @@ export async function getNextPendingService(excludeId?: string) {
   return prisma.service.findFirst({
     where: {
       status: ListingStatus.PENDING,
+      ...(excludeId ? { id: { not: excludeId } } : {}),
+    },
+    orderBy: { createdAt: "asc" },
+    select: { id: true },
+  });
+}
+
+export async function getNextPendingProvider(excludeId?: string) {
+  return prisma.providerProfile.findFirst({
+    where: {
+      reviewStatus: ReviewStatus.PENDING,
       ...(excludeId ? { id: { not: excludeId } } : {}),
     },
     orderBy: { createdAt: "asc" },

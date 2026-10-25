@@ -68,13 +68,15 @@ export async function reviewService(req: Request, res: Response, next: NextFunct
 export async function reviewProvider(req: Request, res: Response, next: NextFunction) {
   try {
     const admin = requireAdmin(req);
+    const id = getParam(req, "id");
     const result = await moderationService.reviewProvider(
       admin.id,
-      getParam(req, "id"),
+      id,
       req.body.decision,
       req.body.reason
     );
-    res.status(200).json(result);
+    const nextPending = await moderationService.getNextPendingProvider(id);
+    res.status(200).json({ ...result, nextPendingId: nextPending?.id ?? null });
   } catch (error) {
     next(error);
   }
