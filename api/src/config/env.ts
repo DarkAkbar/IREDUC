@@ -20,6 +20,12 @@ const envSchema = z.object({
     .string()
     .optional()
     .transform((value) => value === "true" || value === "1"),
+  /** Numéro WhatsApp du support (E.164), ex. +243812345678 */
+  SUPPORT_WHATSAPP: z.string().default("+243810000000"),
+  /** Version minimale de l'app mobile (semver) */
+  MIN_APP_VERSION: z.string().default("1.0.0"),
+  LEGAL_TERMS_URL: z.string().default("/legal/terms"),
+  LEGAL_PRIVACY_URL: z.string().default("/legal/privacy"),
   MAIL_DRIVER: z.enum(["console", "resend", "smtp"]).default("console"),
   MAIL_FROM: z.string().default("IREDUC <noreply@ireduc.cd>"),
   RESEND_API_KEY: z.string().optional(),
