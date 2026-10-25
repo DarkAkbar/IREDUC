@@ -1,5 +1,5 @@
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   Alert,
   KeyboardAvoidingView,
@@ -17,40 +17,66 @@ import { IreducLogo } from "../../components/IreducLogo";
 import { Button } from "../../components/ui/Button";
 import { useAuthStore } from "../../store/authStore";
 import { colors, radii, spacing, typography } from "../../theme";
+import {
+  getErrorMessage,
+  getFieldErrors,
+  isNetworkError,
+} from "../../utils/errors";
 
 type Mode = "login" | "register";
-
-function getErrorMessage(error: unknown, fallback: string) {
-  if (
-    typeof error === "object" &&
-    error &&
-    "response" in error &&
-    typeof (error as { response?: { data?: { message?: string } } }).response?.data
-      ?.message === "string"
-  ) {
-    return (error as { response: { data: { message: string } } }).response.data
-      .message;
-  }
-  return fallback;
-}
 
 export default function AuthScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
-  const params = useLocalSearchParams<{ returnTo?: string }>();
+  const params = useLocalSearchParams<{
+    returnTo?: string;
+    mode?: string;
+  }>();
   const login = useAuthStore((s) => s.login);
   const register = useAuthStore((s) => s.register);
 
-  const [mode, setMode] = useState<Mode>("login");
+  const [mode, setMode] = useState<Mode>(
+    params.mode === "register" ? "register" : "login"
+  );
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [formError, setFormError] = useState<string | null>(null);
+  const [fieldErrors, setFieldErrors] = useState<
+    Partial<Record<string, string>>
+  >({});
+
+  useEffect(() => {
+    if (params.mode === "register" || params.mode === "login") {
+      setMode(params.mode);
+    }
+  }, [params.mode]);
+
+  const passwordRules = useMemo(
+    () => ({
+      length: password.length >= 8,
+      digit: /\d/.test(password),
+    }),
+    [password]
+  );
+
+  function clearErrors() {
+    setFormError(null);
+    setFieldErrors({});
+  }
 
   async function onSubmit() {
+    clearErrors();
+
     if (!email.trim() || !password) {
-      Alert.alert("Champs requis", "Saisissez votre e-mail et votre mot de passe.");
+      setFormError("Saisissez votre e-mail et votre mot de passe.");
+      return;
+    }
+
+    if (mode === "register" && fullName.trim().length < 2) {
+      setFieldErrors({ fullName: "Le nom complet est requis" });
       return;
     }
 
@@ -64,28 +90,44 @@ export default function AuthScreen() {
           router.back();
         }
       } else {
-        if (fullName.trim().length < 2) {
-          Alert.alert("Nom requis", "Indiquez votre nom complet.");
+        const result = await register(fullName, email, password);
+        if (result.autoVerified) {
+          Alert.alert("Compte créé", result.message, [
+            {
+              text: "Se connecter",
+              onPress: () => setMode("login"),
+            },
+          ]);
           return;
         }
-        const message = await register(fullName, email, password);
-        Alert.alert("Vérifiez votre e-mail", message, [
-          {
-            text: "OK",
-            onPress: () => setMode("login"),
+        router.replace({
+          pathname: "/auth/verify-email",
+          params: {
+            email: email.trim().toLowerCase(),
+            emailSent: result.emailSent ? "1" : "0",
+            message: result.message,
+            returnTo: params.returnTo ?? "",
           },
-        ]);
+        } as never);
       }
     } catch (error) {
-      Alert.alert(
-        "Erreur",
-        getErrorMessage(
-          error,
-          mode === "login"
-            ? "Connexion impossible. Vérifiez vos identifiants."
-            : "Inscription impossible."
-        )
-      );
+      if (isNetworkError(error)) {
+        setFormError("Impossible de joindre le serveur");
+      } else {
+        const fields = getFieldErrors(error);
+        if (Object.keys(fields).length > 0) {
+          setFieldErrors(fields);
+        } else {
+          setFormError(
+            getErrorMessage(
+              error,
+              mode === "login"
+                ? "Connexion impossible. Vérifiez vos identifiants."
+                : "Inscription impossible."
+            )
+          );
+        }
+      }
     } finally {
       setLoading(false);
     }
@@ -93,17 +135,16 @@ export default function AuthScreen() {
 
   async function onForgotPassword() {
     if (!email.trim()) {
-      Alert.alert(
-        "E-mail requis",
-        "Saisissez votre e-mail puis appuyez sur « Mot de passe oublié ? »."
-      );
+      setFieldErrors({ email: "Saisissez votre e-mail" });
       return;
     }
     try {
       const data = await forgotPassword(email.trim().toLowerCase());
       Alert.alert("E-mail envoyé", data.message);
     } catch (error) {
-      Alert.alert("Erreur", getErrorMessage(error, "Impossible d'envoyer l'e-mail."));
+      setFormError(
+        getErrorMessage(error, "Impossible d'envoyer l'e-mail.")
+      );
     }
   }
 
@@ -114,7 +155,10 @@ export default function AuthScreen() {
       keyboardVerticalOffset={Platform.OS === "android" ? 24 : 0}
     >
       <ScrollView
-        contentContainerStyle={styles.content}
+        contentContainerStyle={[
+          styles.content,
+          { paddingBottom: insets.bottom + spacing.xxl },
+        ]}
         keyboardShouldPersistTaps="handled"
       >
         <IreducLogo />
@@ -130,7 +174,10 @@ export default function AuthScreen() {
         <View style={styles.tabs}>
           <Pressable
             style={[styles.tab, mode === "login" && styles.tabActive]}
-            onPress={() => setMode("login")}
+            onPress={() => {
+              clearErrors();
+              setMode("login");
+            }}
           >
             <Text style={[styles.tabText, mode === "login" && styles.tabTextActive]}>
               Connexion
@@ -138,7 +185,10 @@ export default function AuthScreen() {
           </Pressable>
           <Pressable
             style={[styles.tab, mode === "register" && styles.tabActive]}
-            onPress={() => setMode("register")}
+            onPress={() => {
+              clearErrors();
+              setMode("register");
+            }}
           >
             <Text
               style={[styles.tabText, mode === "register" && styles.tabTextActive]}
@@ -148,41 +198,68 @@ export default function AuthScreen() {
           </Pressable>
         </View>
 
+        {formError ? <Text style={styles.formError}>{formError}</Text> : null}
+
         {mode === "register" ? (
           <View style={styles.field}>
             <Text style={styles.label}>Nom complet</Text>
             <TextInput
-              style={styles.input}
+              style={[styles.input, fieldErrors.fullName && styles.inputError]}
               value={fullName}
-              onChangeText={setFullName}
+              onChangeText={(v) => {
+                setFullName(v);
+                if (fieldErrors.fullName) {
+                  setFieldErrors((e) => ({ ...e, fullName: undefined }));
+                }
+              }}
               placeholder="Jean Mukendi"
               placeholderTextColor={colors.textMuted}
               autoCapitalize="words"
             />
+            {fieldErrors.fullName ? (
+              <Text style={styles.fieldError}>{fieldErrors.fullName}</Text>
+            ) : null}
           </View>
         ) : null}
 
         <View style={styles.field}>
           <Text style={styles.label}>E-mail</Text>
           <TextInput
-            style={styles.input}
+            style={[styles.input, fieldErrors.email && styles.inputError]}
             value={email}
-            onChangeText={setEmail}
+            onChangeText={(v) => {
+              setEmail(v);
+              if (fieldErrors.email) {
+                setFieldErrors((e) => ({ ...e, email: undefined }));
+              }
+            }}
             placeholder="vous@exemple.com"
             placeholderTextColor={colors.textMuted}
             keyboardType="email-address"
             autoCapitalize="none"
             autoCorrect={false}
           />
+          {fieldErrors.email ? (
+            <Text style={styles.fieldError}>{fieldErrors.email}</Text>
+          ) : null}
         </View>
 
         <View style={styles.field}>
           <Text style={styles.label}>Mot de passe</Text>
           <View style={styles.passwordRow}>
             <TextInput
-              style={[styles.input, styles.passwordInput]}
+              style={[
+                styles.input,
+                styles.passwordInput,
+                fieldErrors.password && styles.inputError,
+              ]}
               value={password}
-              onChangeText={setPassword}
+              onChangeText={(v) => {
+                setPassword(v);
+                if (fieldErrors.password) {
+                  setFieldErrors((e) => ({ ...e, password: undefined }));
+                }
+              }}
               placeholder="••••••••"
               placeholderTextColor={colors.textMuted}
               secureTextEntry={!showPassword}
@@ -196,6 +273,31 @@ export default function AuthScreen() {
               </Text>
             </Pressable>
           </View>
+          {fieldErrors.password ? (
+            <Text style={styles.fieldError}>{fieldErrors.password}</Text>
+          ) : null}
+          {mode === "register" ? (
+            <View style={styles.rules}>
+              <Text
+                style={[
+                  styles.rule,
+                  password.length > 0 &&
+                    (passwordRules.length ? styles.ruleOk : styles.ruleBad),
+                ]}
+              >
+                • Au moins 8 caractères
+              </Text>
+              <Text
+                style={[
+                  styles.rule,
+                  password.length > 0 &&
+                    (passwordRules.digit ? styles.ruleOk : styles.ruleBad),
+                ]}
+              >
+                • Au moins un chiffre
+              </Text>
+            </View>
+          ) : null}
           {mode === "login" ? (
             <Pressable onPress={() => void onForgotPassword()}>
               <Text style={styles.forgot}>Mot de passe oublié ?</Text>
@@ -214,21 +316,36 @@ export default function AuthScreen() {
           {mode === "login" ? (
             <Text style={styles.footerText}>
               Pas de compte ?{" "}
-              <Text style={styles.linkRed} onPress={() => setMode("register")}>
+              <Text
+                style={styles.linkRed}
+                onPress={() => {
+                  clearErrors();
+                  setMode("register");
+                }}
+              >
                 Créer un compte
               </Text>
             </Text>
           ) : (
             <Text style={styles.footerText}>
               Déjà inscrit ?{" "}
-              <Text style={styles.linkRed} onPress={() => setMode("login")}>
+              <Text
+                style={styles.linkRed}
+                onPress={() => {
+                  clearErrors();
+                  setMode("login");
+                }}
+              >
                 Se connecter
               </Text>
             </Text>
           )}
           <Text style={[styles.footerText, { marginTop: spacing.sm }]}>
             Vous êtes propriétaire ou agence ?{" "}
-            <Text style={styles.linkNavy} onPress={() => setMode("register")}>
+            <Text
+              style={styles.linkNavy}
+              onPress={() => router.push("/partner" as never)}
+            >
               Devenir partenaire
             </Text>
           </Text>
@@ -241,7 +358,7 @@ export default function AuthScreen() {
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.background },
   content: {
-    paddingHorizontal: spacing.xl,
+    paddingHorizontal: 20,
     paddingBottom: spacing.xxl,
   },
   subtitle: { ...typography.body, marginTop: spacing.sm, marginBottom: spacing.xl },
@@ -261,6 +378,12 @@ const styles = StyleSheet.create({
   tabActive: { backgroundColor: colors.navy },
   tabText: { color: colors.navy, fontWeight: "700" },
   tabTextActive: { color: colors.white },
+  formError: {
+    color: colors.primary,
+    fontWeight: "700",
+    marginBottom: spacing.md,
+    textAlign: "center",
+  },
   field: { marginBottom: spacing.lg },
   label: { ...typography.label, marginBottom: spacing.sm },
   input: {
@@ -273,10 +396,21 @@ const styles = StyleSheet.create({
     color: colors.navy,
     fontSize: 15,
   },
+  inputError: { borderColor: colors.primary },
+  fieldError: {
+    color: colors.primary,
+    fontSize: 12,
+    fontWeight: "600",
+    marginTop: spacing.xs,
+  },
   passwordRow: { position: "relative", justifyContent: "center" },
   passwordInput: { paddingRight: 90 },
   showBtn: { position: "absolute", right: spacing.lg },
   showText: { color: colors.textMuted, fontWeight: "600" },
+  rules: { marginTop: spacing.sm, gap: 2 },
+  rule: { color: colors.textMuted, fontSize: 12, fontWeight: "600" },
+  ruleOk: { color: "#0F7B3A" },
+  ruleBad: { color: colors.primary },
   forgot: {
     color: colors.primary,
     fontWeight: "700",

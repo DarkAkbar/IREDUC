@@ -14,7 +14,11 @@ type AuthState = {
   isHydrated: boolean;
   hydrate: () => Promise<void>;
   login: (email: string, password: string) => Promise<void>;
-  register: (fullName: string, email: string, password: string) => Promise<string>;
+  register: (
+    fullName: string,
+    email: string,
+    password: string
+  ) => Promise<authApi.RegisterResult>;
   logout: () => Promise<void>;
   setUser: (user: AuthUser | null) => void;
 };
@@ -51,12 +55,11 @@ export const useAuthStore = create<AuthState>((set) => {
     },
 
     register: async (fullName, email, password) => {
-      const data = await authApi.register(
+      return authApi.register(
         fullName.trim(),
         email.trim().toLowerCase(),
         password
       );
-      return data.message;
     },
 
     logout: async () => {
