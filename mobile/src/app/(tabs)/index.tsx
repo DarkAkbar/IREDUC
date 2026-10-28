@@ -94,7 +94,7 @@ export default function HomeScreen() {
         onScroll={(e) => onFabScroll(e.nativeEvent.contentOffset.y)}
       >
         <View style={styles.header}>
-          <IreducLogo tagline="Trouvez. Comparez. Réalisez." compact />
+          <IreducLogo compact />
           <View style={styles.headerRight}>
             <Pressable style={styles.cityPill}>
               <Ionicons name="location" size={14} color={colors.primary} />
