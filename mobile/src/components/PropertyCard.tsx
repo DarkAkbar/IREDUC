@@ -1,6 +1,6 @@
 import { Ionicons } from "@expo/vector-icons";
 import { Image } from "expo-image";
-import { Pressable, StyleSheet, Text, View } from "react-native";
+import { Pressable, StyleSheet, Text, View, ViewStyle } from "react-native";
 import { mediaUrl } from "../api/client";
 import { PropertyListItem } from "../api/types";
 import { colors, radii, spacing, typography } from "../theme";
@@ -10,6 +10,7 @@ type Props = {
   item: PropertyListItem;
   featured?: boolean;
   onPress?: () => void;
+  style?: ViewStyle;
 };
 
 function formatPrice(item: PropertyListItem) {
@@ -20,7 +21,7 @@ function formatPrice(item: PropertyListItem) {
   return `${amount} $`;
 }
 
-export function PropertyCard({ item, featured, onPress }: Props) {
+export function PropertyCard({ item, featured, onPress, style }: Props) {
   const image = mediaUrl(item.coverPhoto?.url);
   const location =
     item.neighborhood?.name
@@ -29,7 +30,7 @@ export function PropertyCard({ item, featured, onPress }: Props) {
 
   return (
     <Pressable
-      style={[styles.card, featured && styles.featuredCard]}
+      style={[styles.card, featured && styles.featuredCard, style]}
       onPress={onPress}
     >
       <View style={styles.imageWrap}>

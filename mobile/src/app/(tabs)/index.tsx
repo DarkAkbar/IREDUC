@@ -2,13 +2,16 @@ import { Ionicons } from "@expo/vector-icons";
 import { useQuery } from "@tanstack/react-query";
 import { Image } from "expo-image";
 import { useRouter } from "expo-router";
+import { useRef } from "react";
 import {
+  Animated,
   Pressable,
   RefreshControl,
   ScrollView,
   StyleSheet,
   Text,
   View,
+  useWindowDimensions,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { mediaUrl } from "../../api/client";
@@ -36,12 +39,27 @@ import { colors, radii, spacing, typography } from "../../theme";
 /** Logo local de secours si aucune photo de bien n'est disponible. */
 const HERO_FALLBACK = require("../../../assets/icon.png");
 
+const CARD_GAP = spacing.md;
+
 export default function HomeScreen() {
   const insets = useSafeAreaInsets();
+  const { width: screenWidth } = useWindowDimensions();
   const router = useRouter();
-  const { requireAuth } = useRequireAuth();
+  const { requireAuth, isAuthenticated } = useRequireAuth();
   const { onScroll: onFabScroll } = usePublishFabScroll();
-  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
+  /** Largeur carte centrale ≈ 60 % de l'écran. */
+  const cardWidth = Math.round(screenWidth * 0.6);
+  const itemSize = cardWidth + CARD_GAP;
+  /** Démarre sur la 2e carte : scrollX initial = ITEM_SIZE. */
+  const scrollX = useRef(new Animated.Value(itemSize)).current;
+  const user = useAuthStore((s) => s.user);
+  const avatarUri = mediaUrl(user?.avatarUrl);
+  const initials = (user?.fullName ?? "?")
+    .split(" ")
+    .map((part) => part[0])
+    .join("")
+    .slice(0, 2)
+    .toUpperCase();
 
   const { data, isLoading, isError, refetch, isFetching } = useQuery({
     queryKey: ["home"],
@@ -94,13 +112,8 @@ export default function HomeScreen() {
         onScroll={(e) => onFabScroll(e.nativeEvent.contentOffset.y)}
       >
         <View style={styles.header}>
-          <IreducLogo tagline="Trouvez. Comparez. Réalisez." compact />
+          <IreducLogo compact />
           <View style={styles.headerRight}>
-            <Pressable style={styles.cityPill}>
-              <Ionicons name="location" size={14} color={colors.primary} />
-              <Text style={styles.cityText}>Kinshasa</Text>
-              <Ionicons name="chevron-down" size={14} color={colors.navy} />
-            </Pressable>
             <Pressable
               style={styles.bell}
               onPress={() => {
@@ -141,6 +154,32 @@ export default function HomeScreen() {
                 </View>
               ) : null}
             </Pressable>
+            <Pressable
+              style={[
+                styles.avatarBtn,
+                !isAuthenticated && styles.avatarBtnGuest,
+              ]}
+              accessibilityLabel={isAuthenticated ? "Profil" : "Connexion"}
+              onPress={() => {
+                if (!isAuthenticated) {
+                  requireAuth("/(tabs)/profile");
+                  return;
+                }
+                router.push("/(tabs)/profile" as never);
+              }}
+            >
+              {avatarUri ? (
+                <Image
+                  source={{ uri: avatarUri }}
+                  style={styles.avatarImg}
+                  contentFit="cover"
+                />
+              ) : isAuthenticated ? (
+                <Text style={styles.avatarInitials}>{initials}</Text>
+              ) : (
+                <Ionicons name="person-outline" size={18} color={colors.navy} />
+              )}
+            </Pressable>
           </View>
         </View>
 
@@ -174,7 +213,8 @@ export default function HomeScreen() {
                     contentFit="cover"
                   />
                 )}
-                <View style={styles.heroOverlay}>
+                <View style={styles.heroDim} pointerEvents="none" />
+                <View style={styles.heroCopy} pointerEvents="none">
                   <Text style={styles.heroTitle}>
                     Un chez-vous,{"\n"}une vie meilleure.
                   </Text>
@@ -182,12 +222,12 @@ export default function HomeScreen() {
                     Immobilier et services pour concrétiser tous vos projets.
                   </Text>
                 </View>
-              </View>
-              <View style={styles.searchWrap}>
-                <SearchBar
-                  onPress={() => router.push("/(tabs)/search")}
-                  onFilterPress={() => router.push("/filters")}
-                />
+                <View style={styles.searchWrap}>
+                  <SearchBar
+                    onPress={() => router.push("/(tabs)/search")}
+                    onFilterPress={() => router.push("/filters")}
+                  />
+                </View>
               </View>
             </View>
 
@@ -206,26 +246,74 @@ export default function HomeScreen() {
               {properties.length === 0 ? (
                 <Text style={styles.empty}>Aucun bien à afficher pour le moment.</Text>
               ) : (
-                <ScrollView
+                <Animated.FlatList
+                  data={properties}
+                  keyExtractor={(item) => item.id}
                   horizontal
                   style={styles.carouselScroll}
                   showsHorizontalScrollIndicator={false}
-                  contentContainerStyle={styles.carousel}
-                >
-                  {properties.map((item, index) => (
-                    <PropertyCard
-                      key={item.id}
-                      item={item}
-                      featured={item.isFeatured || index === 0}
-                      onPress={() =>
-                        router.push({
-                          pathname: "/property/[id]",
-                          params: { id: item.id },
-                        })
-                      }
-                    />
-                  ))}
-                </ScrollView>
+                  snapToInterval={itemSize}
+                  decelerationRate="fast"
+                  bounces={false}
+                  initialScrollIndex={Math.min(1, properties.length - 1)}
+                  getItemLayout={(_, index) => ({
+                    length: itemSize,
+                    offset: itemSize * index,
+                    index,
+                  })}
+                  contentContainerStyle={{
+                    paddingHorizontal: (screenWidth - cardWidth) / 2,
+                    paddingBottom: spacing.sm,
+                  }}
+                  onScroll={Animated.event(
+                    [{ nativeEvent: { contentOffset: { x: scrollX } } }],
+                    { useNativeDriver: true }
+                  )}
+                  scrollEventThrottle={16}
+                  renderItem={({ item, index }) => {
+                    const inputRange = [
+                      (index - 1) * itemSize,
+                      index * itemSize,
+                      (index + 1) * itemSize,
+                    ];
+                    const scale = scrollX.interpolate({
+                      inputRange,
+                      outputRange: [0.85, 1, 0.85],
+                      extrapolate: "clamp",
+                    });
+                    const opacity = scrollX.interpolate({
+                      inputRange,
+                      outputRange: [0.65, 1, 0.65],
+                      extrapolate: "clamp",
+                    });
+                    const translateY = scrollX.interpolate({
+                      inputRange,
+                      outputRange: [12, 0, 12],
+                      extrapolate: "clamp",
+                    });
+                    return (
+                      <Animated.View
+                        style={{
+                          width: itemSize,
+                          opacity,
+                          transform: [{ scale }, { translateY }],
+                        }}
+                      >
+                        <PropertyCard
+                          item={item}
+                          featured={item.isFeatured || index === 0}
+                          style={{ width: cardWidth, marginRight: 0 }}
+                          onPress={() =>
+                            router.push({
+                              pathname: "/property/[id]",
+                              params: { id: item.id },
+                            })
+                          }
+                        />
+                      </Animated.View>
+                    );
+                  }}
+                />
               )}
             </View>
 
@@ -311,19 +399,11 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.lg,
     paddingVertical: spacing.md,
   },
-  headerRight: { flexDirection: "row", alignItems: "center", gap: spacing.sm },
-  cityPill: {
+  headerRight: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 4,
-    backgroundColor: colors.white,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
-    borderRadius: radii.pill,
-    borderWidth: 1,
-    borderColor: colors.border,
+    gap: 12,
   },
-  cityText: { color: colors.navy, fontWeight: "700", fontSize: 13 },
   bell: {
     minWidth: 48,
     minHeight: 48,
@@ -344,6 +424,26 @@ const styles = StyleSheet.create({
     paddingHorizontal: 3,
   },
   bellBadgeText: { color: colors.white, fontSize: 9, fontWeight: "800" },
+  avatarBtn: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: colors.navy,
+    borderWidth: 1,
+    borderColor: colors.border,
+    alignItems: "center",
+    justifyContent: "center",
+    overflow: "hidden",
+  },
+  avatarBtnGuest: {
+    backgroundColor: colors.white,
+  },
+  avatarImg: { width: "100%", height: "100%" },
+  avatarInitials: {
+    color: colors.white,
+    fontSize: 12,
+    fontWeight: "700",
+  },
   hero: { marginBottom: spacing.xl },
   heroImageWrap: {
     width: "100%",
@@ -352,12 +452,15 @@ const styles = StyleSheet.create({
     overflow: "hidden",
   },
   heroImage: { width: "100%", height: "100%" },
-  heroOverlay: {
-    ...StyleSheet.absoluteFill,
-    backgroundColor: colors.overlay,
-    justifyContent: "center",
-    paddingHorizontal: spacing.xl,
-    paddingBottom: spacing.xl,
+  heroDim: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: "rgba(0, 0, 0, 0.35)",
+  },
+  heroCopy: {
+    position: "absolute",
+    top: spacing.xl,
+    left: 24,
+    right: spacing.xl,
   },
   heroTitle: {
     color: colors.white,
@@ -373,8 +476,11 @@ const styles = StyleSheet.create({
     maxWidth: "85%",
   },
   searchWrap: {
-    marginTop: -28,
-    paddingHorizontal: spacing.lg,
+    position: "absolute",
+    left: 20,
+    right: 20,
+    bottom: 16,
+    zIndex: 2,
   },
   section: { marginTop: spacing.xl },
   carouselScroll: { flexGrow: 0, flexShrink: 0 },
