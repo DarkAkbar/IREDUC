@@ -215,12 +215,12 @@ export default function HomeScreen() {
                     Immobilier et services pour concrétiser tous vos projets.
                   </Text>
                 </View>
-              </View>
-              <View style={styles.searchWrap}>
-                <SearchBar
-                  onPress={() => router.push("/(tabs)/search")}
-                  onFilterPress={() => router.push("/filters")}
-                />
+                <View style={styles.searchWrap}>
+                  <SearchBar
+                    onPress={() => router.push("/(tabs)/search")}
+                    onFilterPress={() => router.push("/filters")}
+                  />
+                </View>
               </View>
             </View>
 
@@ -406,11 +406,11 @@ const styles = StyleSheet.create({
   },
   heroImage: { width: "100%", height: "100%" },
   heroOverlay: {
-    ...StyleSheet.absoluteFill,
+    ...StyleSheet.absoluteFillObject,
     backgroundColor: colors.overlay,
-    justifyContent: "center",
+    justifyContent: "flex-start",
     paddingHorizontal: spacing.xl,
-    paddingBottom: spacing.xl,
+    paddingTop: spacing.xl,
   },
   heroTitle: {
     color: colors.white,
@@ -426,8 +426,10 @@ const styles = StyleSheet.create({
     maxWidth: "85%",
   },
   searchWrap: {
-    marginTop: -28,
-    paddingHorizontal: spacing.lg,
+    position: "absolute",
+    left: 20,
+    right: 20,
+    bottom: 16,
   },
   section: { marginTop: spacing.xl },
   carouselScroll: { flexGrow: 0, flexShrink: 0 },
