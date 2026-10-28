@@ -323,6 +323,9 @@ export default function HomeScreen() {
                   name: section.category.name,
                   slug: section.category.slug,
                   serviceCount: section.items.length,
+                  imageUrls: section.items
+                    .map((item) => mediaUrl(item.coverPhoto?.url))
+                    .filter((url): url is string => Boolean(url)),
                 }))}
                 onCategoryPress={(category) =>
                   router.push({
