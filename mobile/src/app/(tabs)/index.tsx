@@ -237,7 +237,16 @@ export default function HomeScreen() {
                 slug: section.category.slug,
                 serviceCount: section.items.length,
               }))}
-              onSeeAll={() => undefined}
+              onCategoryPress={(category) =>
+                router.push({
+                  pathname: "/services",
+                  params: {
+                    categoryId: category.id,
+                    categorySlug: category.slug,
+                  },
+                })
+              }
+              onSeeAll={() => router.push("/services/all" as never)}
             />
 
             <View style={styles.section}>
