@@ -2,11 +2,18 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Stack } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { useEffect } from "react";
+import { View } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { SafeAreaProvider } from "react-native-safe-area-context";
+import { ErrorBoundary } from "../components/ErrorBoundary";
+import { OfflineBanner } from "../components/OfflineBanner";
+import { PublishSheetHost } from "../components/PublishSheetHost";
+import { applyScrollDefaults } from "../lib/scrollDefaults";
 import { useAuthStore } from "../store/authStore";
 import { useFavoritesStore } from "../store/favoritesStore";
 import { colors } from "../theme";
+
+applyScrollDefaults();
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -40,14 +47,17 @@ export default function RootLayout() {
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <SafeAreaProvider>
-        <QueryClientProvider client={queryClient}>
-          <StatusBar style="dark" />
-          <Stack
-            screenOptions={{
-              headerShown: false,
-              contentStyle: { backgroundColor: colors.background },
-            }}
-          >
+        <ErrorBoundary>
+          <QueryClientProvider client={queryClient}>
+            <View style={{ flex: 1, backgroundColor: colors.background }}>
+              <OfflineBanner />
+              <StatusBar style="dark" />
+              <Stack
+                screenOptions={{
+                  headerShown: false,
+                  contentStyle: { backgroundColor: colors.background },
+                }}
+              >
             <Stack.Screen name="(tabs)" />
             <Stack.Screen
               name="auth/login"
@@ -62,22 +72,33 @@ export default function RootLayout() {
             <Stack.Screen name="property/[id]" />
             <Stack.Screen name="service/[id]" />
             <Stack.Screen name="favorites" />
+            <Stack.Screen name="messages" />
             <Stack.Screen name="reserve" />
             <Stack.Screen name="discuss" />
             <Stack.Screen name="conversation/[id]" />
             <Stack.Screen name="notifications" />
-            <Stack.Screen name="partner" />
+            <Stack.Screen name="partner/index" />
+            <Stack.Screen name="partner/form" />
+            <Stack.Screen name="partner/status" />
+            <Stack.Screen name="partner/confirm" />
             <Stack.Screen name="publish/index" />
             <Stack.Screen name="listings/index" />
             <Stack.Screen name="listings/received" />
             <Stack.Screen name="profile/edit" />
             <Stack.Screen name="profile/password" />
+            <Stack.Screen name="profile/sessions" />
             <Stack.Screen name="profile/alerts" />
             <Stack.Screen name="profile/about" />
+            <Stack.Screen name="profile/terms" />
+            <Stack.Screen name="profile/privacy" />
+            <Stack.Screen name="profile/delete-account" />
             <Stack.Screen name="request/[id]" />
             <Stack.Screen name="request/similar" />
-          </Stack>
-        </QueryClientProvider>
+              </Stack>
+              <PublishSheetHost />
+            </View>
+          </QueryClientProvider>
+        </ErrorBoundary>
       </SafeAreaProvider>
     </GestureHandlerRootView>
   );

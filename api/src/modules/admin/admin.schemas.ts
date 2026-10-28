@@ -2,6 +2,10 @@ import {
   AccountStatus,
   CategoryKind,
   ListingStatus,
+  ReportStatus,
+  ReportTargetType,
+  RequestStatus,
+  RequestTarget,
   ReviewStatus,
   SystemRole,
 } from "@prisma/client";
@@ -18,13 +22,24 @@ export const adminProvidersQuerySchema = paginationQuerySchema.extend({
   q: z.string().trim().min(1).optional(),
 });
 
+/** "" / espaces → undefined (évite de bloquer APPROVED avec un motif vide). */
+const optionalReasonSchema = z.preprocess(
+  (value) => {
+    if (value == null) return undefined;
+    if (typeof value !== "string") return value;
+    const trimmed = value.trim();
+    return trimmed.length === 0 ? undefined : trimmed;
+  },
+  z.string().min(3, "Le motif doit contenir au moins 3 caractères").optional()
+);
+
 export const reviewDecisionSchema = z
   .object({
     decision: z.enum(["APPROVED", "REJECTED"]),
-    reason: z.string().min(3, "Le motif est requis en cas de rejet").optional(),
+    reason: optionalReasonSchema,
   })
   .superRefine((data, ctx) => {
-    if (data.decision === "REJECTED" && !data.reason?.trim()) {
+    if (data.decision === "REJECTED" && !data.reason) {
       ctx.addIssue({
         code: "custom",
         path: ["reason"],
@@ -51,6 +66,18 @@ export const adminUsersQuerySchema = paginationQuerySchema.extend({
   status: z.nativeEnum(AccountStatus).optional(),
 });
 
+export const adminRequestsQuerySchema = paginationQuerySchema.extend({
+  status: z.nativeEnum(RequestStatus).optional(),
+  type: z.nativeEnum(RequestTarget).optional(),
+  search: z.string().trim().min(1).optional(),
+  dateFrom: z.string().min(4).optional(),
+  dateTo: z.string().min(4).optional(),
+});
+
+export const cancelRequestSchema = z.object({
+  reason: z.string().min(3, "Le motif est obligatoire (3 caractères minimum)"),
+});
+
 export const updateUserStatusSchema = z
   .object({
     status: z.nativeEnum(AccountStatus),
@@ -68,11 +95,16 @@ export const updateUserStatusSchema = z
 
 export const createAdminSchema = z.object({
   fullName: z.string().min(2, "Le nom complet est requis"),
-  email: z.string().email("Adresse e-mail invalide"),
+  phone: z.string().min(6, "Numéro de téléphone invalide"),
+  email: z
+    .union([z.string().email("Adresse e-mail invalide"), z.literal("")])
+    .optional(),
   temporaryPassword: z
     .string()
-    .min(8, "Le mot de passe doit contenir au moins 8 caractères")
-    .regex(/\d/, "Le mot de passe doit contenir au moins un chiffre"),
+    .refine((value) => value.length >= 8 && /\d/.test(value), {
+      message:
+        "Le mot de passe doit contenir au moins 8 caractères et un chiffre",
+    }),
 });
 
 export const updateAdminRoleSchema = z.object({
@@ -108,3 +140,138 @@ export const updateCategorySchema = z
   .refine((data) => Object.keys(data).length > 0, {
     message: "Aucun champ à mettre à jour",
   });
+
+export const settingKeyParamsSchema = z.object({
+  key: z.enum([
+    "general",
+    "mobile",
+    "validation",
+    "security",
+    "home",
+    "notifications",
+  ]),
+});
+
+export const updateSettingSchema = z.object({
+  value: z.record(z.string(), z.unknown()),
+  reason: z.string().trim().min(3).optional(),
+});
+
+export const settingHistoryQuerySchema = paginationQuerySchema;
+
+export const referentialsIncludeInactiveSchema = z.object({
+  includeInactive: z
+    .enum(["true", "false"])
+    .optional()
+    .transform((v) => v === "true"),
+});
+
+export const createCommuneSchema = z.object({
+  name: z.string().min(2, "Le nom de la commune est requis"),
+});
+
+export const updateCommuneSchema = z
+  .object({
+    name: z.string().min(2).optional(),
+    isActive: z.boolean().optional(),
+  })
+  .refine((data) => Object.keys(data).length > 0, {
+    message: "Aucun champ à mettre à jour",
+  });
+
+export const createNeighborhoodSchema = z.object({
+  name: z.string().min(2, "Le nom du quartier est requis"),
+});
+
+export const updateNeighborhoodSchema = z
+  .object({
+    name: z.string().min(2).optional(),
+    isActive: z.boolean().optional(),
+  })
+  .refine((data) => Object.keys(data).length > 0, {
+    message: "Aucun champ à mettre à jour",
+  });
+
+export const createRejectionReasonSchema = z.object({
+  label: z.string().min(2, "Le libellé est requis"),
+  code: z.string().min(2).nullable().optional(),
+  sortOrder: z.number().int().optional(),
+  isActive: z.boolean().optional(),
+});
+
+export const updateRejectionReasonSchema = z
+  .object({
+    label: z.string().min(2).optional(),
+    code: z.string().min(2).nullable().optional(),
+    sortOrder: z.number().int().optional(),
+    isActive: z.boolean().optional(),
+  })
+  .refine((data) => Object.keys(data).length > 0, {
+    message: "Aucun champ à mettre à jour",
+  });
+
+export const adminReportsQuerySchema = paginationQuerySchema.extend({
+  status: z.nativeEnum(ReportStatus).optional(),
+  targetType: z.nativeEnum(ReportTargetType).optional(),
+});
+
+export const updateReportSchema = z
+  .object({
+    status: z.nativeEnum(ReportStatus).optional(),
+    adminNote: z.string().max(2000).nullable().optional(),
+    action: z.enum(["hide_content", "suspend_user", "dismiss"]).optional(),
+  })
+  .refine((data) => Object.keys(data).length > 0, {
+    message: "Aucun champ à mettre à jour",
+  });
+
+export const reviewVisibilitySchema = z.object({
+  hidden: z.boolean(),
+});
+
+export const adminSearchQuerySchema = z.object({
+  q: z.string().trim().min(2, "Au moins 2 caractères"),
+});
+
+export const adminStatsQuerySchema = z.object({
+  from: z.string().min(4).optional(),
+  to: z.string().min(4).optional(),
+});
+
+export const createAnnouncementSchema = z.object({
+  title: z.string().min(3, "Le titre est requis"),
+  body: z.string().min(3, "Le message est requis"),
+  audience: z.enum(["ALL", "CLIENTS", "PARTNERS"]),
+});
+
+export const changeAdminPasswordSchema = z.object({
+  currentPassword: z.string().min(1, "Mot de passe actuel requis"),
+  newPassword: z
+    .string()
+    .refine((value) => value.length >= 8 && /\d/.test(value), {
+      message:
+        "Le mot de passe doit contenir au moins 8 caractères et un chiffre",
+    }),
+});
+
+export const authEventsQuerySchema = paginationQuerySchema.extend({
+  success: z
+    .enum(["true", "false"])
+    .optional()
+    .transform((v) => (v === undefined ? undefined : v === "true")),
+  eventType: z.string().trim().min(1).optional(),
+  from: z.string().min(4).optional(),
+  to: z.string().min(4).optional(),
+});
+
+export const updateAdminStatusSchema = z.object({
+  status: z.nativeEnum(AccountStatus),
+});
+
+export const adminCategoriesQuerySchema = z.object({
+  parentId: z
+    .union([z.string().uuid(), z.literal("null")])
+    .optional()
+    .transform((v) => (v === "null" ? null : v)),
+  kind: z.nativeEnum(CategoryKind).optional(),
+});

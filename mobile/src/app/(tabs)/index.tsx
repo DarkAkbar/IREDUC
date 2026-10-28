@@ -2,7 +2,6 @@ import { Ionicons } from "@expo/vector-icons";
 import { useQuery } from "@tanstack/react-query";
 import { Image } from "expo-image";
 import { useRouter } from "expo-router";
-import { pushPath } from "../../utils/navigation";
 import {
   Pressable,
   RefreshControl,
@@ -12,10 +11,19 @@ import {
   View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { mediaUrl } from "../../api/client";
+import { fetchConversations } from "../../api/conversations";
 import { fetchHome } from "../../api/home";
 import { fetchNotifications } from "../../api/notifications";
 import { IreducLogo } from "../../components/IreducLogo";
+import { PartnerHomeBanner } from "../../components/PartnerHomeBanner";
 import { PropertyCard } from "../../components/PropertyCard";
+import {
+  PublishFab,
+  PUBLISH_FAB_BOTTOM_INSET,
+  PUBLISH_FAB_SIDE_INSET,
+  usePublishFabScroll,
+} from "../../components/PublishFab";
 import { ServiceCard } from "../../components/ServiceCard";
 import { Button } from "../../components/ui/Button";
 import { SearchBar } from "../../components/ui/SearchBar";
@@ -25,13 +33,14 @@ import { useRequireAuth } from "../../hooks/useRequireAuth";
 import { useAuthStore } from "../../store/authStore";
 import { colors, radii, spacing, typography } from "../../theme";
 
-const HERO_IMAGE =
-  "https://images.unsplash.com/photo-1613490493576-7fde63acd811?auto=format&fit=crop&w=1200&q=80";
+/** Logo local de secours si aucune photo de bien n'est disponible. */
+const HERO_FALLBACK = require("../../../assets/icon.png");
 
 export default function HomeScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const { requireAuth } = useRequireAuth();
+  const { onScroll: onFabScroll } = usePublishFabScroll();
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
 
   const { data, isLoading, isError, refetch, isFetching } = useQuery({
@@ -48,15 +57,31 @@ export default function HomeScreen() {
   });
   const unreadNotifs = notifQuery.data?.unreadCount ?? 0;
 
+  const conversationsQuery = useQuery({
+    queryKey: ["conversations", "badge"],
+    enabled: isAuthenticated,
+    queryFn: fetchConversations,
+    staleTime: 15_000,
+    refetchInterval: 20_000,
+  });
+  const unreadMessages =
+    conversationsQuery.data?.reduce((sum, c) => sum + (c.unreadCount || 0), 0) ??
+    0;
+
   const properties =
     data?.sections.featuredProperties.items?.length
       ? data.sections.featuredProperties.items
       : data?.sections.housesForRent.items ?? [];
 
+  const heroUri = mediaUrl(properties[0]?.coverPhoto?.url);
+
   return (
     <View style={[styles.screen, { paddingTop: insets.top }]}>
       <ScrollView
-        contentContainerStyle={styles.content}
+        contentContainerStyle={[
+          styles.content,
+          { paddingBottom: PUBLISH_FAB_BOTTOM_INSET },
+        ]}
         refreshControl={
           <RefreshControl
             refreshing={isFetching && !isLoading}
@@ -65,6 +90,8 @@ export default function HomeScreen() {
           />
         }
         showsVerticalScrollIndicator={false}
+        scrollEventThrottle={16}
+        onScroll={(e) => onFabScroll(e.nativeEvent.contentOffset.y)}
       >
         <View style={styles.header}>
           <IreducLogo tagline="Trouvez. Comparez. Réalisez." compact />
@@ -77,10 +104,33 @@ export default function HomeScreen() {
             <Pressable
               style={styles.bell}
               onPress={() => {
+                if (requireAuth("/messages")) {
+                  router.push("/messages" as never);
+                }
+              }}
+              accessibilityLabel="Messages"
+            >
+              <Ionicons
+                name="chatbubble-ellipses-outline"
+                size={22}
+                color={colors.navy}
+              />
+              {unreadMessages > 0 ? (
+                <View style={styles.bellBadge}>
+                  <Text style={styles.bellBadgeText}>
+                    {unreadMessages > 99 ? "99+" : unreadMessages}
+                  </Text>
+                </View>
+              ) : null}
+            </Pressable>
+            <Pressable
+              style={styles.bell}
+              onPress={() => {
                 if (requireAuth("/notifications")) {
                   router.push("/notifications" as never);
                 }
               }}
+              accessibilityLabel="Notifications"
             >
               <Ionicons name="notifications-outline" size={22} color={colors.navy} />
               {unreadNotifs > 0 ? (
@@ -109,12 +159,29 @@ export default function HomeScreen() {
         {!isLoading && !isError && data ? (
           <>
             <View style={styles.hero}>
-              <Image source={{ uri: HERO_IMAGE }} style={styles.heroImage} contentFit="cover" />
-              <View style={styles.heroOverlay}>
-                <Text style={styles.heroTitle}>Un chez-vous,{"\n"}une vie meilleure.</Text>
-                <Text style={styles.heroSubtitle}>
-                  Immobilier et services pour concrétiser tous vos projets.
-                </Text>
+              <View style={styles.heroImageWrap}>
+                {heroUri ? (
+                  <Image
+                    source={{ uri: heroUri }}
+                    style={styles.heroImage}
+                    contentFit="cover"
+                    transition={200}
+                  />
+                ) : (
+                  <Image
+                    source={HERO_FALLBACK}
+                    style={styles.heroImage}
+                    contentFit="cover"
+                  />
+                )}
+                <View style={styles.heroOverlay}>
+                  <Text style={styles.heroTitle}>
+                    Un chez-vous,{"\n"}une vie meilleure.
+                  </Text>
+                  <Text style={styles.heroSubtitle}>
+                    Immobilier et services pour concrétiser tous vos projets.
+                  </Text>
+                </View>
               </View>
               <View style={styles.searchWrap}>
                 <SearchBar
@@ -141,6 +208,7 @@ export default function HomeScreen() {
               ) : (
                 <ScrollView
                   horizontal
+                  style={styles.carouselScroll}
                   showsHorizontalScrollIndicator={false}
                   contentContainerStyle={styles.carousel}
                 >
@@ -203,6 +271,7 @@ export default function HomeScreen() {
                 ) : (
                   <ScrollView
                     horizontal
+                    style={styles.carouselScroll}
                     showsHorizontalScrollIndicator={false}
                     contentContainerStyle={styles.carousel}
                   >
@@ -223,41 +292,18 @@ export default function HomeScreen() {
               </View>
             ))}
 
-            <View style={styles.ctaBanner}>
-              <Text style={styles.ctaTitle}>Voulez-vous proposer un bien ou un service ?</Text>
-              <Text style={styles.ctaText}>
-                Devenez partenaire IREDUC et publiez vos annonces à Kinshasa.
-              </Text>
-              <Button
-                label="Publier"
-                variant="navy"
-                onPress={() => {
-                  if (requireAuth("/publish")) {
-                    router.push("/publish" as never);
-                  }
-                }}
-              />
-              <Button
-                label="Devenir partenaire"
-                variant="outline"
-                style={{ marginTop: spacing.sm }}
-                onPress={() => {
-                  if (requireAuth("/partner")) {
-                    router.push("/partner" as never);
-                  }
-                }}
-              />
-            </View>
+            <PartnerHomeBanner />
           </>
         ) : null}
       </ScrollView>
+      <PublishFab />
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.background },
-  content: { paddingBottom: spacing.xxl },
+  content: {},
   header: {
     flexDirection: "row",
     justifyContent: "space-between",
@@ -278,7 +324,13 @@ const styles = StyleSheet.create({
     borderColor: colors.border,
   },
   cityText: { color: colors.navy, fontWeight: "700", fontSize: 13 },
-  bell: { padding: spacing.sm, position: "relative" },
+  bell: {
+    minWidth: 48,
+    minHeight: 48,
+    alignItems: "center",
+    justifyContent: "center",
+    position: "relative",
+  },
   bellBadge: {
     position: "absolute",
     top: 4,
@@ -293,7 +345,13 @@ const styles = StyleSheet.create({
   },
   bellBadgeText: { color: colors.white, fontSize: 9, fontWeight: "800" },
   hero: { marginBottom: spacing.xl },
-  heroImage: { width: "100%", height: 220 },
+  heroImageWrap: {
+    width: "100%",
+    height: 220,
+    backgroundColor: colors.navy,
+    overflow: "hidden",
+  },
+  heroImage: { width: "100%", height: "100%" },
   heroOverlay: {
     ...StyleSheet.absoluteFill,
     backgroundColor: colors.overlay,
@@ -319,7 +377,13 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.lg,
   },
   section: { marginTop: spacing.xl },
-  carousel: { paddingHorizontal: spacing.lg, paddingBottom: spacing.sm },
+  carouselScroll: { flexGrow: 0, flexShrink: 0 },
+  carousel: {
+    flexGrow: 0,
+    paddingLeft: spacing.lg,
+    paddingRight: PUBLISH_FAB_SIDE_INSET,
+    paddingBottom: spacing.sm,
+  },
   trust: {
     marginTop: spacing.xl,
     marginHorizontal: spacing.lg,
@@ -338,18 +402,6 @@ const styles = StyleSheet.create({
     textAlign: "center",
     lineHeight: 14,
   },
-  ctaBanner: {
-    margin: spacing.lg,
-    marginTop: spacing.xxl,
-    backgroundColor: colors.white,
-    borderRadius: radii.lg,
-    padding: spacing.xl,
-    gap: spacing.md,
-    borderWidth: 1,
-    borderColor: colors.border,
-  },
-  ctaTitle: { ...typography.section },
-  ctaText: { ...typography.body },
   stateBox: {
     margin: spacing.lg,
     padding: spacing.xl,

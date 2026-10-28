@@ -93,7 +93,10 @@ export default function AlertsScreen() {
         <FlatList
           data={query.data ?? []}
           keyExtractor={(item) => item.id}
-          contentContainerStyle={{ paddingBottom: spacing.xxl }}
+          contentContainerStyle={[
+            { paddingBottom: spacing.xxl },
+            !(query.data?.length) && { flexGrow: 1 },
+          ]}
           refreshControl={
             <RefreshControl
               refreshing={query.isRefetching}
@@ -103,6 +106,7 @@ export default function AlertsScreen() {
           }
           ListEmptyComponent={
             <EmptyState
+              fill
               title="Aucune alerte"
               message="Créez une alerte depuis une fiche pour être notifié des nouvelles offres."
             />

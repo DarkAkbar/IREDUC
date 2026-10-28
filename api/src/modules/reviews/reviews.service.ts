@@ -60,7 +60,7 @@ export async function listServiceReviews(
   if (!service) throw notFound("Service introuvable");
 
   const { page, limit, skip } = getPagination(query);
-  const where = { serviceId };
+  const where = { serviceId, isHidden: false };
 
   const [total, rows, allRatings] = await prisma.$transaction([
     prisma.review.count({ where }),

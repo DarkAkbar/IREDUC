@@ -1,5 +1,5 @@
 import { Ionicons } from "@expo/vector-icons";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Image } from "expo-image";
 import * as ImagePicker from "expo-image-picker";
 import { useLocalSearchParams, useRouter } from "expo-router";
@@ -62,9 +62,12 @@ const KINDS: { key: PropertyKind; label: string }[] = [
 export default function PublishScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
+  const queryClient = useQueryClient();
   const params = useLocalSearchParams<{
     id?: string;
     type?: string;
+    listingType?: string;
+    resume?: string;
   }>();
   const { requireAuth, isAuthenticated } = useRequireAuth();
   const {
@@ -87,8 +90,19 @@ export default function PublishScreen() {
   }, [isAuthenticated, requireAuth]);
 
   useEffect(() => {
-    if (!params.id) reset();
-  }, [params.id, reset]);
+    if (params.id || params.resume === "1") return;
+    reset();
+  }, [params.id, params.resume, reset]);
+
+  useEffect(() => {
+    const lt = params.listingType;
+    if (
+      !params.id &&
+      (lt === "RENT" || lt === "SALE" || lt === "LAND" || lt === "SERVICE")
+    ) {
+      setListingType(lt);
+    }
+  }, [params.id, params.listingType, setListingType]);
 
   const providerQuery = useQuery({
     queryKey: ["provider-me"],
@@ -339,6 +353,16 @@ export default function PublishScreen() {
         } else {
           await submitService(listingId);
         }
+      }
+
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["my-properties"] }),
+        queryClient.invalidateQueries({ queryKey: ["my-services"] }),
+        queryClient.invalidateQueries({ queryKey: ["home"] }),
+        queryClient.invalidateQueries({ queryKey: ["health-info"] }),
+      ]);
+
+      if (options?.submit && listingId) {
         Alert.alert(
           "Annonce soumise",
           "Votre annonce a été envoyée pour validation.",
@@ -387,6 +411,7 @@ export default function PublishScreen() {
 
   if (!approved) {
     const status = providerQuery.data?.reviewStatus;
+    const note = providerQuery.data?.reviewNote;
     return (
       <View style={[styles.screen, { paddingTop: insets.top }]}>
         <ListScreenHeader showBack />
@@ -395,17 +420,31 @@ export default function PublishScreen() {
           <Text style={styles.subtitle}>
             {!status
               ? "Vous devez d'abord devenir partenaire IREDUC pour publier une annonce."
-              : status === "PENDING"
-                ? "Votre dossier partenaire est en attente de validation. La publication sera débloquée après approbation."
-                : `Votre dossier partenaire a été rejeté${
-                    providerQuery.data?.rejectionReason
-                      ? ` : ${providerQuery.data.rejectionReason}`
-                      : "."
-                  }`}
+              : status === "DRAFT"
+                ? "Votre dossier est encore en brouillon. Complétez-le puis envoyez-le pour validation."
+                : status === "PENDING" && note
+                  ? `Complément demandé : ${note}`
+                  : status === "PENDING"
+                    ? "Votre dossier partenaire est en cours d'examen. La publication sera débloquée après approbation."
+                    : `Votre dossier partenaire a été rejeté${
+                        providerQuery.data?.rejectionReason
+                          ? ` : ${providerQuery.data.rejectionReason}`
+                          : "."
+                      }`}
           </Text>
           <Button
-            label={status ? "Voir mon dossier" : "Devenir partenaire"}
-            onPress={() => router.push("/partner" as never)}
+            label={
+              !status
+                ? "Devenir partenaire"
+                : status === "APPROVED"
+                  ? "Publier"
+                  : "Suivre ma demande"
+            }
+            onPress={() =>
+              router.push(
+                (!status ? "/partner" : "/partner/status") as never
+              )
+            }
           />
         </View>
       </View>

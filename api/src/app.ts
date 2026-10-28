@@ -5,6 +5,7 @@ import path from "path";
 import swaggerUi from "swagger-ui-express";
 import { swaggerSpec } from "./docs/swagger";
 import { errorHandler } from "./middlewares/errorHandler";
+import { apiRateLimiter } from "./middlewares/rateLimit";
 import { adminRouter } from "./modules/admin/admin.routes";
 import { alertsRouter } from "./modules/alerts/alerts.routes";
 import { authRouter } from "./modules/auth/auth.routes";
@@ -18,22 +19,37 @@ import { homeRouter } from "./modules/home/home.routes";
 import { notificationsRouter } from "./modules/notifications/notifications.routes";
 import { propertiesRouter } from "./modules/properties/properties.routes";
 import { providersRouter } from "./modules/providers/providers.routes";
+import { reportsRouter } from "./modules/reports/reports.routes";
 import { requestsRouter } from "./modules/requests/requests.routes";
 import { reviewsRouter } from "./modules/reviews/reviews.routes";
 import { servicesRouter } from "./modules/services/services.routes";
+import { configRouter } from "./modules/config/config.routes";
 import { usersRouter } from "./modules/users/users.routes";
+import { healthRouter } from "./routes/health";
 
 export function createApp() {
   const app = express();
 
-  app.use(helmet());
+  // cross-origin : les images /uploads sont lues depuis l'app mobile (autre origine)
+  app.use(
+    helmet({
+      crossOriginResourcePolicy: { policy: "cross-origin" },
+    })
+  );
   app.use(cors());
-  app.use(express.json());
-  app.use("/uploads", express.static(path.resolve(process.cwd(), "uploads")));
+  app.use(express.json({ limit: "1mb" }));
+  app.use(apiRateLimiter);
+  app.use(
+    "/uploads",
+    express.static(path.resolve(process.cwd(), "uploads"), {
+      setHeaders(res) {
+        // évite de servir indéfiniment d'anciennes images démo en cache HTTP
+        res.setHeader("Cache-Control", "public, max-age=60, must-revalidate");
+      },
+    })
+  );
 
-  app.get("/health", (_req, res) => {
-    res.status(200).json({ status: "ok" });
-  });
+  app.use("/health", healthRouter);
 
   app.use("/docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
   app.get("/docs.json", (_req, res) => {
@@ -41,6 +57,7 @@ export function createApp() {
   });
 
   app.use("/api/v1/auth", authRouter);
+  app.use("/api/v1/config", configRouter);
   app.use("/api/v1/users", usersRouter);
   app.use("/api/v1/providers", providersRouter);
   app.use("/api/v1/categories", categoriesRouter);
@@ -53,6 +70,7 @@ export function createApp() {
   app.use("/api/v1/favorites", favoritesRouter);
   app.use("/api/v1/alerts", alertsRouter);
   app.use("/api/v1/reviews", reviewsRouter);
+  app.use("/api/v1/reports", reportsRouter);
   app.use("/api/v1/notifications", notificationsRouter);
   app.use("/api/v1/admin", adminRouter);
 

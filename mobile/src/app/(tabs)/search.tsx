@@ -1,9 +1,9 @@
 import { useQuery } from "@tanstack/react-query";
 import { useRouter } from "expo-router";
-import { pushPath } from "../../utils/navigation";
 import { useEffect, useState } from "react";
 import {
   Pressable,
+  RefreshControl,
   ScrollView,
   StyleSheet,
   Text,
@@ -14,6 +14,11 @@ import { fetchProperties } from "../../api/properties";
 import { fetchServices } from "../../api/services";
 import { EmptyState } from "../../components/list/EmptyState";
 import { ErrorState } from "../../components/list/ErrorState";
+import {
+  PublishFab,
+  PUBLISH_FAB_BOTTOM_INSET,
+  usePublishFabScroll,
+} from "../../components/PublishFab";
 import { PropertyListCard } from "../../components/PropertyListCard";
 import { ServiceListCard } from "../../components/ServiceListCard";
 import { SearchInput } from "../../components/ui/SearchInput";
@@ -25,6 +30,7 @@ import { colors, spacing, typography } from "../../theme";
 export default function SearchScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
+  const { onScroll: onFabScroll } = usePublishFabScroll();
   const [q, setQ] = useState("");
   const debouncedQ = useDebouncedValue(q, 450);
   const recent = useSearchStore((s) => s.recent);
@@ -86,7 +92,27 @@ export default function SearchScreen() {
         onFilterPress={() => router.push("/filters")}
       />
 
-      <ScrollView contentContainerStyle={styles.content}>
+      <ScrollView
+        contentContainerStyle={[
+          styles.content,
+          { paddingBottom: PUBLISH_FAB_BOTTOM_INSET },
+        ]}
+        scrollEventThrottle={16}
+        onScroll={(e) => onFabScroll(e.nativeEvent.contentOffset.y)}
+        refreshControl={
+          <RefreshControl
+            refreshing={
+              propertiesQuery.isRefetching || servicesQuery.isRefetching
+            }
+            onRefresh={() => {
+              if (!enabled) return;
+              void propertiesQuery.refetch();
+              void servicesQuery.refetch();
+            }}
+            tintColor={colors.primary}
+          />
+        }
+      >
         {!enabled ? (
           <View style={styles.recentBox}>
             <View style={styles.recentHeader}>
@@ -175,6 +201,7 @@ export default function SearchScreen() {
           </View>
         ) : null}
       </ScrollView>
+      <PublishFab />
     </View>
   );
 }
@@ -182,7 +209,7 @@ export default function SearchScreen() {
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.background },
   title: { paddingHorizontal: spacing.lg, marginBottom: spacing.md },
-  content: { paddingBottom: spacing.xxl, paddingTop: spacing.md },
+  content: { paddingTop: spacing.md },
   recentBox: { paddingHorizontal: spacing.lg },
   recentHeader: {
     flexDirection: "row",

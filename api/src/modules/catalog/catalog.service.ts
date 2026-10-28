@@ -24,6 +24,7 @@ export async function listCategories(kind?: CategoryKind) {
 
 export async function listCommunes() {
   return prisma.commune.findMany({
+    where: { isActive: true },
     orderBy: { name: "asc" },
     select: {
       id: true,
@@ -39,7 +40,7 @@ export async function listNeighborhoods(communeId: string) {
   }
 
   const neighborhoods = await prisma.neighborhood.findMany({
-    where: { communeId },
+    where: { communeId, isActive: true },
     orderBy: { name: "asc" },
     select: {
       id: true,

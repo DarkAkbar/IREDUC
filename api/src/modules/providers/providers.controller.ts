@@ -36,6 +36,32 @@ export async function updateMyProvider(req: Request, res: Response, next: NextFu
   }
 }
 
+export async function submitMyProvider(
+  req: Request,
+  res: Response,
+  next: NextFunction
+) {
+  try {
+    const result = await providersService.submitMyProvider(requireUserId(req));
+    res.status(200).json(result);
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function withdrawMyProvider(
+  req: Request,
+  res: Response,
+  next: NextFunction
+) {
+  try {
+    const result = await providersService.withdrawMyProvider(requireUserId(req));
+    res.status(200).json(result);
+  } catch (error) {
+    next(error);
+  }
+}
+
 export async function uploadDocument(req: Request, res: Response, next: NextFunction) {
   try {
     if (!req.file) {

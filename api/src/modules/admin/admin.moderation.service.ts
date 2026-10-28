@@ -1,7 +1,15 @@
-import { ListingStatus, Prisma, ReviewStatus } from "@prisma/client";
+import {
+  ListingStatus,
+  Prisma,
+  ProviderEventType,
+  ReviewStatus,
+} from "@prisma/client";
 import { prisma } from "../../config/prisma";
-import { createNotification } from "../../services/notification.service";
-import { badRequest, notFound } from "../../utils/errors";
+import { badRequest, conflict, notFound } from "../../utils/errors";
+import {
+  addEvent,
+  notifyPartner,
+} from "../providers/providers.service";
 import {
   buildPaginatedResult,
   getPagination,
@@ -143,6 +151,7 @@ export async function listPendingProviders(query: {
           OR: [
             { displayName: { contains: query.q, mode: "insensitive" } },
             { user: { email: { contains: query.q, mode: "insensitive" } } },
+            { user: { phone: { contains: query.q, mode: "insensitive" } } },
             { user: { fullName: { contains: query.q, mode: "insensitive" } } },
           ],
         }
@@ -178,7 +187,10 @@ export async function reviewProperty(
     throw notFound("Bien introuvable");
   }
   if (property.status !== ListingStatus.PENDING) {
-    throw badRequest("Seuls les biens en attente peuvent être modérés");
+    throw conflict(
+      "Seuls les biens en attente peuvent être modérés",
+      "INVALID_STATUS_TRANSITION"
+    );
   }
 
   const updated = await prisma.property.update({
@@ -212,7 +224,10 @@ export async function reviewService(
     throw notFound("Service introuvable");
   }
   if (service.status !== ListingStatus.PENDING) {
-    throw badRequest("Seuls les services en attente peuvent être modérés");
+    throw conflict(
+      "Seuls les services en attente peuvent être modérés",
+      "INVALID_STATUS_TRANSITION"
+    );
   }
 
   const updated = await prisma.service.update({
@@ -248,7 +263,10 @@ export async function reviewProvider(
     throw notFound("Profil partenaire introuvable");
   }
   if (provider.reviewStatus !== ReviewStatus.PENDING) {
-    throw badRequest("Seuls les profils en attente peuvent être modérés");
+    throw conflict(
+      "Seuls les profils en attente peuvent être modérés",
+      "INVALID_STATUS_TRANSITION"
+    );
   }
 
   const updated = await prisma.providerProfile.update({
@@ -257,8 +275,30 @@ export async function reviewProvider(
       reviewStatus:
         decision === "APPROVED" ? ReviewStatus.APPROVED : ReviewStatus.REJECTED,
       rejectionReason: decision === "REJECTED" ? reason!.trim() : null,
+      reviewNote: null,
+      decidedAt: new Date(),
     },
   });
+
+  if (decision === "APPROVED") {
+    await addEvent(providerId, ProviderEventType.APPROVED, "Dossier approuvé");
+    await notifyPartner(
+      provider.userId,
+      "PROVIDER_APPROVED",
+      "Dossier approuvé",
+      "Félicitations ! Votre dossier partenaire a été approuvé.",
+      { providerId }
+    );
+  } else {
+    await addEvent(providerId, ProviderEventType.REJECTED, reason!.trim());
+    await notifyPartner(
+      provider.userId,
+      "PROVIDER_REJECTED",
+      "Dossier rejeté",
+      reason!.trim(),
+      { providerId }
+    );
+  }
 
   await logAdminAction(
     adminId,
@@ -288,25 +328,42 @@ export async function requestProviderComplement(
     );
   }
 
-  await createNotification({
-    userId: provider.userId,
-    type: "PROVIDER_COMPLEMENT_REQUESTED",
-    title: "Complément de dossier demandé",
-    body: reason.trim(),
-    data: { providerId },
+  const note = reason.trim();
+  if (note.length < 3) {
+    throw badRequest("Le message de complément est obligatoire (3 caractères min.)");
+  }
+
+  const updated = await prisma.providerProfile.update({
+    where: { id: providerId },
+    data: {
+      reviewStatus: ReviewStatus.PENDING,
+      reviewNote: note,
+    },
   });
+
+  await addEvent(providerId, ProviderEventType.COMPLEMENT_REQUESTED, note);
+
+  await notifyPartner(
+    provider.userId,
+    "PROVIDER_COMPLEMENT_REQUESTED",
+    "Complément de dossier demandé",
+    note,
+    { providerId }
+  );
 
   await logAdminAction(
     adminId,
     "PROVIDER",
     providerId,
     "REQUEST_PROVIDER_COMPLEMENT",
-    reason
+    note
   );
 
   return {
     message: "Demande de complément enregistrée.",
     providerId,
+    reviewNote: updated.reviewNote,
+    reviewStatus: updated.reviewStatus,
   };
 }
 
@@ -439,6 +496,7 @@ export async function getProviderAdmin(providerId: string) {
         },
       },
       documents: { orderBy: { createdAt: "desc" } },
+      events: { orderBy: { createdAt: "asc" } },
       properties: {
         select: { id: true, title: true, status: true, createdAt: true },
         orderBy: { createdAt: "desc" },
@@ -462,7 +520,7 @@ export async function getProviderAdmin(providerId: string) {
     },
   });
 
-  return { ...provider, history };
+  return { ...provider, timeline: provider.events, history };
 }
 
 export async function getNextPendingProperty(excludeId?: string) {
@@ -480,6 +538,17 @@ export async function getNextPendingService(excludeId?: string) {
   return prisma.service.findFirst({
     where: {
       status: ListingStatus.PENDING,
+      ...(excludeId ? { id: { not: excludeId } } : {}),
+    },
+    orderBy: { createdAt: "asc" },
+    select: { id: true },
+  });
+}
+
+export async function getNextPendingProvider(excludeId?: string) {
+  return prisma.providerProfile.findFirst({
+    where: {
+      reviewStatus: ReviewStatus.PENDING,
       ...(excludeId ? { id: { not: excludeId } } : {}),
     },
     orderBy: { createdAt: "asc" },

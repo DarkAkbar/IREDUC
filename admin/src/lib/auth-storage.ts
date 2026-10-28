@@ -4,7 +4,8 @@ const USER_KEY = "ireduc_admin_user";
 
 export type AdminUser = {
   id: string;
-  email: string;
+  email: string | null;
+  phone: string;
   fullName: string;
   systemRole: "ADMIN" | "SUPER_ADMIN" | string;
   accountStatus: string;

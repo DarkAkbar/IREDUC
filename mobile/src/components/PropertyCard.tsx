@@ -34,7 +34,13 @@ export function PropertyCard({ item, featured, onPress }: Props) {
     >
       <View style={styles.imageWrap}>
         {image ? (
-          <Image source={{ uri: image }} style={styles.image} contentFit="cover" />
+          <Image
+            source={{ uri: image }}
+            style={styles.image}
+            contentFit="cover"
+            cachePolicy="memory-disk"
+            recyclingKey={image}
+          />
         ) : (
           <View style={[styles.image, styles.placeholder]}>
             <Ionicons name="home-outline" size={32} color={colors.textMuted} />

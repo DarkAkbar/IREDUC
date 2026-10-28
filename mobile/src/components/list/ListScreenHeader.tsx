@@ -5,31 +5,62 @@ import { colors, radii, spacing } from "../../theme";
 import { IreducLogo } from "../IreducLogo";
 
 type Props = {
+  /** Titre d'écran compact (sans slogan). */
+  title?: string;
   onFilterPress?: () => void;
   showBack?: boolean;
+  showCity?: boolean;
 };
 
-export function ListScreenHeader({ onFilterPress, showBack = true }: Props) {
+/**
+ * En-tête compact hors accueil : retour, titre, actions.
+ * Le slogan IREDUC n'apparaît que sur l'accueil.
+ */
+export function ListScreenHeader({
+  title,
+  onFilterPress,
+  showBack = true,
+  showCity = true,
+}: Props) {
   const router = useRouter();
 
   return (
     <View style={styles.row}>
       {showBack ? (
-        <Pressable onPress={() => router.back()} hitSlop={8} style={styles.iconBtn}>
+        <Pressable
+          onPress={() => router.back()}
+          hitSlop={8}
+          style={styles.iconBtn}
+          accessibilityLabel="Retour"
+        >
           <Ionicons name="arrow-back" size={22} color={colors.navy} />
         </Pressable>
       ) : (
         <View style={styles.iconBtn} />
       )}
-      <IreducLogo compact tagline="Trouvez. Comparez. Réalisez." />
+      {title ? (
+        <Text style={styles.title} numberOfLines={1}>
+          {title}
+        </Text>
+      ) : (
+        <IreducLogo compact tagline={undefined} />
+      )}
       <View style={styles.right}>
-        <View style={styles.city}>
-          <Ionicons name="location" size={14} color={colors.primary} />
-          <Text style={styles.cityText}>Kinshasa</Text>
-          <Ionicons name="chevron-down" size={14} color={colors.navy} />
-        </View>
+        {showCity ? (
+          <View style={styles.city}>
+            <Ionicons name="location" size={14} color={colors.primary} />
+            <Text style={styles.cityText}>Kinshasa</Text>
+            <Ionicons name="chevron-down" size={14} color={colors.navy} />
+          </View>
+        ) : (
+          <View style={{ flex: 1 }} />
+        )}
         {onFilterPress ? (
-          <Pressable onPress={onFilterPress} style={styles.iconBtn}>
+          <Pressable
+            onPress={onFilterPress}
+            style={styles.iconBtn}
+            accessibilityLabel="Filtres"
+          >
             <Ionicons name="options-outline" size={20} color={colors.navy} />
           </Pressable>
         ) : null}
@@ -46,6 +77,13 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.lg,
     paddingVertical: spacing.sm,
     gap: spacing.sm,
+    minHeight: 48,
+  },
+  title: {
+    flex: 1,
+    color: colors.navy,
+    fontWeight: "800",
+    fontSize: 17,
   },
   right: { flexDirection: "row", alignItems: "center", gap: spacing.sm },
   city: {
@@ -60,5 +98,10 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.sm,
   },
   cityText: { color: colors.navy, fontWeight: "700", fontSize: 13 },
-  iconBtn: { padding: spacing.xs },
+  iconBtn: {
+    minWidth: 44,
+    minHeight: 44,
+    alignItems: "center",
+    justifyContent: "center",
+  },
 });

@@ -28,8 +28,15 @@ import { ListingStatus, PropertyDetail, ServiceDetail } from "../../api/types";
 import { EmptyState } from "../../components/list/EmptyState";
 import { ErrorState } from "../../components/list/ErrorState";
 import { ListScreenHeader } from "../../components/list/ListScreenHeader";
+import {
+  PublishFab,
+  PUBLISH_FAB_BOTTOM_INSET,
+  usePublishFabScroll,
+} from "../../components/PublishFab";
 import { Button } from "../../components/ui/Button";
+import { HorizontalChipScroll } from "../../components/ui/HorizontalChipScroll";
 import { ListSkeleton } from "../../components/ui/SkeletonLoader";
+import { useOpenPublish } from "../../hooks/useOpenPublish";
 import { useRequireAuth } from "../../hooks/useRequireAuth";
 import { usePublishStore } from "../../store/publishStore";
 import { colors, radii, spacing, typography } from "../../theme";
@@ -69,6 +76,8 @@ export default function MyListingsScreen() {
   const router = useRouter();
   const queryClient = useQueryClient();
   const { isAuthenticated, requireAuth } = useRequireAuth();
+  const { openPublish } = useOpenPublish();
+  const { onScroll: onFabScroll } = usePublishFabScroll();
   const resetPublish = usePublishStore((s) => s.reset);
   const [tab, setTab] = useState<TabKey>("DRAFT");
 
@@ -184,15 +193,15 @@ export default function MyListingsScreen() {
       <ListScreenHeader showBack />
       <View style={styles.header}>
         <Text style={typography.title}>Mes annonces</Text>
-        <Button
-          label="Publier"
-          onPress={() => {
-            resetPublish();
-            router.push("/publish" as never);
-          }}
-          style={{ paddingHorizontal: spacing.md, minHeight: 40 }}
-        />
       </View>
+      <Pressable
+        style={styles.partnerBanner}
+        onPress={() => router.push("/partner/status" as never)}
+      >
+        <Ionicons name="briefcase-outline" size={18} color={colors.navy} />
+        <Text style={styles.partnerBannerText}>Suivre mon dossier partenaire</Text>
+        <Ionicons name="chevron-forward" size={16} color={colors.textMuted} />
+      </Pressable>
       <Pressable
         style={styles.receivedLink}
         onPress={() => router.push("/listings/received" as never)}
@@ -211,7 +220,15 @@ export default function MyListingsScreen() {
         <FlatList
           data={items}
           keyExtractor={(item) => `${item.kind}-${item.data.id}`}
-          contentContainerStyle={{ paddingBottom: spacing.xxl, paddingTop: spacing.md }}
+          contentContainerStyle={[
+            {
+              paddingBottom: PUBLISH_FAB_BOTTOM_INSET,
+              paddingTop: spacing.md,
+            },
+            items.length === 0 && { flexGrow: 1 },
+          ]}
+          scrollEventThrottle={16}
+          onScroll={(e) => onFabScroll(e.nativeEvent.contentOffset.y)}
           refreshControl={
             <RefreshControl
               refreshing={
@@ -223,13 +240,11 @@ export default function MyListingsScreen() {
           }
           ListEmptyComponent={
             <EmptyState
+              fill
               title="Aucune annonce"
               message="Publiez un bien ou un service pour le voir ici."
               actionLabel="Publier une annonce"
-              onAction={() => {
-                resetPublish();
-                router.push("/publish" as never);
-              }}
+              onAction={() => openPublish("/listings")}
             />
           }
           renderItem={({ item }) => {
@@ -320,6 +335,7 @@ export default function MyListingsScreen() {
           }}
         />
       ) : null}
+      <PublishFab aboveTabs={false} />
     </View>
   );
 }
@@ -332,7 +348,7 @@ function ScrollTabs({
   onChange: (t: TabKey) => void;
 }) {
   return (
-    <View style={styles.tabs}>
+    <HorizontalChipScroll>
       {TABS.map((t) => {
         const active = tab === t.key;
         return (
@@ -347,7 +363,7 @@ function ScrollTabs({
           </Pressable>
         );
       })}
-    </View>
+    </HorizontalChipScroll>
   );
 }
 
@@ -360,6 +376,20 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.lg,
     gap: spacing.md,
   },
+  partnerBanner: {
+    marginHorizontal: spacing.lg,
+    marginBottom: spacing.sm,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    borderRadius: radii.md,
+    borderWidth: 1,
+    borderColor: colors.border,
+    backgroundColor: colors.white,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.sm,
+  },
+  partnerBannerText: { flex: 1, color: colors.navy, fontWeight: "700", fontSize: 13 },
   receivedLink: {
     flexDirection: "row",
     alignItems: "center",
@@ -374,14 +404,8 @@ const styles = StyleSheet.create({
     borderColor: colors.border,
   },
   receivedText: { flex: 1, color: colors.navy, fontWeight: "700" },
-  tabs: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: spacing.sm,
-    paddingHorizontal: spacing.lg,
-  },
   tab: {
-    paddingHorizontal: spacing.md,
+    paddingHorizontal: spacing.sm + 2,
     paddingVertical: spacing.sm,
     borderRadius: radii.pill,
     borderWidth: 1,

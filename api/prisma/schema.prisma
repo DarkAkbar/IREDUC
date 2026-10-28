@@ -27,9 +27,20 @@ enum ProviderType {
 }
 
 enum ReviewStatus {
+  DRAFT
   PENDING
   APPROVED
   REJECTED
+}
+
+enum ProviderEventType {
+  CREATED
+  SUBMITTED
+  UNDER_REVIEW
+  COMPLEMENT_REQUESTED
+  APPROVED
+  REJECTED
+  WITHDRAWN
 }
 
 enum ListingStatus {
@@ -38,6 +49,27 @@ enum ListingStatus {
   APPROVED
   REJECTED
   ARCHIVED
+}
+
+enum ReportTargetType {
+  PROPERTY
+  SERVICE
+  USER
+  MESSAGE
+  REVIEW
+}
+
+enum ReportStatus {
+  OPEN
+  IN_PROGRESS
+  RESOLVED
+  DISMISSED
+}
+
+enum AnnouncementAudience {
+  ALL
+  CLIENTS
+  PARTNERS
 }
 
 enum OfferType {
@@ -110,13 +142,14 @@ enum TokenPurpose {
 model User {
   id            String        @id @default(uuid()) @db.Uuid
   fullName      String
-  email         String        @unique
+  email         String?       @unique
   passwordHash  String
-  phone         String?
+  phone         String        @unique
   whatsapp      String?
   systemRole    SystemRole    @default(USER)
   accountStatus AccountStatus @default(ACTIVE)
   emailVerified Boolean       @default(false)
+  phoneVerified Boolean       @default(false)
   avatarUrl     String?
   createdAt     DateTime      @default(now())
   updatedAt     DateTime      @updatedAt
@@ -132,10 +165,15 @@ model User {
   alerts                  Alert[]
   notifications           Notification[]
   adminActions            AdminAction[]
-  refreshTokens RefreshToken[]
-  userTokens    UserToken[]
+  refreshTokens           RefreshToken[]
+  userTokens              UserToken[]
+  reportsFiled            Report[]       @relation("ReportReporter")
+  reportsResolved         Report[]       @relation("ReportResolver")
+  authEvents              AuthEvent[]
+  announcementsCreated    Announcement[]
 
   @@index([email])
+  @@index([phone])
   @@index([systemRole])
   @@index([accountStatus])
 }
@@ -153,20 +191,38 @@ model ProviderProfile {
   website           String?
   address           String?
   isRegistered      Boolean      @default(false)
-  reviewStatus      ReviewStatus @default(PENDING)
+  reviewStatus      ReviewStatus @default(DRAFT)
   rejectionReason   String?
+  reviewNote        String?
   yearsOfExperience Int?
+  submittedAt       DateTime?
+  decidedAt         DateTime?
   createdAt         DateTime     @default(now())
   updatedAt         DateTime     @updatedAt
 
-  user       User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user       User                  @relation(fields: [userId], references: [id], onDelete: Cascade)
   documents  ProviderDocument[]
+  events     ProviderReviewEvent[]
   properties Property[]
   services   Service[]
 
   @@index([displayName])
   @@index([type])
   @@index([reviewStatus])
+}
+
+model ProviderReviewEvent {
+  id        String            @id @default(uuid()) @db.Uuid
+  profileId String            @db.Uuid
+  type      ProviderEventType
+  message   String?
+  createdAt DateTime          @default(now())
+
+  profile ProviderProfile @relation(fields: [profileId], references: [id], onDelete: Cascade)
+
+  @@index([profileId])
+  @@index([type])
+  @@index([createdAt])
 }
 
 model ProviderDocument {
@@ -210,6 +266,7 @@ model Category {
 model Commune {
   id        String   @id @default(uuid()) @db.Uuid
   name      String   @unique
+  isActive  Boolean  @default(true)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -218,12 +275,14 @@ model Commune {
   services      Service[]      @relation("ServiceCoverage")
 
   @@index([name])
+  @@index([isActive])
 }
 
 model Neighborhood {
   id        String   @id @default(uuid()) @db.Uuid
   communeId String   @db.Uuid
   name      String
+  isActive  Boolean  @default(true)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -233,6 +292,20 @@ model Neighborhood {
   @@unique([communeId, name])
   @@index([communeId])
   @@index([name])
+  @@index([isActive])
+}
+
+model RejectionReason {
+  id        String   @id @default(uuid()) @db.Uuid
+  label     String
+  code      String?  @unique
+  isActive  Boolean  @default(true)
+  sortOrder Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([isActive])
+  @@index([sortOrder])
 }
 
 model Property {
@@ -287,6 +360,9 @@ model Property {
   @@index([status])
   @@index([price])
   @@index([isFeatured])
+  @@index([status, offerType, communeId])
+  @@index([status, categoryId, price])
+  @@index([status, kind, offerType])
 }
 
 model PropertyMedia {
@@ -333,6 +409,8 @@ model Service {
   @@index([title])
   @@index([status])
   @@index([isFeatured])
+  @@index([status, categoryId])
+  @@index([status, isFeatured])
 }
 
 model ServiceMedia {
@@ -367,7 +445,7 @@ model Request {
   visitSlot      String?
   fullName       String
   phone          String
-  email          String
+  email          String?
   whatsapp       String?
   message        String?       @db.VarChar(500)
   status         RequestStatus @default(PENDING)
@@ -451,6 +529,7 @@ model Review {
   propertyId String?  @db.Uuid
   rating     Int
   comment    String?
+  isHidden   Boolean  @default(false)
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
 
@@ -516,6 +595,29 @@ model Notification {
   @@index([readAt])
 }
 
+model Report {
+  id           String           @id @default(uuid()) @db.Uuid
+  reporterId   String           @db.Uuid
+  targetType   ReportTargetType
+  targetId     String           @db.Uuid
+  reason       String
+  details      String?
+  status       ReportStatus     @default(OPEN)
+  adminNote    String?
+  resolvedById String?          @db.Uuid
+  resolvedAt   DateTime?
+  createdAt    DateTime         @default(now())
+  updatedAt    DateTime         @updatedAt
+
+  reporter   User  @relation("ReportReporter", fields: [reporterId], references: [id], onDelete: Cascade)
+  resolvedBy User? @relation("ReportResolver", fields: [resolvedById], references: [id], onDelete: SetNull)
+
+  @@index([status])
+  @@index([targetType, targetId])
+  @@index([reporterId])
+  @@index([createdAt])
+}
+
 model AdminAction {
   id         String   @id @default(uuid()) @db.Uuid
   adminId    String   @db.Uuid
@@ -533,14 +635,77 @@ model AdminAction {
   @@index([createdAt])
 }
 
-model RefreshToken {
+/// Paramètres plateforme (clé → JSON). Alimente aussi GET /config.
+model Setting {
+  id        String   @id @default(uuid()) @db.Uuid
+  key       String   @unique
+  value     Json
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([key])
+}
+
+model Announcement {
+  id          String               @id @default(uuid()) @db.Uuid
+  title       String
+  body        String
+  audience    AnnouncementAudience
+  createdById String               @db.Uuid
+  sentAt      DateTime?
+  createdAt   DateTime             @default(now())
+
+  createdBy User @relation(fields: [createdById], references: [id], onDelete: Cascade)
+
+  @@index([audience])
+  @@index([createdAt])
+}
+
+model AdminInboxItem {
   id        String    @id @default(uuid()) @db.Uuid
-  userId    String    @db.Uuid
-  tokenHash String
-  expiresAt DateTime
-  revokedAt DateTime?
+  type      String
+  title     String
+  body      String
+  data      Json?
+  readAt    DateTime?
   createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
+
+  @@index([readAt])
+  @@index([type])
+  @@index([createdAt])
+}
+
+model AuthEvent {
+  id           String   @id @default(uuid()) @db.Uuid
+  userId       String?  @db.Uuid
+  emailOrPhone String?
+  eventType    String
+  ipAddress    String?
+  userAgent    String?
+  success      Boolean
+  meta         Json?
+  createdAt    DateTime @default(now())
+
+  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([userId])
+  @@index([eventType])
+  @@index([success])
+  @@index([createdAt])
+}
+
+model RefreshToken {
+  id         String    @id @default(uuid()) @db.Uuid
+  userId     String    @db.Uuid
+  tokenHash  String
+  expiresAt  DateTime
+  revokedAt  DateTime?
+  deviceName String?
+  userAgent  String?
+  ipAddress  String?
+  lastUsedAt DateTime?
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
@@ -554,6 +719,7 @@ model UserToken {
   userId    String       @db.Uuid
   purpose   TokenPurpose
   tokenHash String
+  codeHash  String?
   expiresAt DateTime
   usedAt    DateTime?
   createdAt DateTime     @default(now())
@@ -564,5 +730,6 @@ model UserToken {
   @@index([userId])
   @@index([purpose])
   @@index([tokenHash])
+  @@index([codeHash])
   @@index([expiresAt])
 }

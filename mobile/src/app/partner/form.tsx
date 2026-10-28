@@ -2,7 +2,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import * as ImagePicker from "expo-image-picker";
 import { Image } from "expo-image";
-import { useRouter } from "expo-router";
+import { useLocalSearchParams, useRouter } from "expo-router";
 import { useEffect, useState } from "react";
 import {
   ActivityIndicator,
@@ -16,24 +16,25 @@ import {
   View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { mediaUrl } from "../api/client";
+import { mediaUrl } from "../../api/client";
 import {
   createProvider,
   fetchMyProvider,
+  submitProvider,
   updateProvider,
   uploadProviderDocument,
   uploadProviderLogo,
-} from "../api/providers";
-import { ProviderDocument, ProviderType } from "../api/types";
-import { ListScreenHeader } from "../components/list/ListScreenHeader";
-import { Button } from "../components/ui/Button";
-import { useAuthStore } from "../store/authStore";
-import { useRequireAuth } from "../hooks/useRequireAuth";
-import { colors, radii, spacing, typography } from "../theme";
-import { getErrorMessage } from "../utils/errors";
-import { compressImage, uploadWithRetry } from "../utils/media";
+} from "../../api/providers";
+import { ProviderDocument, ProviderType } from "../../api/types";
+import { ListScreenHeader } from "../../components/list/ListScreenHeader";
+import { Button } from "../../components/ui/Button";
+import { useAuthStore } from "../../store/authStore";
+import { useRequireAuth } from "../../hooks/useRequireAuth";
+import { colors, radii, spacing, typography } from "../../theme";
+import { getErrorMessage } from "../../utils/errors";
+import { compressImage, uploadWithRetry } from "../../utils/media";
 
-type Step = 1 | 2 | 3 | "status";
+type Step = 1 | 2 | 3;
 
 type LocalDoc = {
   key: string;
@@ -61,27 +62,28 @@ const PROFILE_TYPES: { key: ProviderType; label: string; hint: string }[] = [
   },
 ];
 
-function statusLabel(status: string) {
-  if (status === "PENDING") return "En attente de validation";
-  if (status === "APPROVED") return "Approuvé";
-  if (status === "REJECTED") return "Rejeté";
-  return status;
-}
-
-export default function PartnerScreen() {
+export default function PartnerFormScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
+  const params = useLocalSearchParams<{ type?: string }>();
   const queryClient = useQueryClient();
   const { requireAuth, isAuthenticated } = useRequireAuth();
   const user = useAuthStore((s) => s.user);
   const setUser = useAuthStore((s) => s.setUser);
 
-  const [step, setStep] = useState<Step>(1);
-  const [type, setType] = useState<ProviderType>("INDIVIDUAL");
+  const initialType =
+    params.type === "AGENCY" ||
+    params.type === "SERVICE_PROVIDER" ||
+    params.type === "INDIVIDUAL"
+      ? params.type
+      : "INDIVIDUAL";
+
+  const [step, setStep] = useState<Step>(2);
+  const [type, setType] = useState<ProviderType>(initialType);
   const [displayName, setDisplayName] = useState(user?.fullName ?? "");
   const [description, setDescription] = useState("");
   const [phone, setPhone] = useState(user?.phone ?? "");
-  const [whatsapp, setWhatsapp] = useState(user?.whatsapp ?? "");
+  const [whatsapp, setWhatsapp] = useState(user?.whatsapp ?? user?.phone ?? "");
   const [website, setWebsite] = useState("");
   const [address, setAddress] = useState("");
   const [years, setYears] = useState("");
@@ -89,7 +91,6 @@ export default function PartnerScreen() {
   const [logoUri, setLogoUri] = useState<string | null>(null);
   const [docs, setDocs] = useState<LocalDoc[]>([]);
   const [loading, setLoading] = useState(false);
-  const [correctMode, setCorrectMode] = useState(false);
 
   const providerQuery = useQuery({
     queryKey: ["provider-me"],
@@ -99,30 +100,28 @@ export default function PartnerScreen() {
   });
 
   useEffect(() => {
-    if (!isAuthenticated) requireAuth("/partner");
+    if (!isAuthenticated) requireAuth("/partner/form");
   }, [isAuthenticated, requireAuth]);
 
   useEffect(() => {
-    if (providerQuery.data && !correctMode) {
-      setStep("status");
-      setDisplayName(providerQuery.data.displayName);
-      setDescription(providerQuery.data.description ?? "");
-      setPhone(providerQuery.data.phone ?? "");
-      setWhatsapp(providerQuery.data.whatsapp ?? "");
-      setWebsite(providerQuery.data.website ?? "");
-      setAddress(providerQuery.data.address ?? "");
-      setYears(
-        providerQuery.data.yearsOfExperience != null
-          ? String(providerQuery.data.yearsOfExperience)
-          : ""
-      );
-      setIsRegistered(providerQuery.data.isRegistered);
-      setType(providerQuery.data.type as ProviderType);
-      if (providerQuery.data.logoUrl) {
-        setLogoUri(mediaUrl(providerQuery.data.logoUrl));
-      }
+    if (!providerQuery.data) return;
+    setDisplayName(providerQuery.data.displayName);
+    setDescription(providerQuery.data.description ?? "");
+    setPhone(providerQuery.data.phone ?? "");
+    setWhatsapp(providerQuery.data.whatsapp ?? "");
+    setWebsite(providerQuery.data.website ?? "");
+    setAddress(providerQuery.data.address ?? "");
+    setYears(
+      providerQuery.data.yearsOfExperience != null
+        ? String(providerQuery.data.yearsOfExperience)
+        : ""
+    );
+    setIsRegistered(providerQuery.data.isRegistered);
+    setType(providerQuery.data.type as ProviderType);
+    if (providerQuery.data.logoUrl) {
+      setLogoUri(mediaUrl(providerQuery.data.logoUrl));
     }
-  }, [providerQuery.data, correctMode]);
+  }, [providerQuery.data]);
 
   async function pickLogo() {
     const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -176,23 +175,31 @@ export default function PartnerScreen() {
   }
 
   function validateDocs() {
-    if (isRegistered) {
-      if (!docs.some((d) => d.docType === "RCCM") || !docs.some((d) => d.docType === "PATENTE")) {
+    const existingTypes = new Set(
+      (providerQuery.data?.documents ?? []).map((d) => d.docType)
+    );
+    const localTypes = new Set(docs.map((d) => d.docType));
+    const has = (t: ProviderDocument["docType"]) =>
+      localTypes.has(t) || existingTypes.has(t);
+
+    if (isRegistered || type === "AGENCY") {
+      if (!has("ID") || !has("RCCM")) {
         Alert.alert(
           "Documents",
-          "Joignez le RCCM et la patente pour une entreprise immatriculée."
+          "Joignez une pièce d'identité et le RCCM."
         );
         return false;
       }
-    } else if (
-      !docs.some((d) => d.docType === "ID") ||
-      !docs.some((d) => d.docType === "PORTFOLIO") ||
-      !docs.some((d) => d.docType === "REFERENCE")
-    ) {
-      Alert.alert(
-        "Documents",
-        "Joignez une pièce d'identité, un portfolio et des références."
-      );
+    } else if (type === "SERVICE_PROVIDER") {
+      if (!has("ID") || !has("PORTFOLIO")) {
+        Alert.alert(
+          "Documents",
+          "Joignez une pièce d'identité et un portfolio."
+        );
+        return false;
+      }
+    } else if (!has("ID")) {
+      Alert.alert("Documents", "Joignez une pièce d'identité.");
       return false;
     }
     return true;
@@ -235,7 +242,7 @@ export default function PartnerScreen() {
         );
       }
 
-      const me = await fetchMyProvider();
+      const me = await submitProvider();
       await queryClient.invalidateQueries({ queryKey: ["provider-me"] });
       if (user) {
         setUser({
@@ -249,13 +256,8 @@ export default function PartnerScreen() {
           },
         });
       }
-      setCorrectMode(false);
       setDocs([]);
-      setStep("status");
-      Alert.alert(
-        "Demande envoyée",
-        "Votre dossier partenaire a été transmis pour validation."
-      );
+      router.replace("/partner/confirm" as never);
     } catch (error) {
       Alert.alert(
         "Partenaire",
@@ -284,8 +286,6 @@ export default function PartnerScreen() {
     );
   }
 
-  const provider = providerQuery.data;
-
   return (
     <View style={[styles.screen, { paddingTop: insets.top }]}>
       <ListScreenHeader showBack />
@@ -294,72 +294,6 @@ export default function PartnerScreen() {
         <Text style={styles.subtitle}>
           Publiez vos biens ou services après validation de votre dossier.
         </Text>
-
-        {step === "status" && provider ? (
-          <View style={styles.statusCard}>
-            <View
-              style={[
-                styles.statusIcon,
-                provider.reviewStatus === "APPROVED" && styles.statusOk,
-                provider.reviewStatus === "REJECTED" && styles.statusKo,
-              ]}
-            >
-              <Ionicons
-                name={
-                  provider.reviewStatus === "APPROVED"
-                    ? "checkmark"
-                    : provider.reviewStatus === "REJECTED"
-                      ? "close"
-                      : "time-outline"
-                }
-                size={28}
-                color={colors.white}
-              />
-            </View>
-            <Text style={styles.statusTitle}>
-              {statusLabel(provider.reviewStatus)}
-            </Text>
-            {provider.reviewStatus === "PENDING" ? (
-              <Text style={styles.subtitle}>
-                Notre équipe examine votre dossier. Vous serez notifié dès qu'il
-                sera traité.
-              </Text>
-            ) : null}
-            {provider.reviewStatus === "APPROVED" ? (
-              <>
-                <Text style={styles.subtitle}>
-                  Vous pouvez publier vos annonces dès maintenant.
-                </Text>
-                <Button
-                  label="Publier une annonce"
-                  onPress={() => router.push("/publish" as never)}
-                  style={{ marginTop: spacing.md }}
-                />
-              </>
-            ) : null}
-            {provider.reviewStatus === "REJECTED" ? (
-              <>
-                <Text style={styles.reason}>
-                  Motif : {provider.rejectionReason || "Non précisé"}
-                </Text>
-                <Button
-                  label="Corriger et renvoyer"
-                  onPress={() => {
-                    setCorrectMode(true);
-                    setStep(1);
-                  }}
-                  style={{ marginTop: spacing.md }}
-                />
-              </>
-            ) : null}
-            <Button
-              label="Retour au profil"
-              variant="outline"
-              style={{ marginTop: spacing.sm }}
-              onPress={() => router.replace("/(tabs)/profile" as never)}
-            />
-          </View>
-        ) : null}
 
         {step === 1 ? (
           <View style={styles.block}>

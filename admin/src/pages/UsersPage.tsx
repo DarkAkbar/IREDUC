@@ -1,21 +1,26 @@
 import { useQuery } from "@tanstack/react-query";
+import { Eye } from "lucide-react";
 import { useState } from "react";
-import { Link, useSearchParams } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { Alert } from "@/components/ui/alert";
-import { Badge, statusTone } from "@/components/ui/badge";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { DataTable } from "@/components/ui/DataTable";
+import { FilterChips } from "@/components/ui/FilterChips";
 import { Input } from "@/components/ui/input";
+import { PageHeader } from "@/components/ui/PageHeader";
 import { Pagination } from "@/components/ui/pagination";
 import { Select } from "@/components/ui/select";
-import { Spinner } from "@/components/ui/spinner";
+import { TableSkeleton } from "@/components/ui/Skeleton";
+import { StatusBadge, statusTone } from "@/components/ui/StatusBadge";
 import { api, getErrorMessage } from "@/lib/api";
 import { formatDate, statusLabel } from "@/lib/utils";
 
 type UserRow = {
   id: string;
   fullName: string;
-  email: string;
-  phone?: string | null;
+  email: string | null;
+  phone: string;
   systemRole: string;
   accountStatus: string;
   createdAt: string;
@@ -27,6 +32,7 @@ type PageResult = {
 };
 
 export function UsersPage() {
+  const navigate = useNavigate();
   const [params, setParams] = useSearchParams();
   const page = Number(params.get("page") ?? "1");
   const role = params.get("role") ?? "";
@@ -66,104 +72,167 @@ export function UsersPage() {
 
   return (
     <div className="space-y-4">
-      <p className="text-sm text-ireduc-muted">
-        Recherche, consultation et suspension des comptes.
-      </p>
-
-      <Card>
-        <CardHeader>
-          <CardTitle>Filtres</CardTitle>
-        </CardHeader>
-        <CardContent className="flex flex-col gap-3 lg:flex-row">
-          <form
-            className="flex flex-1 gap-2"
-            onSubmit={(e) => {
-              e.preventDefault();
-              update({ search, page: "1" });
+      <PageHeader
+        title="Utilisateurs"
+        description="Recherche, consultation et suspension des comptes."
+        actions={
+          <Button
+            variant="outline"
+            onClick={async () => {
+              const { data } = await api.get<string>("/admin/users/export.csv", {
+                params: {
+                  role: role || undefined,
+                  status: status || undefined,
+                  search: params.get("search") || undefined,
+                },
+                responseType: "text",
+              });
+              const blob = new Blob([data], { type: "text/csv;charset=utf-8" });
+              const url = URL.createObjectURL(blob);
+              const link = document.createElement("a");
+              link.href = url;
+              link.download = "utilisateurs.csv";
+              link.click();
+              URL.revokeObjectURL(url);
             }}
           >
-            <Input
-              placeholder="Nom, e-mail ou téléphone…"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-            />
-            <button
-              type="submit"
-              className="rounded-md bg-ireduc-navy px-4 text-sm text-white"
+            Exporter CSV
+          </Button>
+        }
+      />
+
+      <Card>
+        <CardContent className="space-y-4">
+          <FilterChips
+            value={status || "ALL"}
+            onChange={(value) =>
+              update({ status: value === "ALL" ? "" : value, page: "1" })
+            }
+            options={[
+              { value: "ALL", label: "Tous" },
+              { value: "ACTIVE", label: "Actifs" },
+              { value: "SUSPENDED", label: "Suspendus" },
+            ]}
+          />
+          <div className="flex flex-col gap-3 lg:flex-row">
+            <form
+              className="flex flex-1 gap-2"
+              onSubmit={(e) => {
+                e.preventDefault();
+                update({ search, page: "1" });
+              }}
             >
-              Rechercher
-            </button>
-          </form>
-          <Select
-            value={role}
-            onChange={(e) => update({ role: e.target.value, page: "1" })}
-            className="lg:w-48"
-          >
-            <option value="">Tous les rôles</option>
-            <option value="USER">Utilisateur</option>
-            <option value="ADMIN">Administrateur</option>
-            <option value="SUPER_ADMIN">Super administrateur</option>
-          </Select>
-          <Select
-            value={status}
-            onChange={(e) => update({ status: e.target.value, page: "1" })}
-            className="lg:w-48"
-          >
-            <option value="">Tous les statuts</option>
-            <option value="ACTIVE">Actif</option>
-            <option value="SUSPENDED">Suspendu</option>
-          </Select>
+              <Input
+                placeholder="Nom, numéro ou e-mail…"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+              />
+              <Button type="submit" variant="navy">
+                Rechercher
+              </Button>
+            </form>
+            <Select
+              value={role}
+              onChange={(e) => update({ role: e.target.value, page: "1" })}
+              className="lg:w-48"
+            >
+              <option value="">Tous les rôles</option>
+              <option value="USER">Utilisateur</option>
+              <option value="ADMIN">Administrateur</option>
+              <option value="SUPER_ADMIN">Super administrateur</option>
+            </Select>
+          </div>
         </CardContent>
       </Card>
 
-      {isLoading ? <Spinner /> : null}
       {error ? <Alert tone="error">{getErrorMessage(error)}</Alert> : null}
 
-      {data ? (
-        <Card>
-          <CardContent className="overflow-x-auto p-0">
-            <table className="min-w-full text-left text-sm">
-              <thead className="border-b border-ireduc-border bg-slate-50/80 text-xs uppercase tracking-wide text-ireduc-muted">
-                <tr>
-                  <th className="px-4 py-3 font-semibold">Utilisateur</th>
-                  <th className="px-4 py-3 font-semibold">Rôle</th>
-                  <th className="px-4 py-3 font-semibold">Statut</th>
-                  <th className="px-4 py-3 font-semibold">Inscrit le</th>
-                </tr>
-              </thead>
-              <tbody>
-                {data.data.map((row) => (
-                  <tr key={row.id} className="border-b border-ireduc-border/70 transition hover:bg-slate-50/70 last:border-0">
-                    <td className="px-4 py-3">
-                      <Link
-                        to={`/users/${row.id}`}
-                        className="font-medium text-ireduc-navy hover:underline"
-                      >
-                        {row.fullName}
-                      </Link>
-                      <p className="text-xs text-slate-500">{row.email}</p>
-                    </td>
-                    <td className="px-4 py-3">{statusLabel(row.systemRole)}</td>
-                    <td className="px-4 py-3">
-                      <Badge tone={statusTone(row.accountStatus)}>
-                        {statusLabel(row.accountStatus)}
-                      </Badge>
-                    </td>
-                    <td className="px-4 py-3">{formatDate(row.createdAt)}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </CardContent>
-          <div className="px-4 pb-4">
-            <Pagination
-              page={data.meta.page}
-              totalPages={data.meta.totalPages}
-              onPageChange={(p) => update({ page: String(p) })}
+      <Card>
+        {isLoading ? <TableSkeleton /> : null}
+        {data ? (
+          <>
+            <DataTable
+              rows={data.data}
+              emptyTitle="Aucun utilisateur"
+              emptyDescription="Aucun compte pour ces filtres."
+              onRowClick={(row) => navigate(`/users/${row.id}`)}
+              columns={[
+                {
+                  key: "user",
+                  header: "Utilisateur",
+                  render: (row) => (
+                    <div className="flex items-center gap-3">
+                      <span className="flex h-9 w-9 items-center justify-center rounded-full bg-ireduc-navy text-xs font-extrabold text-white">
+                        {row.fullName
+                          .split(" ")
+                          .map((p) => p[0])
+                          .slice(0, 2)
+                          .join("")
+                          .toUpperCase()}
+                      </span>
+                      <div>
+                        <p className="font-bold text-[var(--text-primary)]">
+                          {row.fullName}
+                        </p>
+                        <p className="text-xs text-[var(--text-muted)]">
+                          {row.email ?? "—"}
+                        </p>
+                      </div>
+                    </div>
+                  ),
+                },
+                {
+                  key: "phone",
+                  header: "Téléphone",
+                  render: (row) => (
+                    <span className="font-semibold text-ireduc-navy">
+                      {row.phone}
+                    </span>
+                  ),
+                },
+                {
+                  key: "role",
+                  header: "Rôle",
+                  render: (row) => statusLabel(row.systemRole),
+                },
+                {
+                  key: "status",
+                  header: "Statut",
+                  render: (row) => (
+                    <StatusBadge tone={statusTone(row.accountStatus)}>
+                      {statusLabel(row.accountStatus)}
+                    </StatusBadge>
+                  ),
+                },
+                {
+                  key: "date",
+                  header: "Inscrit le",
+                  render: (row) => formatDate(row.createdAt),
+                },
+              ]}
+              rowActions={(row) => (
+                <Link
+                  to={`/users/${row.id}`}
+                  className="inline-flex items-center gap-1 rounded-lg px-2 py-1 text-xs font-bold text-ireduc-navy hover:bg-ireduc-navy-soft"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <Eye size={14} />
+                  Voir
+                </Link>
+              )}
             />
-          </div>
-        </Card>
-      ) : null}
+            {data.data.length > 0 ? (
+              <div className="px-4 pb-4">
+                <Pagination
+                  page={data.meta.page}
+                  totalPages={data.meta.totalPages}
+                  onPageChange={(p) => update({ page: String(p) })}
+                />
+              </div>
+            ) : null}
+          </>
+        ) : null}
+      </Card>
     </div>
   );
 }

@@ -1,5 +1,14 @@
-import { PrismaClient, OfferType, PropertyKind, RequestStatus, RequestTarget, ProjectType, VisitMode, MediaType, ListingStatus, ProviderType, SystemRole, PaymentStatus } from "@prisma/client";
+import { PrismaClient, OfferType, PropertyKind, RequestStatus, RequestTarget, ProjectType, VisitMode, MediaType, ListingStatus, ProviderType, SystemRole, PaymentStatus, Prisma } from "@prisma/client";
 import * as bcrypt from "bcrypt";
+import dotenv from "dotenv";
+import { confirmSeedTruncate } from "./seed-confirm";
+import {
+  DEFAULT_SETTINGS,
+  SETTING_KEYS,
+} from "../src/modules/admin/admin.settings.defaults";
+
+// Ne pas écraser DATABASE_URL déjà définie (ex. Vitest → .env.test / ireduc_test)
+dotenv.config({ override: false });
 
 const prisma = new PrismaClient();
 
@@ -59,6 +68,7 @@ const SERVICE_CATEGORIES = [
 const PHOTO = (id: number) => `https://picsum.photos/seed/ireduc-${id}/800/600`;
 
 async function main() {
+  await confirmSeedTruncate("seed de base (prisma db seed)");
   console.log("Nettoyage des données existantes...");
   await prisma.$executeRawUnsafe(`
     TRUNCATE TABLE
@@ -151,6 +161,7 @@ async function main() {
       phone: "+243810000001",
       systemRole: SystemRole.SUPER_ADMIN,
       emailVerified: true,
+      phoneVerified: true,
     },
   });
 
@@ -162,6 +173,7 @@ async function main() {
       phone: "+243810000002",
       systemRole: SystemRole.ADMIN,
       emailVerified: true,
+      phoneVerified: true,
     },
   });
 
@@ -178,6 +190,7 @@ async function main() {
           whatsapp: u.phone,
           systemRole: SystemRole.USER,
           emailVerified: true,
+          phoneVerified: true,
         },
       })
     )
@@ -244,6 +257,7 @@ async function main() {
           passwordHash: providerHash,
           systemRole: SystemRole.USER,
           emailVerified: true,
+          phoneVerified: true,
           providerProfile: {
             create: {
               ...p.profile,
@@ -729,6 +743,17 @@ async function main() {
       handledById: superAdmin.id,
     },
   });
+
+  for (const key of SETTING_KEYS) {
+    await prisma.setting.upsert({
+      where: { key },
+      create: {
+        key,
+        value: DEFAULT_SETTINGS[key] as Prisma.InputJsonValue,
+      },
+      update: {},
+    });
+  }
 
   console.log("Seed IREDUC terminé avec succès.");
 }

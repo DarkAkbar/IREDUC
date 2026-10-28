@@ -10,6 +10,7 @@ import {
   buildPaginatedResult,
   getPagination,
 } from "../../utils/pagination";
+import { phoneDigitsForWhatsApp } from "../../utils/phone";
 
 async function assertParticipant(conversationId: string, userId: string) {
   const participant = await prisma.conversationParticipant.findUnique({
@@ -357,7 +358,7 @@ export async function getWhatsappLink(userId: string, conversationId: string) {
     );
   }
 
-  const digits = raw.replace(/\D/g, "");
+  const digits = phoneDigitsForWhatsApp(raw);
   const me = conversation.participants.find((p) => p.userId === userId)?.user;
   const topic =
     conversation.property?.title ||

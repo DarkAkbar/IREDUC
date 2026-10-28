@@ -14,6 +14,7 @@ export function toPublicUser(user: UserWithProvider) {
     systemRole: user.systemRole,
     accountStatus: user.accountStatus,
     emailVerified: user.emailVerified,
+    phoneVerified: user.phoneVerified,
     avatarUrl: user.avatarUrl,
     providerProfile: user.providerProfile
       ? {

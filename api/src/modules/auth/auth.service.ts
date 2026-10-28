@@ -2,7 +2,11 @@ import { AccountStatus, TokenPurpose } from "@prisma/client";
 import { AUTH_CONFIG } from "../../config/env";
 import { prisma } from "../../config/prisma";
 import { getMailService } from "../../mail";
-import { generateOpaqueToken, hashToken } from "../../utils/crypto";
+import {
+  generateEmailCode,
+  generateOpaqueToken,
+  hashToken,
+} from "../../utils/crypto";
 import {
   badRequest,
   conflict,
@@ -10,8 +14,17 @@ import {
   unauthorized,
 } from "../../utils/errors";
 import { signAccessToken } from "../../utils/jwt";
+import { logger } from "../../utils/logger";
 import { hashPassword, verifyPassword } from "../../utils/password";
+import {
+  looksLikeEmail,
+  normalizeOptionalEmail,
+  normalizePhone,
+} from "../../utils/phone";
+import type { DeviceMeta } from "../../utils/deviceMeta";
 import { toPublicUser } from "./auth.mapper";
+
+const INVALID_CREDENTIALS_MESSAGE = "Identifiant ou mot de passe incorrect";
 
 function refreshExpiryDate(): Date {
   const date = new Date();
@@ -27,19 +40,30 @@ function userTokenExpiryDate(): Date {
 
 async function createUserToken(userId: string, purpose: TokenPurpose) {
   const token = generateOpaqueToken();
+  const code =
+    purpose === TokenPurpose.VERIFY_EMAIL ? generateEmailCode() : null;
+
   await prisma.userToken.create({
     data: {
       userId,
       purpose,
       tokenHash: hashToken(token),
+      codeHash: code ? hashToken(code) : null,
       expiresAt: userTokenExpiryDate(),
     },
   });
-  return token;
+
+  return { token, code };
 }
 
-async function issueTokenPair(userId: string, email: string, role: Parameters<typeof signAccessToken>[0]["role"]) {
-  const accessToken = signAccessToken({ sub: userId, email, role });
+async function issueTokenPair(
+  userId: string,
+  phone: string,
+  email: string | null,
+  role: Parameters<typeof signAccessToken>[0]["role"],
+  deviceMeta?: DeviceMeta
+) {
+  const accessToken = signAccessToken({ sub: userId, phone, email, role });
   const refreshToken = generateOpaqueToken();
 
   await prisma.refreshToken.create({
@@ -47,54 +71,107 @@ async function issueTokenPair(userId: string, email: string, role: Parameters<ty
       userId,
       tokenHash: hashToken(refreshToken),
       expiresAt: refreshExpiryDate(),
+      deviceName: deviceMeta?.deviceName ?? null,
+      userAgent: deviceMeta?.userAgent ?? null,
+      ipAddress: deviceMeta?.ipAddress ?? null,
+      lastUsedAt: new Date(),
     },
   });
 
   return { accessToken, refreshToken };
 }
 
-export async function register(input: {
-  fullName: string;
-  email: string;
-  password: string;
-}) {
-  const email = input.email.toLowerCase().trim();
-  const existing = await prisma.user.findUnique({ where: { email } });
-  if (existing) {
-    throw conflict("Un compte existe déjà avec cet e-mail", "EMAIL_TAKEN");
+export async function register(
+  input: {
+    fullName: string;
+    phone: string;
+    password: string;
+    email?: string | null;
+  },
+  deviceMeta?: DeviceMeta
+) {
+  const phone = normalizePhone(input.phone);
+  const email = normalizeOptionalEmail(input.email ?? null);
+
+  const existingPhone = await prisma.user.findUnique({ where: { phone } });
+  if (existingPhone) {
+    throw conflict("Ce numéro est déjà utilisé", "PHONE_TAKEN");
+  }
+
+  if (email) {
+    const existingEmail = await prisma.user.findUnique({ where: { email } });
+    if (existingEmail) {
+      throw conflict("Cette adresse e-mail est déjà utilisée", "EMAIL_TAKEN");
+    }
   }
 
   const user = await prisma.user.create({
     data: {
       fullName: input.fullName.trim(),
+      phone,
       email,
       passwordHash: await hashPassword(input.password),
+      whatsapp: phone,
     },
     include: { providerProfile: true },
   });
 
-  const token = await createUserToken(user.id, TokenPurpose.VERIFY_EMAIL);
-  await getMailService().sendVerificationEmail(user.email, token);
+  const tokens = await issueTokenPair(
+    user.id,
+    user.phone,
+    user.email,
+    user.systemRole,
+    deviceMeta
+  );
 
   return {
-    message: "Inscription réussie. Vérifiez votre e-mail pour activer le compte.",
+    message: "Inscription réussie.",
+    ...tokens,
     user: toPublicUser(user),
   };
 }
 
-export async function verifyEmail(token: string) {
-  const tokenHash = hashToken(token);
-  const record = await prisma.userToken.findFirst({
-    where: {
-      tokenHash,
-      purpose: TokenPurpose.VERIFY_EMAIL,
-      usedAt: null,
-      expiresAt: { gt: new Date() },
-    },
-  });
+/** Vérification e-mail conservée (désactivée côté parcours si REQUIRE_ACCOUNT_VERIFICATION=false). */
+export async function verifyEmail(input: {
+  token?: string;
+  email?: string;
+  code?: string;
+}) {
+  let record =
+    input.token != null
+      ? await prisma.userToken.findFirst({
+          where: {
+            tokenHash: hashToken(input.token),
+            purpose: TokenPurpose.VERIFY_EMAIL,
+            usedAt: null,
+            expiresAt: { gt: new Date() },
+          },
+        })
+      : null;
+
+  if (!record && input.email && input.code) {
+    const user = await prisma.user.findUnique({
+      where: { email: input.email.toLowerCase().trim() },
+    });
+    if (user) {
+      record = await prisma.userToken.findFirst({
+        where: {
+          userId: user.id,
+          purpose: TokenPurpose.VERIFY_EMAIL,
+          codeHash: hashToken(input.code),
+          usedAt: null,
+          expiresAt: { gt: new Date() },
+        },
+      });
+    }
+  }
 
   if (!record) {
-    throw badRequest("Jeton de vérification invalide ou expiré", undefined, "INVALID_TOKEN");
+    throw badRequest(
+      "Code ou jeton de vérification invalide ou expiré",
+      undefined,
+      "INVALID_TOKEN"
+    );
   }
 
   await prisma.$transaction([
@@ -116,10 +193,10 @@ export async function resendVerification(email: string) {
     where: { email: email.toLowerCase().trim() },
   });
 
-  // Réponse neutre pour éviter l'énumération d'e-mails
-  if (!user || user.emailVerified) {
+  if (!user || user.emailVerified || !user.email) {
     return {
       message: "Si un compte non vérifié existe, un e-mail a été envoyé.",
+      emailSent: false,
     };
   }
 
@@ -132,37 +209,96 @@ export async function resendVerification(email: string) {
     data: { usedAt: new Date() },
   });
 
-  const token = await createUserToken(user.id, TokenPurpose.VERIFY_EMAIL);
-  await getMailService().sendVerificationEmail(user.email, token);
+  const { token, code } = await createUserToken(
+    user.id,
+    TokenPurpose.VERIFY_EMAIL
+  );
+
+  let emailSent = true;
+  try {
+    await getMailService().sendVerificationEmail(
+      user.email,
+      token,
+      code ?? undefined
+    );
+  } catch (error) {
+    emailSent = false;
+    logger.error("Échec renvoi e-mail de vérification", error);
+  }
 
   return {
-    message: "Si un compte non vérifié existe, un e-mail a été envoyé.",
+    message: emailSent
+      ? "Si un compte non vérifié existe, un e-mail a été envoyé."
+      : "Impossible d'envoyer l'e-mail de vérification pour le moment.",
+    emailSent,
   };
 }
 
-export async function login(input: { email: string; password: string }) {
+export async function resolveLoginIdentifier(identifier: string): Promise<{
+  normalizedKey: string;
+  user: Awaited<ReturnType<typeof prisma.user.findFirst>>;
+}> {
+  const raw = identifier.trim();
+  if (looksLikeEmail(raw)) {
+    const email = raw.toLowerCase();
+    const user = await prisma.user.findUnique({
+      where: { email },
+      include: { providerProfile: true },
+    });
+    return { normalizedKey: `email:${email}`, user };
+  }
+
+  const phone = normalizePhone(raw);
   const user = await prisma.user.findUnique({
-    where: { email: input.email.toLowerCase().trim() },
+    where: { phone },
     include: { providerProfile: true },
   });
+  return { normalizedKey: `phone:${phone}`, user };
+}
+
+export async function login(
+  input: { identifier: string; password: string },
+  deviceMeta?: DeviceMeta
+) {
+  let normalizedKey = input.identifier.trim().toLowerCase();
+  let user = null as Awaited<ReturnType<typeof prisma.user.findFirst>>;
+
+  try {
+    const resolved = await resolveLoginIdentifier(input.identifier);
+    normalizedKey = resolved.normalizedKey;
+    user = resolved.user;
+  } catch {
+    // Numéro invalide → même message que mauvais mot de passe
+    throw unauthorized(INVALID_CREDENTIALS_MESSAGE, "INVALID_CREDENTIALS");
+  }
 
   if (!user || !(await verifyPassword(input.password, user.passwordHash))) {
-    throw unauthorized("E-mail ou mot de passe incorrect", "INVALID_CREDENTIALS");
+    throw unauthorized(INVALID_CREDENTIALS_MESSAGE, "INVALID_CREDENTIALS");
   }
 
   if (user.accountStatus === AccountStatus.SUSPENDED) {
     throw forbidden("Ce compte est suspendu", "ACCOUNT_SUSPENDED");
   }
 
-  const tokens = await issueTokenPair(user.id, user.email, user.systemRole);
+  const tokens = await issueTokenPair(
+    user.id,
+    user.phone,
+    user.email,
+    user.systemRole,
+    deviceMeta
+  );
 
   return {
     ...tokens,
     user: toPublicUser(user),
+    _loginKey: normalizedKey,
   };
 }
 
-export async function refresh(refreshToken: string) {
+export async function refresh(
+  refreshToken: string,
+  deviceMeta?: DeviceMeta
+) {
   const tokenHash = hashToken(refreshToken);
   const stored = await prisma.refreshToken.findFirst({
     where: {
@@ -190,8 +326,14 @@ export async function refresh(refreshToken: string) {
 
   const tokens = await issueTokenPair(
     stored.user.id,
+    stored.user.phone,
     stored.user.email,
-    stored.user.systemRole
+    stored.user.systemRole,
+    {
+      deviceName: deviceMeta?.deviceName ?? stored.deviceName,
+      userAgent: deviceMeta?.userAgent ?? stored.userAgent,
+      ipAddress: deviceMeta?.ipAddress ?? stored.ipAddress,
+    }
   );
 
   return {
@@ -215,7 +357,7 @@ export async function forgotPassword(email: string) {
     where: { email: email.toLowerCase().trim() },
   });
 
-  if (user) {
+  if (user?.email) {
     await prisma.userToken.updateMany({
       where: {
         userId: user.id,
@@ -225,7 +367,10 @@ export async function forgotPassword(email: string) {
       data: { usedAt: new Date() },
     });
 
-    const token = await createUserToken(user.id, TokenPurpose.RESET_PASSWORD);
+    const { token } = await createUserToken(
+      user.id,
+      TokenPurpose.RESET_PASSWORD
+    );
     await getMailService().sendPasswordResetEmail(user.email, token);
   }
 

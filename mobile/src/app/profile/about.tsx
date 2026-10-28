@@ -11,7 +11,7 @@ export default function AboutScreen() {
     <View style={[styles.screen, { paddingTop: insets.top }]}>
       <ListScreenHeader showBack />
       <View style={styles.content}>
-        <IreducLogo tagline="Trouvez. Comparez. Réalisez." />
+        <IreducLogo tagline={undefined} />
         <Text style={[typography.section, { marginTop: spacing.xl }]}>
           À propos d'IREDUC
         </Text>

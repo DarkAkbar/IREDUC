@@ -16,6 +16,7 @@ import { mediaUrl } from "../../api/client";
 import { fetchService, fetchServiceReviews } from "../../api/services";
 import { DetailGallery } from "../../components/detail/DetailGallery";
 import { FavoriteButton } from "../../components/FavoriteButton";
+import { ReportButton } from "../../components/ReportButton";
 import { ErrorState } from "../../components/list/ErrorState";
 import { ListScreenHeader } from "../../components/list/ListScreenHeader";
 import { Button } from "../../components/ui/Button";
@@ -203,6 +204,11 @@ export default function ServiceDetailScreen() {
                   <Text style={styles.secondaryLabel}>Créer une alerte</Text>
                 </Pressable>
               </View>
+              <ReportButton
+                targetType="SERVICE"
+                targetId={service.id}
+                returnTo={`/service/${service.id}`}
+              />
               <Pressable style={styles.whatsapp} onPress={() => void shareWhatsApp()}>
                 <Ionicons name="logo-whatsapp" size={18} color={colors.whatsapp} />
                 <Text style={styles.whatsappText}>Partager sur WhatsApp</Text>

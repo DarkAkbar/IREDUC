@@ -7,6 +7,7 @@ import { Badge, statusTone } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Spinner } from "@/components/ui/spinner";
+import { useToast } from "@/components/ui/toast";
 import { api, getErrorMessage } from "@/lib/api";
 import { docTypeLabel, resolveMediaUrl } from "@/lib/media";
 import { formatDate, statusLabel } from "@/lib/utils";
@@ -23,10 +24,13 @@ type ProviderDetail = {
   address?: string | null;
   reviewStatus: string;
   rejectionReason?: string | null;
+  reviewNote?: string | null;
+  submittedAt?: string | null;
+  decidedAt?: string | null;
   yearsOfExperience?: number | null;
   user: {
     fullName: string;
-    email: string;
+    email: string | null;
     phone?: string | null;
     whatsapp?: string | null;
   };
@@ -38,6 +42,12 @@ type ProviderDetail = {
   }>;
   properties: Array<{ id: string; title: string; status: string }>;
   services: Array<{ id: string; title: string; status: string }>;
+  timeline?: Array<{
+    id: string;
+    type: string;
+    message?: string | null;
+    createdAt: string;
+  }>;
   history: Array<{
     id: string;
     action: string;
@@ -51,6 +61,7 @@ export function PartnerDetailPage() {
   const { id = "" } = useParams();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const { pushToast } = useToast();
   const [dialog, setDialog] = useState<"approve" | "reject" | "complement" | null>(
     null
   );
@@ -74,24 +85,36 @@ export function PartnerDetailPage() {
         await api.patch(`/admin/providers/${id}/request-complement`, {
           reason: payload.reason,
         });
-        return;
+        return { nextPendingId: null as string | null };
       }
-      await api.patch(`/admin/providers/${id}/review`, {
-        decision: payload.kind === "approve" ? "APPROVED" : "REJECTED",
-        reason: payload.reason || undefined,
-      });
+      const { data: body } = await api.patch<{ nextPendingId?: string | null }>(
+        `/admin/providers/${id}/review`,
+        {
+          decision: payload.kind === "approve" ? "APPROVED" : "REJECTED",
+          reason: payload.reason.trim() || undefined,
+        }
+      );
+      return body;
     },
-    onSuccess: async (_data, variables) => {
-      await queryClient.invalidateQueries({ queryKey: ["admin-providers"] });
-      await queryClient.invalidateQueries({ queryKey: ["admin-provider", id] });
-      setMessage(
+    onSuccess: async (body, variables) => {
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["admin-providers"] }),
+        queryClient.invalidateQueries({ queryKey: ["admin-provider"] }),
+        queryClient.invalidateQueries({ queryKey: ["admin-stats"] }),
+        queryClient.invalidateQueries({ queryKey: ["health-info"] }),
+      ]);
+      const okMsg =
         variables.kind === "approve"
           ? "Partenaire approuvé."
           : variables.kind === "reject"
             ? "Partenaire rejeté."
-            : "Demande de complément envoyée."
-      );
-      if (variables.kind !== "complement") {
+            : "Demande de complément envoyée.";
+      pushToast(okMsg, "success");
+      setMessage(okMsg);
+      if (variables.kind === "complement") return;
+      if (body.nextPendingId) {
+        navigate(`/partners/${body.nextPendingId}`);
+      } else {
         navigate("/partners?status=PENDING");
       }
     },
@@ -115,18 +138,30 @@ export function PartnerDetailPage() {
             <Badge tone={statusTone(data.reviewStatus)}>
               {statusLabel(data.reviewStatus)}
             </Badge>
-            <span className="text-sm text-slate-500">{data.type}</span>
+            <span className="text-sm text-[var(--text-muted)]">{data.type}</span>
           </div>
         </div>
         {data.reviewStatus === "PENDING" ? (
           <div className="flex flex-wrap gap-2">
-            <Button variant="success" onClick={() => setDialog("approve")}>
+            <Button
+              variant="success"
+              disabled={mutation.isPending}
+              onClick={() => setDialog("approve")}
+            >
               Approuver
             </Button>
-            <Button variant="danger" onClick={() => setDialog("reject")}>
+            <Button
+              variant="danger"
+              disabled={mutation.isPending}
+              onClick={() => setDialog("reject")}
+            >
               Rejeter
             </Button>
-            <Button variant="outline" onClick={() => setDialog("complement")}>
+            <Button
+              variant="outline"
+              disabled={mutation.isPending}
+              onClick={() => setDialog("complement")}
+            >
               Demander un complément
             </Button>
           </div>
@@ -145,34 +180,37 @@ export function PartnerDetailPage() {
           </CardHeader>
           <CardContent className="space-y-2 text-sm">
             <p>
-              <span className="text-slate-500">Compte :</span> {data.user.fullName} (
-              {data.user.email})
+              <span className="text-[var(--text-muted)]">Compte :</span> {data.user.fullName}
             </p>
             <p>
-              <span className="text-slate-500">Téléphone :</span>{" "}
+              <span className="text-[var(--text-muted)]">Téléphone :</span>{" "}
               {data.phone ?? data.user.phone ?? "—"}
             </p>
             <p>
-              <span className="text-slate-500">WhatsApp :</span>{" "}
+              <span className="text-[var(--text-muted)]">E-mail :</span>{" "}
+              {data.user.email ?? "—"}
+            </p>
+            <p>
+              <span className="text-[var(--text-muted)]">WhatsApp :</span>{" "}
               {data.whatsapp ?? data.user.whatsapp ?? "—"}
             </p>
             <p>
-              <span className="text-slate-500">E-mail pro :</span>{" "}
+              <span className="text-[var(--text-muted)]">E-mail pro :</span>{" "}
               {data.contactEmail ?? "—"}
             </p>
             <p>
-              <span className="text-slate-500">Site :</span> {data.website ?? "—"}
+              <span className="text-[var(--text-muted)]">Site :</span> {data.website ?? "—"}
             </p>
             <p>
-              <span className="text-slate-500">Adresse :</span> {data.address ?? "—"}
+              <span className="text-[var(--text-muted)]">Adresse :</span> {data.address ?? "—"}
             </p>
             <p>
-              <span className="text-slate-500">Expérience :</span>{" "}
+              <span className="text-[var(--text-muted)]">Expérience :</span>{" "}
               {data.yearsOfExperience != null
                 ? `${data.yearsOfExperience} an(s)`
                 : "—"}
             </p>
-            {data.bio ? <p className="pt-2 text-slate-700">{data.bio}</p> : null}
+            {data.bio ? <p className="pt-2 text-[var(--text-primary)]">{data.bio}</p> : null}
             {data.rejectionReason ? (
               <Alert tone="error">Motif de rejet : {data.rejectionReason}</Alert>
             ) : null}
@@ -185,7 +223,7 @@ export function PartnerDetailPage() {
           </CardHeader>
           <CardContent className="space-y-2">
             {data.documents.length === 0 ? (
-              <p className="text-sm text-slate-500">Aucun document.</p>
+              <p className="text-sm text-[var(--text-muted)]">Aucun document.</p>
             ) : (
               data.documents.map((doc) => {
                 const href = resolveMediaUrl(doc.fileUrl);
@@ -198,7 +236,7 @@ export function PartnerDetailPage() {
                       <p className="font-medium">
                         {docTypeLabel[doc.docType] ?? doc.docType}
                       </p>
-                      <p className="text-xs text-slate-500">
+                      <p className="text-xs text-[var(--text-muted)]">
                         {statusLabel(doc.reviewStatus)}
                       </p>
                     </div>
@@ -227,7 +265,7 @@ export function PartnerDetailPage() {
           </CardHeader>
           <CardContent className="space-y-2 text-sm">
             {data.properties.length === 0 ? (
-              <p className="text-slate-500">Aucune.</p>
+              <p className="text-[var(--text-muted)]">Aucune.</p>
             ) : (
               data.properties.map((p) => (
                 <Link
@@ -247,7 +285,7 @@ export function PartnerDetailPage() {
           </CardHeader>
           <CardContent className="space-y-2 text-sm">
             {data.services.length === 0 ? (
-              <p className="text-slate-500">Aucun.</p>
+              <p className="text-[var(--text-muted)]">Aucun.</p>
             ) : (
               data.services.map((s) => (
                 <Link
@@ -263,21 +301,50 @@ export function PartnerDetailPage() {
         </Card>
       </div>
 
+      {data.reviewNote ? (
+        <Alert tone="info">
+          Complément demandé : {data.reviewNote}
+        </Alert>
+      ) : null}
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Chronologie du dossier</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-2 text-sm">
+          {(data.timeline ?? []).length === 0 ? (
+            <p className="text-[var(--text-muted)]">Aucun événement.</p>
+          ) : (
+            (data.timeline ?? []).map((e) => (
+              <div key={e.id} className="rounded-md border border-ireduc-border px-3 py-2">
+                <p className="font-medium">{e.type}</p>
+                <p className="text-xs text-[var(--text-muted)]">
+                  {formatDate(e.createdAt)}
+                </p>
+                {e.message ? (
+                  <p className="mt-1 text-[var(--text-primary)]">{e.message}</p>
+                ) : null}
+              </div>
+            ))
+          )}
+        </CardContent>
+      </Card>
+
       <Card>
         <CardHeader>
           <CardTitle>Historique de modération</CardTitle>
         </CardHeader>
         <CardContent className="space-y-2 text-sm">
           {data.history.length === 0 ? (
-            <p className="text-slate-500">Aucune action enregistrée.</p>
+            <p className="text-[var(--text-muted)]">Aucune action enregistrée.</p>
           ) : (
             data.history.map((h) => (
               <div key={h.id} className="rounded-md border border-ireduc-border px-3 py-2">
                 <p className="font-medium">
                   {h.action} — {h.admin.fullName}
                 </p>
-                <p className="text-xs text-slate-500">{formatDate(h.createdAt)}</p>
-                {h.reason ? <p className="mt-1 text-slate-700">{h.reason}</p> : null}
+                <p className="text-xs text-[var(--text-muted)]">{formatDate(h.createdAt)}</p>
+                {h.reason ? <p className="mt-1 text-[var(--text-primary)]">{h.reason}</p> : null}
               </div>
             ))
           )}
@@ -316,7 +383,7 @@ export function PartnerDetailPage() {
       <DecisionDialog
         open={dialog === "complement"}
         title="Demander un complément"
-        description="Le partenaire recevra une notification."
+        description="Le message est obligatoire. Le dossier reste en attente et le partenaire est notifié."
         requireReason
         confirmLabel="Envoyer"
         onClose={() => setDialog(null)}

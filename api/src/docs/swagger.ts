@@ -29,18 +29,31 @@ export const swaggerSpec = swaggerJsdoc({
         },
         RegisterRequest: {
           type: "object",
-          required: ["fullName", "email", "password"],
+          required: ["fullName", "phone", "password"],
           properties: {
             fullName: { type: "string", example: "Jean Mukendi" },
-            email: { type: "string", format: "email" },
+            phone: {
+              type: "string",
+              example: "+243812345678",
+              description: "Numéro E.164 (formats locaux CD acceptés)",
+            },
             password: { type: "string", minLength: 8, example: "Password123!" },
+            email: {
+              type: "string",
+              format: "email",
+              description: "Facultatif",
+            },
           },
         },
         LoginRequest: {
           type: "object",
-          required: ["email", "password"],
+          required: ["identifier", "password"],
           properties: {
-            email: { type: "string", format: "email", example: "admin@ireduc.cd" },
+            identifier: {
+              type: "string",
+              example: "+243810000002",
+              description: "Numéro de téléphone ou e-mail",
+            },
             password: { type: "string", example: "Admin123!" },
           },
         },
@@ -68,15 +81,15 @@ export const swaggerSpec = swaggerJsdoc({
             },
           },
           responses: {
-            "201": { description: "Compte créé" },
-            "409": { description: "E-mail déjà utilisé" },
+            "201": { description: "Compte créé et connecté (jetons renvoyés)" },
+            "409": { description: "Numéro ou e-mail déjà utilisé" },
           },
         },
       },
       "/api/v1/auth/verify-email": {
         post: {
           tags: ["Auth"],
-          summary: "Vérifier l'e-mail",
+          summary: "Vérifier l'e-mail (optionnel, si activé plus tard)",
           requestBody: {
             required: true,
             content: {
@@ -216,6 +229,122 @@ export const swaggerSpec = swaggerJsdoc({
           responses: { "200": { description: "Mot de passe mis à jour" } },
         },
       },
+      "/api/v1/config": {
+        get: {
+          tags: ["Config"],
+          summary:
+            "Configuration publique (alimentée par les paramètres Setting, fallback env)",
+          responses: {
+            "200": {
+              description: "Configuration",
+              content: {
+                "application/json": {
+                  schema: {
+                    type: "object",
+                    properties: {
+                      platformName: { type: "string" },
+                      slogan: { type: "string" },
+                      defaultCurrency: { type: "string", example: "USD" },
+                      launchCity: { type: "string" },
+                      contactEmail: { type: "string" },
+                      supportWhatsapp: { type: "string", example: "+243810000000" },
+                      minAppVersion: { type: "string", example: "1.0.0" },
+                      maintenanceMode: { type: "boolean" },
+                      maintenanceMessage: { type: "string" },
+                      partnerReviewSlaHours: {
+                        type: "integer",
+                        example: 48,
+                        description: "Délai indicatif de traitement des dossiers",
+                      },
+                      legal: {
+                        type: "object",
+                        properties: {
+                          termsUrl: { type: "string" },
+                          privacyUrl: { type: "string" },
+                        },
+                      },
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+      "/api/v1/admin/settings": {
+        get: {
+          tags: ["Admin"],
+          summary: "Lister tous les paramètres (ADMIN+)",
+          security: [{ bearerAuth: [] }],
+          responses: { "200": { description: "Liste clé/valeur" } },
+        },
+      },
+      "/api/v1/admin/settings/{key}": {
+        get: {
+          tags: ["Admin"],
+          summary: "Lire un paramètre",
+          security: [{ bearerAuth: [] }],
+          parameters: [
+            {
+              name: "key",
+              in: "path",
+              required: true,
+              schema: {
+                type: "string",
+                enum: [
+                  "general",
+                  "mobile",
+                  "validation",
+                  "security",
+                  "home",
+                  "notifications",
+                ],
+              },
+            },
+          ],
+          responses: { "200": { description: "Paramètre" } },
+        },
+        patch: {
+          tags: ["Admin"],
+          summary: "Modifier un paramètre (SUPER_ADMIN, journalisé)",
+          security: [{ bearerAuth: [] }],
+          parameters: [
+            {
+              name: "key",
+              in: "path",
+              required: true,
+              schema: { type: "string" },
+            },
+          ],
+          requestBody: {
+            required: true,
+            content: {
+              "application/json": {
+                schema: {
+                  type: "object",
+                  required: ["value"],
+                  properties: {
+                    value: { type: "object" },
+                    reason: { type: "string" },
+                  },
+                },
+              },
+            },
+          },
+          responses: {
+            "200": { description: "Mis à jour" },
+            "403": { description: "Réservé SUPER_ADMIN" },
+          },
+        },
+      },
+      "/api/v1/admin/settings/{key}/history": {
+        get: {
+          tags: ["Admin"],
+          summary: "Historique des modifications d'un paramètre (SUPER_ADMIN)",
+          security: [{ bearerAuth: [] }],
+          responses: { "200": { description: "Journal AdminAction" } },
+        },
+      },
       "/api/v1/users/me": {
         get: {
           tags: ["Users"],
@@ -229,6 +358,83 @@ export const swaggerSpec = swaggerJsdoc({
           security: [{ bearerAuth: [] }],
           responses: { "200": { description: "Profil mis à jour" } },
         },
+        delete: {
+          tags: ["Users"],
+          summary: "Supprimer / anonymiser mon compte (mot de passe requis)",
+          security: [{ bearerAuth: [] }],
+          requestBody: {
+            required: true,
+            content: {
+              "application/json": {
+                schema: {
+                  type: "object",
+                  required: ["password"],
+                  properties: { password: { type: "string" } },
+                },
+              },
+            },
+          },
+          responses: {
+            "200": { description: "Compte anonymisé" },
+            "403": { description: "SUPER_ADMIN non supprimable" },
+          },
+        },
+      },
+      "/api/v1/users/me/summary": {
+        get: {
+          tags: ["Users"],
+          summary: "Résumé profil (compteurs demandes, favoris, messages, partenaire)",
+          security: [{ bearerAuth: [] }],
+          responses: { "200": { description: "Résumé" } },
+        },
+      },
+      "/api/v1/users/me/sessions": {
+        get: {
+          tags: ["Users"],
+          summary: "Liste des sessions actives (header X-Refresh-Token pour marquer la courante)",
+          security: [{ bearerAuth: [] }],
+          parameters: [
+            {
+              name: "X-Refresh-Token",
+              in: "header",
+              schema: { type: "string" },
+              description: "Refresh token de la session courante",
+            },
+          ],
+          responses: { "200": { description: "Sessions" } },
+        },
+      },
+      "/api/v1/users/me/sessions/others": {
+        delete: {
+          tags: ["Users"],
+          summary: "Déconnecter tous les autres appareils",
+          security: [{ bearerAuth: [] }],
+          parameters: [
+            {
+              name: "X-Refresh-Token",
+              in: "header",
+              required: true,
+              schema: { type: "string" },
+            },
+          ],
+          responses: { "200": { description: "Autres sessions révoquées" } },
+        },
+      },
+      "/api/v1/users/me/sessions/{id}": {
+        delete: {
+          tags: ["Users"],
+          summary: "Déconnecter un appareil",
+          security: [{ bearerAuth: [] }],
+          parameters: [
+            { name: "id", in: "path", required: true, schema: { type: "string", format: "uuid" } },
+            {
+              name: "X-Refresh-Token",
+              in: "header",
+              schema: { type: "string" },
+            },
+          ],
+          responses: { "200": { description: "Session révoquée" } },
+        },
       },
       "/api/v1/users/me/password": {
         patch: {
@@ -238,26 +444,54 @@ export const swaggerSpec = swaggerJsdoc({
           responses: { "200": { description: "Mot de passe modifié" } },
         },
       },
+      "/api/v1/users/me/avatar": {
+        post: {
+          tags: ["Users"],
+          summary: "Uploader un avatar (multipart)",
+          security: [{ bearerAuth: [] }],
+          responses: { "200": { description: "Profil mis à jour" } },
+        },
+      },
       "/api/v1/providers": {
         post: {
           tags: ["Providers"],
-          summary: "Devenir partenaire (profil PENDING)",
+          summary: "Créer un dossier partenaire (brouillon DRAFT)",
           security: [{ bearerAuth: [] }],
-          responses: { "201": { description: "Profil créé" } },
+          responses: { "201": { description: "Brouillon créé" } },
         },
       },
       "/api/v1/providers/me": {
         get: {
           tags: ["Providers"],
-          summary: "Mon profil partenaire",
+          summary:
+            "Dossier partenaire complet (statut, reviewNote, documents, historique)",
           security: [{ bearerAuth: [] }],
           responses: { "200": { description: "Profil partenaire" } },
         },
         patch: {
           tags: ["Providers"],
-          summary: "Mettre à jour mon profil partenaire",
+          summary: "Mettre à jour le brouillon / dossier corrigible",
           security: [{ bearerAuth: [] }],
           responses: { "200": { description: "Profil mis à jour" } },
+        },
+      },
+      "/api/v1/providers/me/submit": {
+        post: {
+          tags: ["Providers"],
+          summary: "Soumettre le dossier (DRAFT → PENDING)",
+          security: [{ bearerAuth: [] }],
+          responses: {
+            "200": { description: "Dossier soumis" },
+            "400": { description: "Pièces manquantes" },
+          },
+        },
+      },
+      "/api/v1/providers/me/withdraw": {
+        post: {
+          tags: ["Providers"],
+          summary: "Retirer une demande en attente (PENDING → DRAFT)",
+          security: [{ bearerAuth: [] }],
+          responses: { "200": { description: "Demande retirée" } },
         },
       },
       "/api/v1/providers/me/documents": {
@@ -560,6 +794,30 @@ export const swaggerSpec = swaggerJsdoc({
           responses: { "200": { description: "Statut mis à jour" } },
         },
       },
+      "/api/v1/admin/users/export.csv": {
+        get: {
+          tags: ["Admin"],
+          summary: "Export CSV des utilisateurs (filtres courants)",
+          security: [{ bearerAuth: [] }],
+          responses: { "200": { description: "Fichier CSV" } },
+        },
+      },
+      "/api/v1/admin/users/{id}/force-logout": {
+        post: {
+          tags: ["Admin"],
+          summary: "Révoquer toutes les sessions",
+          security: [{ bearerAuth: [] }],
+          responses: { "200": { description: "Sessions révoquées" } },
+        },
+      },
+      "/api/v1/admin/users/{id}/reset-password": {
+        post: {
+          tags: ["Admin"],
+          summary: "Mot de passe temporaire (SUPER_ADMIN)",
+          security: [{ bearerAuth: [] }],
+          responses: { "200": { description: "Mot de passe généré" } },
+        },
+      },
       "/api/v1/admin/admins": {
         get: {
           tags: ["Admin"],
@@ -590,10 +848,122 @@ export const swaggerSpec = swaggerJsdoc({
           responses: { "200": { description: "Liste paginée" } },
         },
       },
+      "/api/v1/reports": {
+        post: {
+          tags: ["Reports"],
+          summary: "Signaler un contenu (authentifié)",
+          security: [{ bearerAuth: [] }],
+          responses: { "201": { description: "Signalement créé" } },
+        },
+      },
+      "/api/v1/admin/reports": {
+        get: {
+          tags: ["Admin"],
+          summary: "Liste des signalements",
+          security: [{ bearerAuth: [] }],
+          responses: { "200": { description: "Liste paginée" } },
+        },
+      },
+      "/api/v1/admin/reports/open-count": {
+        get: {
+          tags: ["Admin"],
+          summary: "Nombre de signalements ouverts",
+          security: [{ bearerAuth: [] }],
+          responses: { "200": { description: "Compteur" } },
+        },
+      },
+      "/api/v1/admin/reports/{id}": {
+        get: {
+          tags: ["Admin"],
+          summary: "Détail d'un signalement",
+          security: [{ bearerAuth: [] }],
+          responses: { "200": { description: "Détail" } },
+        },
+        patch: {
+          tags: ["Admin"],
+          summary: "Modérer un signalement",
+          security: [{ bearerAuth: [] }],
+          responses: { "200": { description: "Mis à jour" } },
+        },
+      },
+      "/api/v1/admin/reviews/{id}/visibility": {
+        patch: {
+          tags: ["Admin"],
+          summary: "Masquer ou afficher un avis",
+          security: [{ bearerAuth: [] }],
+          responses: { "200": { description: "Visibilité mise à jour" } },
+        },
+      },
+      "/api/v1/admin/communes": {
+        get: {
+          tags: ["Admin"],
+          summary: "Liste des communes (admin)",
+          security: [{ bearerAuth: [] }],
+          responses: { "200": { description: "Liste" } },
+        },
+        post: {
+          tags: ["Admin"],
+          summary: "Créer une commune",
+          security: [{ bearerAuth: [] }],
+          responses: { "201": { description: "Créée" } },
+        },
+      },
+      "/api/v1/admin/communes/{id}": {
+        patch: {
+          tags: ["Admin"],
+          summary: "Modifier une commune",
+          security: [{ bearerAuth: [] }],
+          responses: { "200": { description: "Mise à jour" } },
+        },
+      },
+      "/api/v1/admin/communes/{id}/neighborhoods": {
+        get: {
+          tags: ["Admin"],
+          summary: "Quartiers d'une commune",
+          security: [{ bearerAuth: [] }],
+          responses: { "200": { description: "Liste" } },
+        },
+        post: {
+          tags: ["Admin"],
+          summary: "Créer un quartier",
+          security: [{ bearerAuth: [] }],
+          responses: { "201": { description: "Créé" } },
+        },
+      },
+      "/api/v1/admin/neighborhoods/{id}": {
+        patch: {
+          tags: ["Admin"],
+          summary: "Modifier un quartier",
+          security: [{ bearerAuth: [] }],
+          responses: { "200": { description: "Mise à jour" } },
+        },
+      },
+      "/api/v1/admin/rejection-reasons": {
+        get: {
+          tags: ["Admin"],
+          summary: "Motifs de rejet",
+          security: [{ bearerAuth: [] }],
+          responses: { "200": { description: "Liste" } },
+        },
+        post: {
+          tags: ["Admin"],
+          summary: "Créer un motif de rejet",
+          security: [{ bearerAuth: [] }],
+          responses: { "201": { description: "Créé" } },
+        },
+      },
+      "/api/v1/admin/rejection-reasons/{id}": {
+        patch: {
+          tags: ["Admin"],
+          summary: "Modifier un motif de rejet",
+          security: [{ bearerAuth: [] }],
+          responses: { "200": { description: "Mise à jour" } },
+        },
+      },
       "/api/v1/admin/categories": {
         get: {
           tags: ["Admin"],
-          summary: "Liste des catégories (SUPER_ADMIN)",
+          summary: "Liste des catégories (SUPER_ADMIN, parentId, sous-catégories)",
           security: [{ bearerAuth: [] }],
           responses: { "200": { description: "Liste" } },
         },

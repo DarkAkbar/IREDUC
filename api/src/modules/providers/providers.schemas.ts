@@ -7,15 +7,16 @@ export const createProviderSchema = z.object({
   description: z.string().max(2000).optional(),
   contactEmail: z.string().email("E-mail de contact invalide").optional(),
   phone: z.string().min(6).optional(),
-  whatsapp: z.string().min(6, "Le numéro WhatsApp est requis"),
+  whatsapp: z.string().min(6).optional(),
   website: z.string().url("URL invalide").optional(),
   address: z.string().optional(),
-  isRegistered: z.boolean(),
+  isRegistered: z.boolean().optional().default(false),
   yearsOfExperience: z.number().int().min(0).max(80).optional(),
 });
 
 export const updateProviderSchema = z
   .object({
+    type: z.nativeEnum(ProviderType).optional(),
     displayName: z.string().min(2).optional(),
     description: z.string().max(2000).nullable().optional(),
     contactEmail: z.string().email().nullable().optional(),

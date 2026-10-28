@@ -57,6 +57,7 @@ export function MediaCarousel({ photos, height = 200, onPress, topRight }: Props
         ref={ref}
         horizontal
         pagingEnabled
+        style={{ flexGrow: 0 }}
         showsHorizontalScrollIndicator={false}
         onScroll={onScroll}
         scrollEventThrottle={16}

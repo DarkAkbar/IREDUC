@@ -5,9 +5,9 @@ import { prisma } from "../src/config/prisma";
 
 const app = createApp();
 
-async function login(email: string, password: string) {
+async function login(identifier: string, password: string) {
   const response = await request(app).post("/api/v1/auth/login").send({
-    email,
+    identifier,
     password,
   });
   expect(response.status).toBe(200);

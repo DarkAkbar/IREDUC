@@ -13,8 +13,13 @@ type AuthState = {
   isAuthenticated: boolean;
   isHydrated: boolean;
   hydrate: () => Promise<void>;
-  login: (email: string, password: string) => Promise<void>;
-  register: (fullName: string, email: string, password: string) => Promise<string>;
+  login: (identifier: string, password: string) => Promise<void>;
+  register: (input: {
+    fullName: string;
+    phone: string;
+    password: string;
+    email?: string;
+  }) => Promise<void>;
   logout: () => Promise<void>;
   setUser: (user: AuthUser | null) => void;
 };
@@ -44,19 +49,21 @@ export const useAuthStore = create<AuthState>((set) => {
       }
     },
 
-    login: async (email, password) => {
-      const data = await authApi.login(email.trim().toLowerCase(), password);
+    login: async (identifier, password) => {
+      const data = await authApi.login(identifier.trim(), password);
       await setStoredTokens(data.accessToken, data.refreshToken);
       set({ user: data.user, isAuthenticated: true });
     },
 
-    register: async (fullName, email, password) => {
-      const data = await authApi.register(
-        fullName.trim(),
-        email.trim().toLowerCase(),
-        password
-      );
-      return data.message;
+    register: async (input) => {
+      const data = await authApi.register({
+        fullName: input.fullName.trim(),
+        phone: input.phone,
+        password: input.password,
+        email: input.email?.trim() || undefined,
+      });
+      await setStoredTokens(data.accessToken, data.refreshToken);
+      set({ user: data.user, isAuthenticated: true });
     },
 
     logout: async () => {

@@ -14,6 +14,7 @@ export function authenticate(req: Request, _res: Response, next: NextFunction): 
     const payload = verifyAccessToken(token);
     req.user = {
       id: payload.sub,
+      phone: payload.phone,
       email: payload.email,
       role: payload.role,
     };

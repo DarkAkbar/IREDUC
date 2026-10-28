@@ -82,12 +82,13 @@ function applyProfile(
   }
 ) {
   if (!profile) return draft;
+  const phone = profile.phone ?? draft.phone;
   return {
     ...draft,
     fullName: profile.fullName ?? draft.fullName,
     email: profile.email ?? draft.email,
-    phone: profile.phone ?? draft.phone,
-    whatsapp: profile.whatsapp ?? draft.whatsapp,
+    phone,
+    whatsapp: profile.whatsapp || phone || draft.whatsapp,
   };
 }
 

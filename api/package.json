@@ -10,6 +10,7 @@
     "start": "node dist/server.js",
     "prisma:migrate": "prisma migrate dev",
     "prisma:seed": "prisma db seed",
+    "seed:demo": "ts-node --transpile-only prisma/seed-demo.ts",
     "prisma:studio": "prisma studio",
     "test": "vitest run",
     "test:watch": "vitest"
@@ -29,9 +30,11 @@
     "express-rate-limit": "^8.7.1",
     "helmet": "^8.1.0",
     "jsonwebtoken": "^9.0.2",
+    "libphonenumber-js": "^1.13.15",
     "multer": "^2.0.2",
     "nodemailer": "^10.0.16",
     "prisma": "^6.16.2",
+    "sharp": "^0.35.5",
     "swagger-jsdoc": "^6.3.0",
     "swagger-ui-express": "^5.0.1",
     "zod": "^4.1.8"
@@ -44,6 +47,7 @@
     "@types/multer": "^2.0.0",
     "@types/node": "^24.5.2",
     "@types/nodemailer": "^8.0.2",
+    "@types/sharp": "^0.31.1",
     "@types/supertest": "^7.2.1",
     "@types/swagger-jsdoc": "^6.0.4",
     "@types/swagger-ui-express": "^4.1.8",

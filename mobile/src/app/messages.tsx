@@ -11,15 +11,16 @@ import {
   View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { mediaUrl } from "../../api/client";
-import { fetchConversations } from "../../api/conversations";
-import { ConversationListItem } from "../../api/types";
-import { EmptyState } from "../../components/list/EmptyState";
-import { ErrorState } from "../../components/list/ErrorState";
-import { Button } from "../../components/ui/Button";
-import { ListSkeleton } from "../../components/ui/SkeletonLoader";
-import { useAuthStore } from "../../store/authStore";
-import { colors, radii, spacing, typography } from "../../theme";
+import { mediaUrl } from "../api/client";
+import { fetchConversations } from "../api/conversations";
+import { ConversationListItem } from "../api/types";
+import { GuestPrompt } from "../components/GuestPrompt";
+import { EmptyState } from "../components/list/EmptyState";
+import { ErrorState } from "../components/list/ErrorState";
+import { ListScreenHeader } from "../components/list/ListScreenHeader";
+import { ListSkeleton } from "../components/ui/SkeletonLoader";
+import { useAuthStore } from "../store/authStore";
+import { colors, radii, spacing, typography } from "../theme";
 
 function formatMessageTime(value: string) {
   const date = new Date(value);
@@ -60,31 +61,25 @@ export default function MessagesScreen() {
 
   if (isHydrated && !isAuthenticated) {
     return (
-      <View style={[styles.screen, { paddingTop: insets.top + spacing.xl }]}>
-        <Text style={typography.title}>Messages</Text>
-        <Text style={styles.subtitle}>
-          Connectez-vous pour échanger avec les propriétaires et prestataires.
-        </Text>
-        <Button
-          label="Se connecter"
-          style={{ marginTop: spacing.lg }}
-          onPress={() =>
-            router.push({
-              pathname: "/auth/login",
-              params: { returnTo: "/(tabs)/messages" },
-            } as never)
-          }
-        />
-      </View>
+      <GuestPrompt
+        icon="chatbubble-ellipses-outline"
+        title="Vos conversations"
+        message="Connectez-vous pour échanger avec les propriétaires et prestataires."
+        returnTo="/messages"
+        showBack
+      />
     );
   }
 
   return (
     <View style={[styles.screen, { paddingTop: insets.top }]}>
-      <Text style={[typography.title, styles.title]}>Messages</Text>
-      <Text style={styles.subtitle}>
-        Vos conversations avec les propriétaires et prestataires.
-      </Text>
+      <ListScreenHeader showBack />
+      <View style={styles.padded}>
+        <Text style={[typography.title, styles.title]}>Messages</Text>
+        <Text style={styles.subtitle}>
+          Vos conversations avec les propriétaires et prestataires.
+        </Text>
+      </View>
 
       {query.isLoading ? <ListSkeleton /> : null}
       {query.isError ? <ErrorState onRetry={() => void query.refetch()} /> : null}
@@ -93,7 +88,16 @@ export default function MessagesScreen() {
         <FlatList
           data={query.data ?? []}
           keyExtractor={(item) => item.id}
-          contentContainerStyle={{ paddingBottom: spacing.xxl }}
+          contentContainerStyle={[
+            {
+              paddingBottom: spacing.xxl,
+              paddingHorizontal: spacing.lg,
+            },
+            !(query.data?.length) && { flexGrow: 1 },
+          ]}
+          initialNumToRender={12}
+          windowSize={7}
+          removeClippedSubviews
           refreshControl={
             <RefreshControl
               refreshing={query.isRefetching}
@@ -103,6 +107,7 @@ export default function MessagesScreen() {
           }
           ListEmptyComponent={
             <EmptyState
+              fill
               title="Aucune conversation"
               message="Discutez depuis une fiche bien, un service ou une demande approuvée."
               actionLabel="Découvrir les biens"
@@ -167,10 +172,14 @@ const styles = StyleSheet.create({
   screen: {
     flex: 1,
     backgroundColor: colors.background,
-    paddingHorizontal: spacing.lg,
   },
-  title: { marginTop: spacing.md },
-  subtitle: { ...typography.body, marginTop: spacing.xs, marginBottom: spacing.md },
+  padded: { paddingHorizontal: 20 },
+  title: { marginTop: spacing.sm },
+  subtitle: {
+    ...typography.body,
+    marginTop: spacing.xs,
+    marginBottom: spacing.md,
+  },
   row: {
     flexDirection: "row",
     alignItems: "center",

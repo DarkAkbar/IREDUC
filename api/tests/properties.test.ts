@@ -100,7 +100,7 @@ describe("Biens, accueil et modération", () => {
 
   it("refuse la publication à un utilisateur simple (403)", async () => {
     const login = await request(app).post("/api/v1/auth/login").send({
-      email: "jean.mukendi@example.com",
+      identifier: "jean.mukendi@example.com",
       password: "Password123!",
     });
     expect(login.status).toBe(200);
@@ -131,7 +131,7 @@ describe("Biens, accueil et modération", () => {
     fs.writeFileSync(fixturePath, TINY_PNG);
 
     const providerLogin = await request(app).post("/api/v1/auth/login").send({
-      email: "claire.mbuyi@example.com",
+      identifier: "claire.mbuyi@example.com",
       password: "Provider123!",
     });
     expect(providerLogin.status).toBe(200);
@@ -178,7 +178,7 @@ describe("Biens, accueil et modération", () => {
     expect(submitted.body.status).toBe("PENDING");
 
     const adminLogin = await request(app).post("/api/v1/auth/login").send({
-      email: "admin@ireduc.cd",
+      identifier: "admin@ireduc.cd",
       password: "Admin123!",
     });
     expect(adminLogin.status).toBe(200);

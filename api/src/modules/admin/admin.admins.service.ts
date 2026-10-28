@@ -1,4 +1,4 @@
-import { SystemRole } from "@prisma/client";
+import { AccountStatus, SystemRole } from "@prisma/client";
 import { prisma } from "../../config/prisma";
 import { badRequest, conflict, forbidden, notFound } from "../../utils/errors";
 import {
@@ -6,6 +6,10 @@ import {
   getPagination,
 } from "../../utils/pagination";
 import { hashPassword } from "../../utils/password";
+import {
+  normalizeOptionalEmail,
+  normalizePhone,
+} from "../../utils/phone";
 import { logAdminAction } from "./admin.shared";
 
 export async function listAdmins(query: { page: number; limit: number }) {
@@ -37,25 +41,41 @@ export async function listAdmins(query: { page: number; limit: number }) {
 
 export async function createAdmin(
   actorId: string,
-  input: { fullName: string; email: string; temporaryPassword: string }
+  input: {
+    fullName: string;
+    phone: string;
+    email?: string;
+    temporaryPassword: string;
+  }
 ) {
-  const email = input.email.toLowerCase().trim();
-  const existing = await prisma.user.findUnique({ where: { email } });
-  if (existing) {
-    throw conflict("Un compte existe déjà avec cet e-mail");
+  const phone = normalizePhone(input.phone);
+  const email = normalizeOptionalEmail(input.email ?? null);
+
+  const existingPhone = await prisma.user.findUnique({ where: { phone } });
+  if (existingPhone) {
+    throw conflict("Ce numéro est déjà utilisé", "PHONE_TAKEN");
+  }
+  if (email) {
+    const existingEmail = await prisma.user.findUnique({ where: { email } });
+    if (existingEmail) {
+      throw conflict("Cette adresse e-mail est déjà utilisée", "EMAIL_TAKEN");
+    }
   }
 
   const user = await prisma.user.create({
     data: {
       fullName: input.fullName.trim(),
+      phone,
       email,
       passwordHash: await hashPassword(input.temporaryPassword),
       systemRole: SystemRole.ADMIN,
-      emailVerified: true,
+      emailVerified: Boolean(email),
+      phoneVerified: true,
     },
     select: {
       id: true,
       fullName: true,
+      phone: true,
       email: true,
       systemRole: true,
       accountStatus: true,
@@ -109,6 +129,59 @@ export async function updateAdminRole(
     "USER",
     targetId,
     role === "ADMIN" ? "PROMOTE_ADMIN" : "DEMOTE_ADMIN"
+  );
+
+  return updated;
+}
+
+export async function updateAdminStatus(
+  actor: { id: string; role: SystemRole },
+  targetId: string,
+  status: AccountStatus
+) {
+  if (actor.role !== SystemRole.SUPER_ADMIN) {
+    throw forbidden("Réservé au super administrateur");
+  }
+  if (actor.id === targetId) {
+    throw badRequest("Vous ne pouvez pas modifier votre propre statut");
+  }
+
+  const target = await prisma.user.findUnique({ where: { id: targetId } });
+  if (!target) throw notFound("Administrateur introuvable");
+  if (
+    target.systemRole !== SystemRole.ADMIN &&
+    target.systemRole !== SystemRole.SUPER_ADMIN
+  ) {
+    throw badRequest("La cible n'est pas un administrateur");
+  }
+  if (target.systemRole === SystemRole.SUPER_ADMIN) {
+    throw forbidden("Impossible de suspendre un super administrateur");
+  }
+
+  const updated = await prisma.user.update({
+    where: { id: targetId },
+    data: { accountStatus: status },
+    select: {
+      id: true,
+      fullName: true,
+      email: true,
+      systemRole: true,
+      accountStatus: true,
+    },
+  });
+
+  if (status === AccountStatus.SUSPENDED) {
+    await prisma.refreshToken.updateMany({
+      where: { userId: targetId, revokedAt: null },
+      data: { revokedAt: new Date() },
+    });
+  }
+
+  await logAdminAction(
+    actor.id,
+    "USER",
+    targetId,
+    status === AccountStatus.SUSPENDED ? "SUSPEND_ADMIN" : "REACTIVATE_ADMIN"
   );
 
   return updated;

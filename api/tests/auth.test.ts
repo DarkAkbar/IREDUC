@@ -5,12 +5,13 @@ import { prisma } from "../src/config/prisma";
 
 const app = createApp();
 const suffix = Date.now();
+const testPhone = `+24385${String(suffix).slice(-7)}`;
 const testEmail = `auth.test.${suffix}@example.com`;
 const testPassword = "Password123!";
 
 describe("Authentification IREDUC", () => {
   afterAll(async () => {
-    const user = await prisma.user.findUnique({ where: { email: testEmail } });
+    const user = await prisma.user.findUnique({ where: { phone: testPhone } });
     if (user) {
       await prisma.refreshToken.deleteMany({ where: { userId: user.id } });
       await prisma.userToken.deleteMany({ where: { userId: user.id } });
@@ -22,18 +23,20 @@ describe("Authentification IREDUC", () => {
   it("inscrit un nouvel utilisateur", async () => {
     const response = await request(app).post("/api/v1/auth/register").send({
       fullName: "Test Auth User",
+      phone: testPhone,
       email: testEmail,
       password: testPassword,
     });
 
     expect(response.status).toBe(201);
+    expect(response.body.user.phone).toBe(testPhone);
     expect(response.body.user.email).toBe(testEmail);
-    expect(response.body.user.emailVerified).toBe(false);
+    expect(response.body.accessToken).toBeTruthy();
   });
 
   it("refuse la connexion avec un mauvais mot de passe", async () => {
     const response = await request(app).post("/api/v1/auth/login").send({
-      email: testEmail,
+      identifier: testPhone,
       password: "WrongPass1",
     });
 
@@ -42,25 +45,20 @@ describe("Authentification IREDUC", () => {
   });
 
   it("connecte un utilisateur avec de bons identifiants", async () => {
-    await prisma.user.update({
-      where: { email: testEmail },
-      data: { emailVerified: true },
-    });
-
     const response = await request(app).post("/api/v1/auth/login").send({
-      email: testEmail,
+      identifier: testEmail,
       password: testPassword,
     });
 
     expect(response.status).toBe(200);
     expect(response.body.accessToken).toBeTruthy();
     expect(response.body.refreshToken).toBeTruthy();
-    expect(response.body.user.email).toBe(testEmail);
+    expect(response.body.user.phone).toBe(testPhone);
   });
 
   it("rafraîchit le jeton avec rotation", async () => {
     const login = await request(app).post("/api/v1/auth/login").send({
-      email: testEmail,
+      identifier: testPhone,
       password: testPassword,
     });
 
@@ -88,7 +86,7 @@ describe("Authentification IREDUC", () => {
 
   it("refuse une route admin à un utilisateur simple (403)", async () => {
     const login = await request(app).post("/api/v1/auth/login").send({
-      email: "jean.mukendi@example.com",
+      identifier: "jean.mukendi@example.com",
       password: "Password123!",
     });
 

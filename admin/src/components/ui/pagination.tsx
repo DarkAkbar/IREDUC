@@ -12,7 +12,7 @@ export function Pagination({
   if (totalPages <= 1) return null;
 
   return (
-    <div className="flex items-center justify-between gap-3 pt-4 text-sm text-slate-600">
+    <div className="flex items-center justify-between gap-3 pt-4 text-sm text-[var(--text-muted)]">
       <span>
         Page {page} / {totalPages}
       </span>

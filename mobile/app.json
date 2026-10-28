@@ -7,12 +7,19 @@
     "icon": "./assets/icon.png",
     "scheme": "ireduc",
     "userInterfaceStyle": "light",
+    "splash": {
+      "image": "./assets/splash-icon.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#0B2A8A"
+    },
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "cd.ireduc.app"
     },
     "android": {
+      "package": "cd.ireduc.app",
       "adaptiveIcon": {
-        "backgroundColor": "#F4F7FE",
+        "backgroundColor": "#0B2A8A",
         "foregroundImage": "./assets/android-icon-foreground.png",
         "backgroundImage": "./assets/android-icon-background.png",
         "monochromeImage": "./assets/android-icon-monochrome.png"
@@ -31,6 +38,11 @@
     ],
     "experiments": {
       "typedRoutes": false
+    },
+    "extra": {
+      "eas": {
+        "projectId": "replace-with-eas-project-id"
+      }
     }
   }
 }

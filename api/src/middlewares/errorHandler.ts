@@ -2,6 +2,7 @@ import { NextFunction, Request, Response } from "express";
 import multer from "multer";
 import { ZodError } from "zod";
 import { AppError } from "../utils/errors";
+import { logger } from "../utils/logger";
 
 export function errorHandler(
   err: unknown,
@@ -21,7 +22,7 @@ export function errorHandler(
   if (err instanceof multer.MulterError) {
     const message =
       err.code === "LIMIT_FILE_SIZE"
-        ? "Le fichier dépasse la taille maximale de 5 Mo"
+        ? "Le fichier dépasse la taille maximale autorisée"
         : "Erreur lors du téléversement du fichier";
     res.status(400).json({
       message,
@@ -42,7 +43,15 @@ export function errorHandler(
     return;
   }
 
-  console.error(err);
+  if (err instanceof SyntaxError) {
+    res.status(400).json({
+      message: "Corps JSON invalide",
+      code: "INVALID_JSON",
+    });
+    return;
+  }
+
+  logger.error("Erreur non gérée", err);
   res.status(500).json({
     message: "Erreur interne du serveur",
     code: "INTERNAL_ERROR",

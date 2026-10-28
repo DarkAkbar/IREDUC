@@ -26,7 +26,18 @@ import { colors, radii, spacing, typography } from "../theme";
 import { formatRequestDate } from "../utils/dates";
 
 function openNotification(item: NotificationItem, router: ReturnType<typeof useRouter>) {
-  const data = item.data;
+  const data = item.data as
+    | {
+        conversationId?: string;
+        requestId?: string;
+        screen?: string;
+      }
+    | null
+    | undefined;
+  if (data?.screen === "partner-status") {
+    router.push("/partner/status" as never);
+    return;
+  }
   if (data?.conversationId) {
     router.push({
       pathname: "/conversation/[id]",

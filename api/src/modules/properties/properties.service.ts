@@ -327,6 +327,14 @@ export async function submitProperty(ownerId: string, propertyId: string) {
     include: propertyDetailInclude,
   });
 
+  const { enqueueAdminInbox } = await import("../admin/admin.inbox.service");
+  await enqueueAdminInbox({
+    type: "PROPERTY_PENDING",
+    title: "Annonce en attente",
+    body: property.title,
+    data: { propertyId: property.id },
+  });
+
   return mapPropertyDetail(property);
 }
 
@@ -388,10 +396,17 @@ export async function addMedia(
     throw badRequest("Une seule vidéo est autorisée par bien");
   }
 
+  let filename = file.filename;
+  if (isPhoto) {
+    const { optimizeUploadedImage } = await import("../../utils/imageProcessing");
+    const optimizedPath = await optimizeUploadedImage(file.path);
+    filename = path.basename(optimizedPath);
+  }
+
   const media = await prisma.propertyMedia.create({
     data: {
       propertyId,
-      url: `/uploads/${file.filename}`,
+      url: `/uploads/${filename}`,
       type: isVideo ? MediaType.VIDEO : MediaType.PHOTO,
       caption: caption?.trim() || null,
       sortOrder: (lastMedia?.sortOrder ?? -1) + 1,

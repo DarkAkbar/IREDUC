@@ -23,6 +23,7 @@ import { InfoBanner } from "../../components/list/InfoBanner";
 import { ListScreenHeader } from "../../components/list/ListScreenHeader";
 import { RemovableChip } from "../../components/list/RemovableChip";
 import { PropertyListCard } from "../../components/PropertyListCard";
+import { HorizontalChipScroll } from "../../components/ui/HorizontalChipScroll";
 import { ListSkeleton } from "../../components/ui/SkeletonLoader";
 import { SearchInput } from "../../components/ui/SearchInput";
 import { useDebouncedValue } from "../../hooks/useDebouncedValue";
@@ -128,23 +129,31 @@ export default function PropertiesListScreen() {
     setSort(SORT_OPTIONS[(idx + 1) % SORT_OPTIONS.length].key);
   }
 
-  const titleKind = kind === "ALL" ? "Biens" : `${kindLabel(kind)}s`;
+  const kindPlural =
+    kind === "ALL" ? "Biens" : `${kindLabel(kind as PropertyKind)}s`;
+  const listTitle =
+    offerType === "RENT"
+      ? `${kindPlural} à louer`
+      : offerType === "SALE"
+        ? `${kindPlural} à vendre`
+        : `${kindPlural} à louer et à vendre`;
 
   return (
     <View style={[styles.screen, { paddingTop: insets.top }]}>
-      <ListScreenHeader onFilterPress={() => router.push("/filters")} />
+      <ListScreenHeader title="Biens" />
       <SearchInput
         value={q}
         onChangeText={setQ}
         placeholder="Rechercher par ville, quartier, type de bien..."
         onFilterPress={() => router.push("/filters")}
+        activeFilterCount={activeChips.length}
       />
-      <View style={{ marginTop: spacing.md }}>
+      <View style={styles.kindTabs}>
         <CategoryTabs tabs={KIND_TABS} activeKey={kind} onChange={setKind} />
       </View>
 
       {activeChips.length > 0 ? (
-        <View style={styles.chips}>
+        <HorizontalChipScroll contentContainerStyle={styles.chips}>
           {activeChips.map((chip) => (
             <RemovableChip
               key={chip.key}
@@ -163,14 +172,14 @@ export default function PropertiesListScreen() {
               }}
             />
           ))}
-          <Pressable onPress={resetFilters}>
+          <Pressable onPress={resetFilters} style={styles.resetBtn}>
             <Text style={styles.reset}>Réinitialiser</Text>
           </Pressable>
-        </View>
+        </HorizontalChipScroll>
       ) : null}
 
       <View style={styles.heading}>
-        <Text style={typography.title}>{titleKind} à louer et à vendre</Text>
+        <Text style={typography.title}>{listTitle}</Text>
         <Text style={styles.subtitle}>
           Des biens vérifiés pour un cadre de vie meilleur.
         </Text>
@@ -196,6 +205,10 @@ export default function PropertiesListScreen() {
           keyExtractor={(item) => item.id}
           renderItem={({ item }) => <PropertyListCard item={item} />}
           contentContainerStyle={{ paddingBottom: spacing.xxl }}
+          initialNumToRender={8}
+          maxToRenderPerBatch={8}
+          windowSize={7}
+          removeClippedSubviews
           onEndReached={() => {
             if (query.hasNextPage && !query.isFetchingNextPage) {
               void query.fetchNextPage();
@@ -220,7 +233,7 @@ export default function PropertiesListScreen() {
               {query.isFetchingNextPage ? (
                 <Text style={styles.loadingMore}>Chargement...</Text>
               ) : null}
-              <InfoBanner text="Cliquez sur une image ou sur le bouton « Réservez » pour voir tous les détails de l'offre et effectuer votre réservation." />
+              <InfoBanner text="Cliquez sur une image ou sur le bouton « Réserver » pour voir tous les détails de l'offre et effectuer votre réservation." />
             </>
           }
         />
@@ -231,7 +244,11 @@ export default function PropertiesListScreen() {
 
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.background },
-  heading: { paddingHorizontal: spacing.lg, marginBottom: spacing.md, marginTop: spacing.sm },
+  heading: {
+    paddingHorizontal: spacing.lg,
+    marginBottom: spacing.md,
+    marginTop: spacing.md,
+  },
   subtitle: { color: colors.textMuted, marginTop: 4 },
   metaRow: {
     flexDirection: "row",
@@ -242,14 +259,15 @@ const styles = StyleSheet.create({
   count: { color: colors.textMuted, fontWeight: "600" },
   sortBtn: { flexDirection: "row", alignItems: "center", gap: 4 },
   sortText: { color: colors.navy, fontWeight: "700", fontSize: 13 },
-  chips: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: spacing.sm,
-    paddingHorizontal: spacing.lg,
-    marginTop: spacing.sm,
-    alignItems: "center",
+  kindTabs: {
+    marginTop: spacing.md,
+    flexGrow: 0,
+    flexShrink: 0,
   },
+  chips: {
+    marginTop: spacing.sm,
+  },
+  resetBtn: { justifyContent: "center", paddingVertical: spacing.sm },
   reset: { color: colors.primary, fontWeight: "700", fontSize: 12 },
   loadingMore: {
     textAlign: "center",
