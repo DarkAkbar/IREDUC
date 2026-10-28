@@ -339,7 +339,11 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.lg,
     paddingVertical: spacing.md,
   },
-  headerRight: { flexDirection: "row", alignItems: "center", gap: spacing.sm },
+  headerRight: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+  },
   bell: {
     minWidth: 48,
     minHeight: 48,
