@@ -2,13 +2,16 @@ import { Ionicons } from "@expo/vector-icons";
 import { useQuery } from "@tanstack/react-query";
 import { Image } from "expo-image";
 import { useRouter } from "expo-router";
+import { useRef } from "react";
 import {
+  Animated,
   Pressable,
   RefreshControl,
   ScrollView,
   StyleSheet,
   Text,
   View,
+  useWindowDimensions,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { mediaUrl } from "../../api/client";
@@ -36,11 +39,19 @@ import { colors, radii, spacing, typography } from "../../theme";
 /** Logo local de secours si aucune photo de bien n'est disponible. */
 const HERO_FALLBACK = require("../../../assets/icon.png");
 
+const CARD_GAP = spacing.md;
+
 export default function HomeScreen() {
   const insets = useSafeAreaInsets();
+  const { width: screenWidth } = useWindowDimensions();
   const router = useRouter();
   const { requireAuth, isAuthenticated } = useRequireAuth();
   const { onScroll: onFabScroll } = usePublishFabScroll();
+  /** Largeur carte centrale ≈ 60 % de l'écran. */
+  const cardWidth = Math.round(screenWidth * 0.6);
+  const itemSize = cardWidth + CARD_GAP;
+  /** Démarre sur la 2e carte : scrollX initial = ITEM_SIZE. */
+  const scrollX = useRef(new Animated.Value(itemSize)).current;
   const user = useAuthStore((s) => s.user);
   const avatarUri = mediaUrl(user?.avatarUrl);
   const initials = (user?.fullName ?? "?")
@@ -235,26 +246,74 @@ export default function HomeScreen() {
               {properties.length === 0 ? (
                 <Text style={styles.empty}>Aucun bien à afficher pour le moment.</Text>
               ) : (
-                <ScrollView
+                <Animated.FlatList
+                  data={properties}
+                  keyExtractor={(item) => item.id}
                   horizontal
                   style={styles.carouselScroll}
                   showsHorizontalScrollIndicator={false}
-                  contentContainerStyle={styles.carousel}
-                >
-                  {properties.map((item, index) => (
-                    <PropertyCard
-                      key={item.id}
-                      item={item}
-                      featured={item.isFeatured || index === 0}
-                      onPress={() =>
-                        router.push({
-                          pathname: "/property/[id]",
-                          params: { id: item.id },
-                        })
-                      }
-                    />
-                  ))}
-                </ScrollView>
+                  snapToInterval={itemSize}
+                  decelerationRate="fast"
+                  bounces={false}
+                  initialScrollIndex={Math.min(1, properties.length - 1)}
+                  getItemLayout={(_, index) => ({
+                    length: itemSize,
+                    offset: itemSize * index,
+                    index,
+                  })}
+                  contentContainerStyle={{
+                    paddingHorizontal: (screenWidth - cardWidth) / 2,
+                    paddingBottom: spacing.sm,
+                  }}
+                  onScroll={Animated.event(
+                    [{ nativeEvent: { contentOffset: { x: scrollX } } }],
+                    { useNativeDriver: true }
+                  )}
+                  scrollEventThrottle={16}
+                  renderItem={({ item, index }) => {
+                    const inputRange = [
+                      (index - 1) * itemSize,
+                      index * itemSize,
+                      (index + 1) * itemSize,
+                    ];
+                    const scale = scrollX.interpolate({
+                      inputRange,
+                      outputRange: [0.85, 1, 0.85],
+                      extrapolate: "clamp",
+                    });
+                    const opacity = scrollX.interpolate({
+                      inputRange,
+                      outputRange: [0.65, 1, 0.65],
+                      extrapolate: "clamp",
+                    });
+                    const translateY = scrollX.interpolate({
+                      inputRange,
+                      outputRange: [12, 0, 12],
+                      extrapolate: "clamp",
+                    });
+                    return (
+                      <Animated.View
+                        style={{
+                          width: itemSize,
+                          opacity,
+                          transform: [{ scale }, { translateY }],
+                        }}
+                      >
+                        <PropertyCard
+                          item={item}
+                          featured={item.isFeatured || index === 0}
+                          style={{ width: cardWidth, marginRight: 0 }}
+                          onPress={() =>
+                            router.push({
+                              pathname: "/property/[id]",
+                              params: { id: item.id },
+                            })
+                          }
+                        />
+                      </Animated.View>
+                    );
+                  }}
+                />
               )}
             </View>
 
