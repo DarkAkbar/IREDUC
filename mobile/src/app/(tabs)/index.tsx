@@ -230,24 +230,26 @@ export default function HomeScreen() {
               </View>
             </View>
 
-            <ServiceCategoryCarousel
-              categories={data.sections.servicesByCategory.map((section) => ({
-                id: section.category.id,
-                name: section.category.name,
-                slug: section.category.slug,
-                serviceCount: section.items.length,
-              }))}
-              onCategoryPress={(category) =>
-                router.push({
-                  pathname: "/services",
-                  params: {
-                    categoryId: category.id,
-                    categorySlug: category.slug,
-                  },
-                })
-              }
-              onSeeAll={() => router.push("/services/all" as never)}
-            />
+            <View style={styles.section}>
+              <ServiceCategoryCarousel
+                categories={data.sections.servicesByCategory.map((section) => ({
+                  id: section.category.id,
+                  name: section.category.name,
+                  slug: section.category.slug,
+                  serviceCount: section.items.length,
+                }))}
+                onCategoryPress={(category) =>
+                  router.push({
+                    pathname: "/services",
+                    params: {
+                      categoryId: category.id,
+                      categorySlug: category.slug,
+                    },
+                  })
+                }
+                onSeeAll={() => router.push("/services/all" as never)}
+              />
+            </View>
 
             <View style={styles.section}>
               <SectionHeader
@@ -420,7 +422,7 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: "700",
   },
-  hero: { marginBottom: spacing.xl },
+  hero: { marginBottom: 0 },
   heroImageWrap: {
     width: "100%",
     height: 220,
@@ -458,10 +460,10 @@ const styles = StyleSheet.create({
     bottom: 16,
     zIndex: 2,
   },
-  section: { marginTop: spacing.xl },
+  section: { marginTop: 24 },
   carouselScroll: { flexGrow: 0, flexShrink: 0 },
   trust: {
-    marginTop: spacing.xl,
+    marginTop: 24,
     marginHorizontal: spacing.lg,
     backgroundColor: colors.white,
     borderRadius: radii.lg,

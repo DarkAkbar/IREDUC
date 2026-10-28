@@ -55,7 +55,7 @@ export function ServiceCategoryCarousel({
   }
 
   return (
-    <View style={styles.section}>
+    <View>
       <SectionHeader
         title="Services"
         subtitle="Toutes les catégories près de chez vous"
@@ -146,7 +146,6 @@ export function ServiceCategoryCarousel({
 }
 
 const styles = StyleSheet.create({
-  section: { marginTop: spacing.xl },
   carouselScroll: { flexGrow: 0, flexShrink: 0 },
   card: {
     backgroundColor: colors.white,
