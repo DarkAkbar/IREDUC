@@ -202,7 +202,8 @@ export default function HomeScreen() {
                     contentFit="cover"
                   />
                 )}
-                <View style={styles.heroOverlay}>
+                <View style={styles.heroDim} pointerEvents="none" />
+                <View style={styles.heroCopy} pointerEvents="none">
                   <Text style={styles.heroTitle}>
                     Un chez-vous,{"\n"}une vie meilleure.
                   </Text>
@@ -392,12 +393,15 @@ const styles = StyleSheet.create({
     overflow: "hidden",
   },
   heroImage: { width: "100%", height: "100%" },
-  heroOverlay: {
+  heroDim: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: colors.overlay,
-    justifyContent: "flex-start",
-    paddingHorizontal: spacing.xl,
-    paddingTop: spacing.xl,
+    backgroundColor: "rgba(0, 0, 0, 0.35)",
+  },
+  heroCopy: {
+    position: "absolute",
+    top: spacing.xl,
+    left: 24,
+    right: spacing.xl,
   },
   heroTitle: {
     color: colors.white,
@@ -417,6 +421,7 @@ const styles = StyleSheet.create({
     left: 20,
     right: 20,
     bottom: 16,
+    zIndex: 2,
   },
   section: { marginTop: spacing.xl },
   carouselScroll: { flexGrow: 0, flexShrink: 0 },
