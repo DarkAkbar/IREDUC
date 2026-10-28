@@ -103,11 +103,6 @@ export default function HomeScreen() {
         <View style={styles.header}>
           <IreducLogo compact />
           <View style={styles.headerRight}>
-            <Pressable style={styles.cityPill}>
-              <Ionicons name="location" size={14} color={colors.primary} />
-              <Text style={styles.cityText}>Kinshasa</Text>
-              <Ionicons name="chevron-down" size={14} color={colors.navy} />
-            </Pressable>
             <Pressable
               style={styles.bell}
               onPress={() => {
@@ -345,18 +340,6 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.md,
   },
   headerRight: { flexDirection: "row", alignItems: "center", gap: spacing.sm },
-  cityPill: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 4,
-    backgroundColor: colors.white,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
-    borderRadius: radii.pill,
-    borderWidth: 1,
-    borderColor: colors.border,
-  },
-  cityText: { color: colors.navy, fontWeight: "700", fontSize: 13 },
   bell: {
     minWidth: 48,
     minHeight: 48,
