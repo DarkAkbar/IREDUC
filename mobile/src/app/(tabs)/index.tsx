@@ -19,6 +19,7 @@ import { fetchConversations } from "../../api/conversations";
 import { fetchHome } from "../../api/home";
 import { fetchNotifications } from "../../api/notifications";
 import { IreducLogo } from "../../components/IreducLogo";
+import { ServiceCategoryCarousel } from "../../components/home/ServiceCategoryCarousel";
 import { PartnerHomeBanner } from "../../components/PartnerHomeBanner";
 import { PropertyCard } from "../../components/PropertyCard";
 import {
@@ -228,6 +229,16 @@ export default function HomeScreen() {
                 </View>
               </View>
             </View>
+
+            <ServiceCategoryCarousel
+              categories={data.sections.servicesByCategory.map((section) => ({
+                id: section.category.id,
+                name: section.category.name,
+                slug: section.category.slug,
+                serviceCount: section.items.length,
+              }))}
+              onSeeAll={() => undefined}
+            />
 
             <View style={styles.section}>
               <SectionHeader
