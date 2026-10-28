@@ -39,9 +39,16 @@ const HERO_FALLBACK = require("../../../assets/icon.png");
 export default function HomeScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
-  const { requireAuth } = useRequireAuth();
+  const { requireAuth, isAuthenticated } = useRequireAuth();
   const { onScroll: onFabScroll } = usePublishFabScroll();
-  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
+  const user = useAuthStore((s) => s.user);
+  const avatarUri = mediaUrl(user?.avatarUrl);
+  const initials = (user?.fullName ?? "?")
+    .split(" ")
+    .map((part) => part[0])
+    .join("")
+    .slice(0, 2)
+    .toUpperCase();
 
   const { data, isLoading, isError, refetch, isFetching } = useQuery({
     queryKey: ["home"],
@@ -140,6 +147,32 @@ export default function HomeScreen() {
                   </Text>
                 </View>
               ) : null}
+            </Pressable>
+            <Pressable
+              style={[
+                styles.avatarBtn,
+                !isAuthenticated && styles.avatarBtnGuest,
+              ]}
+              accessibilityLabel={isAuthenticated ? "Profil" : "Connexion"}
+              onPress={() => {
+                if (!isAuthenticated) {
+                  requireAuth("/(tabs)/profile");
+                  return;
+                }
+                router.push("/(tabs)/profile" as never);
+              }}
+            >
+              {avatarUri ? (
+                <Image
+                  source={{ uri: avatarUri }}
+                  style={styles.avatarImg}
+                  contentFit="cover"
+                />
+              ) : isAuthenticated ? (
+                <Text style={styles.avatarInitials}>{initials}</Text>
+              ) : (
+                <Ionicons name="person-outline" size={18} color={colors.navy} />
+              )}
             </Pressable>
           </View>
         </View>
@@ -344,6 +377,26 @@ const styles = StyleSheet.create({
     paddingHorizontal: 3,
   },
   bellBadgeText: { color: colors.white, fontSize: 9, fontWeight: "800" },
+  avatarBtn: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: colors.navy,
+    borderWidth: 1,
+    borderColor: colors.border,
+    alignItems: "center",
+    justifyContent: "center",
+    overflow: "hidden",
+  },
+  avatarBtnGuest: {
+    backgroundColor: colors.white,
+  },
+  avatarImg: { width: "100%", height: "100%" },
+  avatarInitials: {
+    color: colors.white,
+    fontSize: 12,
+    fontWeight: "700",
+  },
   hero: { marginBottom: spacing.xl },
   heroImageWrap: {
     width: "100%",
