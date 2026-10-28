@@ -24,10 +24,8 @@ import { PropertyCard } from "../../components/PropertyCard";
 import {
   PublishFab,
   PUBLISH_FAB_BOTTOM_INSET,
-  PUBLISH_FAB_SIDE_INSET,
   usePublishFabScroll,
 } from "../../components/PublishFab";
-import { ServiceCard } from "../../components/ServiceCard";
 import { Button } from "../../components/ui/Button";
 import { SearchBar } from "../../components/ui/SearchBar";
 import { SectionHeader } from "../../components/ui/SectionHeader";
@@ -338,48 +336,6 @@ export default function HomeScreen() {
               </View>
             </View>
 
-            {data.sections.servicesByCategory.map((section) => (
-              <View key={section.category.id} style={styles.section}>
-                <SectionHeader
-                  title={section.title}
-                  subtitle="Prestataires vérifiés à Kinshasa"
-                  icon="construct-outline"
-                  onSeeAll={() =>
-                    router.push({
-                      pathname: "/services",
-                      params: {
-                        categoryId: section.category.id,
-                        categorySlug: section.category.slug,
-                      },
-                    })
-                  }
-                />
-                {section.items.length === 0 ? (
-                  <Text style={styles.empty}>Aucun service dans cette catégorie.</Text>
-                ) : (
-                  <ScrollView
-                    horizontal
-                    style={styles.carouselScroll}
-                    showsHorizontalScrollIndicator={false}
-                    contentContainerStyle={styles.carousel}
-                  >
-                    {section.items.map((item) => (
-                      <ServiceCard
-                        key={item.id}
-                        item={item}
-                        onPress={() =>
-                          router.push({
-                            pathname: "/service/[id]",
-                            params: { id: item.id },
-                          })
-                        }
-                      />
-                    ))}
-                  </ScrollView>
-                )}
-              </View>
-            ))}
-
             <PartnerHomeBanner />
           </>
         ) : null}
@@ -484,12 +440,6 @@ const styles = StyleSheet.create({
   },
   section: { marginTop: spacing.xl },
   carouselScroll: { flexGrow: 0, flexShrink: 0 },
-  carousel: {
-    flexGrow: 0,
-    paddingLeft: spacing.lg,
-    paddingRight: PUBLISH_FAB_SIDE_INSET,
-    paddingBottom: spacing.sm,
-  },
   trust: {
     marginTop: spacing.xl,
     marginHorizontal: spacing.lg,
