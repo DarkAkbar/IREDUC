@@ -7,9 +7,19 @@ type Props = {
   subtitle?: string;
   icon?: keyof typeof Ionicons.glyphMap;
   onSeeAll?: () => void;
+  /** Libellé du lien (défaut : « Voir tout »). */
+  seeAllLabel?: string;
+  seeAllIcon?: keyof typeof Ionicons.glyphMap;
 };
 
-export function SectionHeader({ title, subtitle, icon, onSeeAll }: Props) {
+export function SectionHeader({
+  title,
+  subtitle,
+  icon,
+  onSeeAll,
+  seeAllLabel = "Voir tout",
+  seeAllIcon = "arrow-forward",
+}: Props) {
   return (
     <View style={styles.row}>
       <View style={styles.left}>
@@ -23,8 +33,8 @@ export function SectionHeader({ title, subtitle, icon, onSeeAll }: Props) {
       </View>
       {onSeeAll ? (
         <Pressable onPress={onSeeAll} style={styles.seeAll}>
-          <Text style={styles.seeAllText}>Voir tout</Text>
-          <Ionicons name="arrow-forward" size={16} color={colors.primary} />
+          <Text style={styles.seeAllText}>{seeAllLabel}</Text>
+          <Ionicons name={seeAllIcon} size={16} color={colors.primary} />
         </Pressable>
       ) : null}
     </View>

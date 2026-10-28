@@ -2,7 +2,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { useQuery } from "@tanstack/react-query";
 import { Image } from "expo-image";
 import { useRouter } from "expo-router";
-import { useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   Animated,
   Pressable,
@@ -20,6 +20,7 @@ import { fetchHome } from "../../api/home";
 import { fetchNotifications } from "../../api/notifications";
 import { IreducLogo } from "../../components/IreducLogo";
 import { ServiceCategoryCarousel } from "../../components/home/ServiceCategoryCarousel";
+import { ServicesExpandedList } from "../../components/home/ServicesExpandedList";
 import { PartnerHomeBanner } from "../../components/PartnerHomeBanner";
 import { PropertyCard } from "../../components/PropertyCard";
 import {
@@ -51,6 +52,9 @@ export default function HomeScreen() {
   const itemSize = cardWidth + CARD_GAP;
   /** Démarre sur la 2e carte : scrollX initial = ITEM_SIZE. */
   const scrollX = useRef(new Animated.Value(itemSize)).current;
+  const mainScrollRef = useRef<ScrollView>(null);
+  const servicesSectionY = useRef(0);
+  const [servicesExpanded, setServicesExpanded] = useState(false);
   const user = useAuthStore((s) => s.user);
   const avatarUri = mediaUrl(user?.avatarUrl);
   const initials = (user?.fullName ?? "?")
@@ -92,9 +96,21 @@ export default function HomeScreen() {
 
   const heroUri = mediaUrl(properties[0]?.coverPhoto?.url);
 
+  useEffect(() => {
+    if (!servicesExpanded) return;
+    const timer = setTimeout(() => {
+      mainScrollRef.current?.scrollTo({
+        y: Math.max(0, servicesSectionY.current),
+        animated: true,
+      });
+    }, 50);
+    return () => clearTimeout(timer);
+  }, [servicesExpanded]);
+
   return (
     <View style={[styles.screen, { paddingTop: insets.top }]}>
       <ScrollView
+        ref={mainScrollRef}
         contentContainerStyle={[
           styles.content,
           { paddingBottom: PUBLISH_FAB_BOTTOM_INSET },
@@ -316,28 +332,51 @@ export default function HomeScreen() {
               )}
             </View>
 
-            <View style={styles.section}>
-              <ServiceCategoryCarousel
-                categories={data.sections.servicesByCategory.map((section) => ({
-                  id: section.category.id,
-                  name: section.category.name,
-                  slug: section.category.slug,
-                  serviceCount: section.items.length,
-                  imageUrls: section.items
-                    .map((item) => mediaUrl(item.coverPhoto?.url))
-                    .filter((url): url is string => Boolean(url)),
-                }))}
-                onCategoryPress={(category) =>
-                  router.push({
-                    pathname: "/services",
-                    params: {
-                      categoryId: category.id,
-                      categorySlug: category.slug,
-                    },
-                  })
-                }
-                onSeeAll={() => router.push("/services/all" as never)}
-              />
+            <View
+              style={styles.section}
+              onLayout={(e) => {
+                servicesSectionY.current = e.nativeEvent.layout.y;
+              }}
+            >
+              {servicesExpanded ? (
+                <>
+                  <SectionHeader
+                    title="Services"
+                    subtitle="Toutes les catégories près de chez vous"
+                    icon="construct-outline"
+                    seeAllLabel="Réduire"
+                    seeAllIcon="chevron-up"
+                    onSeeAll={() => setServicesExpanded(false)}
+                  />
+                  <ServicesExpandedList
+                    sections={data.sections.servicesByCategory}
+                  />
+                </>
+              ) : (
+                <ServiceCategoryCarousel
+                  categories={data.sections.servicesByCategory.map(
+                    (section) => ({
+                      id: section.category.id,
+                      name: section.category.name,
+                      slug: section.category.slug,
+                      serviceCount: section.items.length,
+                      imageUrls: section.items
+                        .map((item) => mediaUrl(item.coverPhoto?.url))
+                        .filter((url): url is string => Boolean(url)),
+                    })
+                  )}
+                  onCategoryPress={(category) =>
+                    router.push({
+                      pathname: "/services",
+                      params: {
+                        categoryId: category.id,
+                        categorySlug: category.slug,
+                      },
+                    })
+                  }
+                  onSeeAll={() => setServicesExpanded(true)}
+                />
+              )}
             </View>
 
             <View style={styles.trust}>

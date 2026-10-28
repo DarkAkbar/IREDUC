@@ -40,12 +40,16 @@ type Props = {
   categories: ServiceCategoryCarouselItem[];
   onCategoryPress?: (category: ServiceCategoryCarouselItem) => void;
   onSeeAll?: () => void;
+  seeAllLabel?: string;
+  seeAllIcon?: keyof typeof Ionicons.glyphMap;
 };
 
 export function ServiceCategoryCarousel({
   categories,
   onCategoryPress,
   onSeeAll,
+  seeAllLabel,
+  seeAllIcon,
 }: Props) {
   const { width: screenWidth } = useWindowDimensions();
   const cardWidth = Math.round(screenWidth * 0.6);
@@ -83,6 +87,8 @@ export function ServiceCategoryCarousel({
         subtitle="Toutes les catégories près de chez vous"
         icon="construct-outline"
         onSeeAll={onSeeAll}
+        seeAllLabel={seeAllLabel}
+        seeAllIcon={seeAllIcon}
       />
       <Animated.FlatList
         data={categories}
