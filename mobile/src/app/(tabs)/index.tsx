@@ -231,27 +231,6 @@ export default function HomeScreen() {
             </View>
 
             <View style={styles.section}>
-              <ServiceCategoryCarousel
-                categories={data.sections.servicesByCategory.map((section) => ({
-                  id: section.category.id,
-                  name: section.category.name,
-                  slug: section.category.slug,
-                  serviceCount: section.items.length,
-                }))}
-                onCategoryPress={(category) =>
-                  router.push({
-                    pathname: "/services",
-                    params: {
-                      categoryId: category.id,
-                      categorySlug: category.slug,
-                    },
-                  })
-                }
-                onSeeAll={() => router.push("/services/all" as never)}
-              />
-            </View>
-
-            <View style={styles.section}>
               <SectionHeader
                 title="Maison"
                 subtitle="Appartements, villas, terrains et plus encore"
@@ -335,6 +314,27 @@ export default function HomeScreen() {
                   }}
                 />
               )}
+            </View>
+
+            <View style={styles.section}>
+              <ServiceCategoryCarousel
+                categories={data.sections.servicesByCategory.map((section) => ({
+                  id: section.category.id,
+                  name: section.category.name,
+                  slug: section.category.slug,
+                  serviceCount: section.items.length,
+                }))}
+                onCategoryPress={(category) =>
+                  router.push({
+                    pathname: "/services",
+                    params: {
+                      categoryId: category.id,
+                      categorySlug: category.slug,
+                    },
+                  })
+                }
+                onSeeAll={() => router.push("/services/all" as never)}
+              />
             </View>
 
             <View style={styles.trust}>
