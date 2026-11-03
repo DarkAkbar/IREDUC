@@ -30,6 +30,7 @@ import { useDebouncedValue } from "../../hooks/useDebouncedValue";
 import { useSearchStore } from "../../store/searchStore";
 import { colors, spacing, typography } from "../../theme";
 import { kindLabel } from "../../utils/format";
+import { formatResultCount } from "../../utils/formatCount";
 
 const KIND_TABS = [
   { key: "HOUSE", label: "Maison", icon: "home-outline" as const },
@@ -184,7 +185,7 @@ export default function PropertiesListScreen() {
           Des biens vérifiés pour un cadre de vie meilleur.
         </Text>
         <View style={styles.metaRow}>
-          <Text style={styles.count}>{total} résultats</Text>
+          <Text style={styles.count}>{formatResultCount(total)}</Text>
           <Pressable style={styles.sortBtn} onPress={openSort}>
             <Text style={styles.sortText}>
               Trier par · {SORT_OPTIONS.find((o) => o.key === sort)?.label}
