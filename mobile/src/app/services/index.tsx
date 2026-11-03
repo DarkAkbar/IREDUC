@@ -13,23 +13,16 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { fetchCategories } from "../../api/catalog";
 import { fetchServices } from "../../api/services";
 import { Category } from "../../api/types";
-import { CategoryTabs } from "../../components/list/CategoryTabs";
+import { CategoryFilterRow } from "../../components/list/CategoryFilterRow";
 import { EmptyState } from "../../components/list/EmptyState";
 import { ErrorState } from "../../components/list/ErrorState";
 import { InfoBanner } from "../../components/list/InfoBanner";
-import { ListScreenHeader } from "../../components/list/ListScreenHeader";
+import { AppHeader } from "../../components/navigation/AppHeader";
 import { ServiceListCard } from "../../components/ServiceListCard";
-import { SearchInput } from "../../components/ui/SearchInput";
 import { ListSkeleton } from "../../components/ui/SkeletonLoader";
 import { useDebouncedValue } from "../../hooks/useDebouncedValue";
 import { colors, spacing, typography } from "../../theme";
-
-const SUB_TABS = [
-  { key: "", label: "Tous", icon: "apps-outline" as const },
-  { key: "Installation", label: "Installation", icon: "construct-outline" as const },
-  { key: "Dépannage", label: "Dépannage", icon: "settings-outline" as const },
-  { key: "Plus", label: "Plus", icon: "ellipsis-horizontal" as const },
-];
+import { formatResultCount } from "../../utils/formatCount";
 
 const CATEGORY_ICONS: Record<string, keyof typeof Ionicons.glyphMap> = {
   electricite: "flash-outline",
@@ -64,9 +57,8 @@ export default function ServicesListScreen() {
   const categories = asCategoryList(categoriesQuery.data);
 
   const [categoryId, setCategoryId] = useState(params.categoryId ?? "");
-  const [sub, setSub] = useState("");
   const [q, setQ] = useState(params.q ?? "");
-  const debouncedQ = useDebouncedValue(q);
+  const debouncedQ = useDebouncedValue(q, 300);
 
   useEffect(() => {
     if (categoryId || categories.length === 0) return;
@@ -89,7 +81,7 @@ export default function ServicesListScreen() {
 
   const queryFilters = {
     categoryId: resolvedCategoryId || undefined,
-    q: debouncedQ || (sub && sub !== "Plus" ? sub : undefined),
+    q: debouncedQ || undefined,
   };
 
   const query = useInfiniteQuery({
@@ -107,47 +99,32 @@ export default function ServicesListScreen() {
 
   return (
     <View style={[styles.screen, { paddingTop: insets.top }]}>
-      <ListScreenHeader title="Services" />
-      <SearchInput
-        value={q}
-        onChangeText={setQ}
-        placeholder={`Rechercher un service${
-          activeCategory ? ` (${activeCategory.name.toLowerCase()})` : ""
-        }...`}
-        onFilterPress={() => router.push("/filters" as never)}
+      <AppHeader
+        title="Services"
+        searchable
+        searchValue={q}
+        onSearchChange={setQ}
+        searchPlaceholder="Rechercher un service…"
       />
 
       <View style={styles.tabsBlock}>
         {categoryTabs.length > 0 ? (
-          <CategoryTabs
+          <CategoryFilterRow
             tabs={categoryTabs}
             activeKey={resolvedCategoryId ?? ""}
-            onChange={(key) => {
-              setCategoryId(key);
-              setSub("");
-            }}
+            onChange={setCategoryId}
+            onFilterPress={() => router.push("/filters" as never)}
             activeColor={colors.primary}
           />
         ) : null}
-        <View style={styles.subTabs}>
-          <CategoryTabs
-            tabs={SUB_TABS}
-            activeKey={sub}
-            onChange={setSub}
-            activeColor={colors.navy}
-          />
-        </View>
       </View>
 
       <View style={styles.heading}>
         <Text style={typography.title}>
           {activeCategory ? `Services — ${activeCategory.name}` : "Services"}
         </Text>
-        <Text style={styles.subtitle}>
-          Des professionnels qualifiés pour vos projets, près de chez vous.
-        </Text>
         <View style={styles.metaRow}>
-          <Text style={styles.count}>{total} résultats</Text>
+          <Text style={styles.count}>{formatResultCount(total)}</Text>
           <View style={styles.sortBtn}>
             <Text style={styles.sortText}>Trier par · Récent</Text>
             <Ionicons name="chevron-down" size={14} color={colors.navy} />
@@ -167,7 +144,7 @@ export default function ServicesListScreen() {
           data={items}
           keyExtractor={(item) => item.id}
           renderItem={({ item }) => <ServiceListCard item={item} />}
-          contentContainerStyle={{ paddingBottom: spacing.xxl }}
+          contentContainerStyle={styles.listContent}
           onEndReached={() => {
             if (query.hasNextPage && !query.isFetchingNextPage) {
               void query.fetchNextPage();
@@ -183,12 +160,19 @@ export default function ServicesListScreen() {
           }
           ListEmptyComponent={
             <EmptyState
+              fill
               title="Aucun service trouvé"
-              message="Essayez une autre catégorie ou un autre mot-clé."
+              message={
+                debouncedQ
+                  ? "Aucun résultat pour cette recherche. Essayez un autre mot-clé."
+                  : "Essayez une autre catégorie ou un autre mot-clé."
+              }
             />
           }
           ListFooterComponent={
-            <InfoBanner text="Cliquez sur une image ou sur le bouton « Réserver » pour voir tous les détails du service, le profil du prestataire et effectuer votre réservation." />
+            items.length > 0 ? (
+              <InfoBanner text="Cliquez sur une image ou sur le bouton « Réserver » pour voir tous les détails du service, le profil du prestataire et effectuer votre réservation." />
+            ) : null
           }
         />
       ) : null}
@@ -199,28 +183,26 @@ export default function ServicesListScreen() {
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.background },
   tabsBlock: {
-    marginTop: spacing.md,
-    flexGrow: 0,
-    flexShrink: 0,
-  },
-  subTabs: {
     marginTop: spacing.sm,
     flexGrow: 0,
     flexShrink: 0,
   },
   heading: {
     paddingHorizontal: spacing.lg,
-    marginBottom: spacing.md,
+    marginBottom: spacing.sm,
     marginTop: spacing.md,
   },
-  subtitle: { color: colors.textMuted, marginTop: 4 },
   metaRow: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginTop: spacing.md,
+    marginTop: spacing.sm,
   },
   count: { color: colors.textMuted, fontWeight: "600" },
   sortBtn: { flexDirection: "row", alignItems: "center", gap: 4 },
   sortText: { color: colors.navy, fontWeight: "700", fontSize: 13 },
+  listContent: {
+    flexGrow: 1,
+    paddingBottom: spacing.xxl,
+  },
 });
