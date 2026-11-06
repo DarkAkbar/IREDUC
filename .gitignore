@@ -48,6 +48,7 @@ coverage/
 
 # Mobile
 mobile/.expo/
+mobiel/node_modules/
 mobile/dist/
 *.jks
 *.p8
