@@ -18,11 +18,12 @@ import { FavoriteButton } from "../../components/FavoriteButton";
 import { GuestPrompt } from "../../components/GuestPrompt";
 import { EmptyState } from "../../components/list/EmptyState";
 import { ErrorState } from "../../components/list/ErrorState";
+import { TabScreenHeader } from "../../components/navigation/TabScreenHeader";
 import { HorizontalChipScroll } from "../../components/ui/HorizontalChipScroll";
 import { ListSkeleton } from "../../components/ui/SkeletonLoader";
 import { useAuthStore } from "../../store/authStore";
 import { useFavoritesStore } from "../../store/favoritesStore";
-import { colors, radii, spacing, typography } from "../../theme";
+import { colors, radii, spacing } from "../../theme";
 
 type FavTab = "PROPERTY" | "SERVICE";
 
@@ -79,10 +80,10 @@ export default function FavoritesTabScreen() {
 
   return (
     <View style={[styles.screen, { paddingTop: insets.top }]}>
-      <Text style={[typography.title, styles.title]}>Favoris</Text>
-      <Text style={styles.subtitle}>
-        Vos biens et services sauvegardés.
-      </Text>
+      <TabScreenHeader
+        title="Favoris"
+        subtitle="Vos biens et services sauvegardés."
+      />
 
       <HorizontalChipScroll contentContainerStyle={styles.tabsContent}>
         {TABS.map((t) => {
@@ -223,17 +224,7 @@ export default function FavoritesTabScreen() {
 
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.background },
-  title: {
-    paddingHorizontal: spacing.lg,
-    marginTop: spacing.md,
-    marginBottom: spacing.xs,
-  },
-  subtitle: {
-    ...typography.body,
-    paddingHorizontal: spacing.lg,
-    marginBottom: spacing.md,
-  },
-  tabsContent: { marginBottom: spacing.md },
+  tabsContent: { marginTop: spacing.md, marginBottom: spacing.md },
   tab: {
     paddingHorizontal: spacing.sm + 2,
     paddingVertical: spacing.sm,

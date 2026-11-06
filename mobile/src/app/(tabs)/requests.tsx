@@ -1,4 +1,3 @@
-import { Ionicons } from "@expo/vector-icons";
 import { useInfiniteQuery } from "@tanstack/react-query";
 import { useRouter } from "expo-router";
 import { useState } from "react";
@@ -16,11 +15,12 @@ import { RequestStatus } from "../../api/types";
 import { GuestPrompt } from "../../components/GuestPrompt";
 import { EmptyState } from "../../components/list/EmptyState";
 import { ErrorState } from "../../components/list/ErrorState";
+import { TabScreenHeader } from "../../components/navigation/TabScreenHeader";
 import { RequestCard } from "../../components/requests/RequestCard";
 import { HorizontalChipScroll } from "../../components/ui/HorizontalChipScroll";
 import { ListSkeleton } from "../../components/ui/SkeletonLoader";
 import { useAuthStore } from "../../store/authStore";
-import { colors, radii, spacing, typography } from "../../theme";
+import { colors, radii, spacing } from "../../theme";
 
 type TabKey = "ALL" | RequestStatus;
 
@@ -86,22 +86,17 @@ export default function RequestsScreen() {
 
   return (
     <View style={[styles.screen, { paddingTop: insets.top }]}>
-      <View style={styles.header}>
-        <View style={styles.titleRow}>
-          <Text style={styles.headerTitle} numberOfLines={1}>
-            Mes demandes
-          </Text>
-          {counters && counters.all > 0 ? (
+      <TabScreenHeader
+        title="Mes demandes"
+        showCity
+        titleAccessory={
+          counters && counters.all > 0 ? (
             <View style={styles.countBadge}>
               <Text style={styles.countBadgeText}>{counters.all}</Text>
             </View>
-          ) : null}
-        </View>
-        <View style={styles.city}>
-          <Ionicons name="location" size={14} color={colors.primary} />
-          <Text style={styles.cityText}>Kinshasa</Text>
-        </View>
-      </View>
+          ) : null
+        }
+      />
 
       <Text style={styles.subtitle}>
         Suivez l'état de toutes vos demandes de réservation.
@@ -175,38 +170,6 @@ export default function RequestsScreen() {
 
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.background },
-  header: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.sm,
-    minHeight: 48,
-    gap: spacing.sm,
-  },
-  titleRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.sm,
-    flexShrink: 1,
-  },
-  headerTitle: {
-    color: colors.navy,
-    fontWeight: "800",
-    fontSize: 17,
-  },
-  city: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 4,
-    backgroundColor: colors.white,
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: radii.pill,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
-  },
-  cityText: { color: colors.navy, fontWeight: "700", fontSize: 13 },
   countBadge: {
     backgroundColor: colors.primary,
     minWidth: 22,
@@ -218,10 +181,12 @@ const styles = StyleSheet.create({
   },
   countBadgeText: { color: colors.white, fontWeight: "800", fontSize: 12 },
   subtitle: {
-    ...typography.body,
+    color: colors.textMuted,
+    fontSize: 14,
+    lineHeight: 20,
     paddingHorizontal: spacing.lg,
     marginTop: spacing.md,
-    marginBottom: spacing.md,
+    marginBottom: spacing.sm,
   },
   tabsContent: {
     paddingBottom: 0,
