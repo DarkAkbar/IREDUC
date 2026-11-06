@@ -4,6 +4,12 @@ Toutes les modifications notables du projet IREDUC sont documentées dans ce fic
 
 ## [Non publié]
 
+### Mobile — En-têtes onglets (Favoris, Demandes, Rechercher)
+
+- **Séparateur** : `TabScreenHeader` avec ligne sous l’en-tête pour distinguer nav et contenu.
+- **Favoris / Mes demandes** : même gabarit d’en-tête (titre, sous-titre ou ville).
+- **Rechercher** : barre de recherche + Filtres remontés dans l’en-tête ; bloc « récentes / raccourcis » harmonisé en carte.
+
 ### Mobile — Refonte écran Services (liste catégorie)
 
 - **En-tête** : `AppHeader` + `HeaderSearchButton` (loupe ronde 44 px) ; recherche déployable animée (« Rechercher un service… », debounce 300 ms) ; titre +2 px, espacements resserrés.
