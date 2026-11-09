@@ -78,7 +78,7 @@ export default function TabsLayout() {
       <Tabs.Screen
         name="requests"
         options={{
-          title: "Mes demandes",
+          title: "Demandes",
           tabBarIcon: ({ color, size }) => (
             <TabIconWithBadge
               name="document-text-outline"

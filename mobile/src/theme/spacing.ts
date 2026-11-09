@@ -7,6 +7,12 @@ export const spacing = {
   xxl: 32,
 } as const;
 
+/**
+ * Espace horizontal entre les icônes d'en-tête (message, notification, profil).
+ * Référence visuelle : écart notification ↔ avatar.
+ */
+export const HEADER_ICON_GAP = 8;
+
 export const radii = {
   sm: 8,
   md: 12,

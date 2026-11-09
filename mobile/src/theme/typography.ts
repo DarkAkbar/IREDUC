@@ -7,6 +7,19 @@ export const typography = {
     fontWeight: "700",
     color: colors.navy,
   } satisfies TextStyle,
+  /** H1 d'écran (même taille que « IREDUC » non compact sur l'accueil). */
+  screenH1: {
+    fontSize: 24,
+    fontWeight: "800",
+    color: colors.navy,
+    letterSpacing: 0.5,
+  } satisfies TextStyle,
+  /** Titre de section dans le corps (ex. « Maisons à louer »). */
+  sectionHeading: {
+    fontSize: 22,
+    fontWeight: "800",
+    color: colors.navy,
+  } satisfies TextStyle,
   title: {
     fontSize: 22,
     fontWeight: "700",

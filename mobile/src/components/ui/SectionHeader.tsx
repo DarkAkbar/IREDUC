@@ -10,6 +10,8 @@ type Props = {
   /** Libellé du lien (défaut : « Voir tout »). */
   seeAllLabel?: string;
   seeAllIcon?: keyof typeof Ionicons.glyphMap;
+  /** `subsection` : titre 18 px gras, sans icône de section. */
+  variant?: "section" | "subsection";
 };
 
 export function SectionHeader({
@@ -19,15 +21,18 @@ export function SectionHeader({
   onSeeAll,
   seeAllLabel = "Voir tout",
   seeAllIcon = "arrow-forward",
+  variant = "section",
 }: Props) {
+  const isSub = variant === "subsection";
+
   return (
     <View style={styles.row}>
       <View style={styles.left}>
-        {icon ? (
+        {!isSub && icon ? (
           <Ionicons name={icon} size={22} color={colors.primary} style={styles.icon} />
         ) : null}
         <View style={{ flex: 1 }}>
-          <Text style={typography.section}>{title}</Text>
+          <Text style={isSub ? styles.subTitle : typography.section}>{title}</Text>
           {subtitle ? <Text style={styles.subtitle}>{subtitle}</Text> : null}
         </View>
       </View>
@@ -51,6 +56,11 @@ const styles = StyleSheet.create({
   },
   left: { flexDirection: "row", alignItems: "flex-start", flex: 1, gap: spacing.sm },
   icon: { marginTop: 2 },
+  subTitle: {
+    fontSize: 18,
+    fontWeight: "800",
+    color: colors.navy,
+  },
   subtitle: { ...typography.caption, marginTop: 2 },
   seeAll: { flexDirection: "row", alignItems: "center", gap: 4, marginLeft: spacing.sm },
   seeAllText: { color: colors.primary, fontWeight: "700", fontSize: 13 },

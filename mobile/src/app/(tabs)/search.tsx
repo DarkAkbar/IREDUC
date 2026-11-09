@@ -10,11 +10,14 @@ import {
   Text,
   View,
 } from "react-native";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { fetchProperties } from "../../api/properties";
 import { fetchServices } from "../../api/services";
 import { EmptyState } from "../../components/list/EmptyState";
 import { ErrorState } from "../../components/list/ErrorState";
+import {
+  ScreenLayout,
+  screenBodyContentStyle,
+} from "../../components/navigation/ScreenLayout";
 import { TabScreenHeader } from "../../components/navigation/TabScreenHeader";
 import {
   PublishFab,
@@ -30,15 +33,11 @@ import { useSearchStore } from "../../store/searchStore";
 import { colors, radii, spacing, typography } from "../../theme";
 
 export default function SearchScreen() {
-  const insets = useSafeAreaInsets();
   const router = useRouter();
   const { onScroll: onFabScroll } = usePublishFabScroll();
   const [q, setQ] = useState("");
   const debouncedQ = useDebouncedValue(q, 450);
-  const recent = useSearchStore((s) => s.recent);
-  const loadRecent = useSearchStore((s) => s.loadRecent);
   const addRecent = useSearchStore((s) => s.addRecent);
-  const clearRecent = useSearchStore((s) => s.clearRecent);
   const filters = useSearchStore((s) => s.filters);
 
   const activeFilterCount = useMemo(() => {
@@ -52,10 +51,6 @@ export default function SearchScreen() {
     if (filters.minArea != null) n += 1;
     return n;
   }, [filters]);
-
-  useEffect(() => {
-    void loadRecent();
-  }, [loadRecent]);
 
   useEffect(() => {
     if (debouncedQ.trim().length >= 2) {
@@ -98,20 +93,27 @@ export default function SearchScreen() {
     enabled && !loading && properties.length === 0 && services.length === 0;
 
   return (
-    <View style={[styles.screen, { paddingTop: insets.top }]}>
-      <TabScreenHeader title="Rechercher">
-        <SearchInput
-          value={q}
-          onChangeText={setQ}
-          placeholder="Biens, services, quartier…"
-          onFilterPress={() => router.push("/filters")}
-          activeFilterCount={activeFilterCount}
+    <ScreenLayout
+      header={
+        <TabScreenHeader
+          title="Rechercher"
+          trailing={
+            <SearchInput
+              compact
+              value={q}
+              onChangeText={setQ}
+              placeholder="Biens, services…"
+              onFilterPress={() => router.push("/filters")}
+              activeFilterCount={activeFilterCount}
+            />
+          }
         />
-      </TabScreenHeader>
-
+      }
+      footer={<PublishFab />}
+    >
       <ScrollView
         contentContainerStyle={[
-          styles.content,
+          screenBodyContentStyle,
           { paddingBottom: PUBLISH_FAB_BOTTOM_INSET },
         ]}
         scrollEventThrottle={16}
@@ -132,56 +134,6 @@ export default function SearchScreen() {
       >
         {!enabled ? (
           <View style={styles.panel}>
-            <View style={styles.panelHeader}>
-              <Text style={styles.panelTitle}>Recherches récentes</Text>
-              {recent.length > 0 ? (
-                <Pressable onPress={() => void clearRecent()} hitSlop={8}>
-                  <Text style={styles.clear}>Effacer</Text>
-                </Pressable>
-              ) : null}
-            </View>
-
-            {recent.length === 0 ? (
-              <View style={styles.hintBox}>
-                <Ionicons
-                  name="search-outline"
-                  size={20}
-                  color={colors.textMuted}
-                />
-                <Text style={styles.hint}>
-                  Saisissez au moins 2 caractères pour lancer une recherche.
-                </Text>
-              </View>
-            ) : (
-              <View style={styles.recentList}>
-                {recent.map((item) => (
-                  <Pressable
-                    key={item}
-                    style={styles.recentItem}
-                    onPress={() => setQ(item)}
-                  >
-                    <View style={styles.recentIcon}>
-                      <Ionicons
-                        name="time-outline"
-                        size={16}
-                        color={colors.navy}
-                      />
-                    </View>
-                    <Text style={styles.recentText} numberOfLines={1}>
-                      {item}
-                    </Text>
-                    <Ionicons
-                      name="arrow-forward"
-                      size={16}
-                      color={colors.textMuted}
-                    />
-                  </Pressable>
-                ))}
-              </View>
-            )}
-
-            <View style={styles.panelDivider} />
-
             <Text style={styles.panelTitle}>Raccourcis</Text>
             <View style={styles.shortcuts}>
               <Pressable
@@ -242,12 +194,14 @@ export default function SearchScreen() {
         ) : null}
 
         {properties.length > 0 ? (
-          <View>
+          <View style={styles.resultsBlock}>
             <Text style={styles.section}>
               Biens ({propertiesQuery.data?.meta.total})
             </Text>
             {properties.map((item) => (
-              <PropertyListCard key={item.id} item={item} />
+              <View key={item.id} style={styles.cardSlot}>
+                <PropertyListCard item={item} />
+              </View>
             ))}
             <Pressable
               style={styles.link}
@@ -264,12 +218,14 @@ export default function SearchScreen() {
         ) : null}
 
         {services.length > 0 ? (
-          <View style={{ marginTop: spacing.lg }}>
+          <View style={[styles.resultsBlock, { marginTop: 12 }]}>
             <Text style={styles.section}>
               Services ({servicesQuery.data?.meta.total})
             </Text>
             {services.map((item) => (
-              <ServiceListCard key={item.id} item={item} />
+              <View key={item.id} style={styles.cardSlot}>
+                <ServiceListCard item={item} />
+              </View>
             ))}
             <Pressable
               style={styles.link}
@@ -285,16 +241,12 @@ export default function SearchScreen() {
           </View>
         ) : null}
       </ScrollView>
-      <PublishFab />
-    </View>
+    </ScreenLayout>
   );
 }
 
 const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: colors.background },
-  content: { paddingTop: spacing.md },
   panel: {
-    marginHorizontal: spacing.lg,
     backgroundColor: colors.white,
     borderRadius: radii.lg,
     borderWidth: 1,
@@ -302,47 +254,11 @@ const styles = StyleSheet.create({
     padding: spacing.lg,
     gap: spacing.md,
   },
-  panelHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-  },
   panelTitle: {
     ...typography.section,
     fontSize: 16,
   },
-  panelDivider: {
-    height: StyleSheet.hairlineWidth,
-    backgroundColor: colors.border,
-    marginVertical: spacing.xs,
-  },
-  clear: { color: colors.primary, fontWeight: "700", fontSize: 13 },
-  hintBox: {
-    flexDirection: "row",
-    alignItems: "flex-start",
-    gap: spacing.sm,
-    backgroundColor: colors.background,
-    borderRadius: radii.md,
-    padding: spacing.md,
-  },
-  hint: { flex: 1, color: colors.textMuted, fontSize: 13, lineHeight: 18 },
-  recentList: { gap: spacing.xs },
-  recentItem: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.sm,
-    paddingVertical: spacing.sm,
-  },
-  recentIcon: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    backgroundColor: colors.background,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  recentText: { flex: 1, color: colors.navy, fontWeight: "600", fontSize: 14 },
-  shortcuts: { gap: spacing.sm },
+  shortcuts: { gap: 12 },
   shortcutCard: {
     flexDirection: "row",
     alignItems: "center",
@@ -368,11 +284,16 @@ const styles = StyleSheet.create({
     fontWeight: "700",
     fontSize: 14,
   },
+  resultsBlock: { gap: 0 },
+  /** Annule les marges internes des list cards (déjà paddées par ScreenLayout). */
+  cardSlot: {
+    marginHorizontal: -spacing.lg,
+    marginBottom: 12 - spacing.lg,
+  },
   section: {
     ...typography.section,
-    paddingHorizontal: spacing.lg,
     marginBottom: spacing.md,
   },
-  link: { paddingHorizontal: spacing.lg, paddingVertical: spacing.sm },
+  link: { paddingVertical: spacing.sm },
   linkText: { color: colors.primary, fontWeight: "700" },
 });

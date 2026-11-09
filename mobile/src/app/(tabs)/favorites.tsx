@@ -10,7 +10,6 @@ import {
   Text,
   View,
 } from "react-native";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { mediaUrl } from "../../api/client";
 import { fetchFavorites } from "../../api/favorites";
 import { Favorite } from "../../api/types";
@@ -18,6 +17,10 @@ import { FavoriteButton } from "../../components/FavoriteButton";
 import { GuestPrompt } from "../../components/GuestPrompt";
 import { EmptyState } from "../../components/list/EmptyState";
 import { ErrorState } from "../../components/list/ErrorState";
+import {
+  ScreenLayout,
+  screenBodyContentStyle,
+} from "../../components/navigation/ScreenLayout";
 import { TabScreenHeader } from "../../components/navigation/TabScreenHeader";
 import { HorizontalChipScroll } from "../../components/ui/HorizontalChipScroll";
 import { ListSkeleton } from "../../components/ui/SkeletonLoader";
@@ -33,7 +36,6 @@ const TABS: { key: FavTab; label: string }[] = [
 ];
 
 export default function FavoritesTabScreen() {
-  const insets = useSafeAreaInsets();
   const router = useRouter();
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   const isHydrated = useAuthStore((s) => s.isHydrated);
@@ -78,155 +80,190 @@ export default function FavoritesTabScreen() {
     );
   }
 
+  const header = <TabScreenHeader title="Favoris" />;
+
+  const tabs = (
+    <HorizontalChipScroll contentContainerStyle={styles.tabsContent}>
+      {TABS.map((t) => {
+        const count = t.key === "PROPERTY" ? propertyCount : serviceCount;
+        const active = tab === t.key;
+        const label = count > 0 ? `${t.label} (${count})` : t.label;
+        return (
+          <Pressable
+            key={t.key}
+            style={[styles.tab, active && styles.tabActive]}
+            onPress={() => setTab(t.key)}
+          >
+            <Text style={[styles.tabText, active && styles.tabTextActive]}>
+              {label}
+            </Text>
+          </Pressable>
+        );
+      })}
+    </HorizontalChipScroll>
+  );
+
+  if (query.isLoading && items.length === 0) {
+    return (
+      <ScreenLayout header={header}>
+        <View style={[screenBodyContentStyle, styles.bodyFill]}>
+          {tabs}
+          <ListSkeleton />
+        </View>
+      </ScreenLayout>
+    );
+  }
+
+  if (query.isError && items.length === 0) {
+    return (
+      <ScreenLayout header={header}>
+        <View style={[screenBodyContentStyle, styles.bodyFill]}>
+          {tabs}
+          <ErrorState
+            onRetry={() => {
+              void query.refetch();
+              void hydrate();
+            }}
+          />
+        </View>
+      </ScreenLayout>
+    );
+  }
+
   return (
-    <View style={[styles.screen, { paddingTop: insets.top }]}>
-      <TabScreenHeader
-        title="Favoris"
-        subtitle="Vos biens et services sauvegardés."
+    <ScreenLayout header={header}>
+      <FlatList
+        data={filtered}
+        keyExtractor={(item) => item.id}
+        refreshControl={
+          <RefreshControl
+            refreshing={query.isRefetching}
+            onRefresh={() => {
+              void query.refetch();
+              void hydrate();
+            }}
+            tintColor={colors.primary}
+          />
+        }
+        ListHeaderComponent={tabs}
+        contentContainerStyle={[
+          screenBodyContentStyle,
+          styles.listBottom,
+          filtered.length === 0 && { flexGrow: 1 },
+        ]}
+        ListEmptyComponent={
+          <EmptyState
+            fill
+            title={
+              tab === "PROPERTY" ? "Aucun bien favori" : "Aucun service favori"
+            }
+            message="Ajoutez un élément en tapant sur le cœur depuis une fiche."
+          />
+        }
+        renderItem={({ item }) => {
+          if (item.targetType === "PROPERTY" && item.property) {
+            const cover = item.property.media?.[0];
+            const targetId = item.propertyId ?? item.property.id;
+            return (
+              <Pressable
+                style={styles.card}
+                onPress={() =>
+                  router.push({
+                    pathname: "/property/[id]",
+                    params: { id: item.property!.id },
+                  } as never)
+                }
+              >
+                <View style={styles.imageWrap}>
+                  {cover ? (
+                    <Image
+                      source={{ uri: mediaUrl(cover.url) ?? undefined }}
+                      style={styles.image}
+                      contentFit="cover"
+                    />
+                  ) : (
+                    <View style={[styles.image, styles.placeholder]} />
+                  )}
+                  <View style={styles.typeBadge}>
+                    <Text style={styles.typeBadgeText}>Bien</Text>
+                  </View>
+                </View>
+                <View style={styles.info}>
+                  <Text style={styles.name} numberOfLines={2}>
+                    {item.property.title}
+                  </Text>
+                  <Text style={styles.meta} numberOfLines={1}>
+                    {item.property.commune?.name ?? "Kinshasa"}
+                  </Text>
+                </View>
+                <FavoriteButton
+                  targetType="PROPERTY"
+                  targetId={targetId}
+                  returnTo="/(tabs)/favorites"
+                />
+              </Pressable>
+            );
+          }
+          if (item.targetType === "SERVICE" && item.service) {
+            const cover = item.service.media?.[0];
+            const targetId = item.serviceId ?? item.service.id;
+            return (
+              <Pressable
+                style={styles.card}
+                onPress={() =>
+                  router.push({
+                    pathname: "/service/[id]",
+                    params: { id: item.service!.id },
+                  } as never)
+                }
+              >
+                <View style={styles.imageWrap}>
+                  {cover ? (
+                    <Image
+                      source={{ uri: mediaUrl(cover.url) ?? undefined }}
+                      style={styles.image}
+                      contentFit="cover"
+                    />
+                  ) : (
+                    <View style={[styles.image, styles.placeholder]} />
+                  )}
+                  <View style={[styles.typeBadge, styles.typeBadgeService]}>
+                    <Text style={styles.typeBadgeText}>Service</Text>
+                  </View>
+                </View>
+                <View style={styles.info}>
+                  <Text style={styles.name} numberOfLines={2}>
+                    {item.service.title}
+                  </Text>
+                  <Text style={styles.meta} numberOfLines={1}>
+                    {item.service.category?.name ?? "Service"}
+                  </Text>
+                </View>
+                <FavoriteButton
+                  targetType="SERVICE"
+                  targetId={targetId}
+                  returnTo="/(tabs)/favorites"
+                />
+              </Pressable>
+            );
+          }
+          return null;
+        }}
       />
-
-      <HorizontalChipScroll contentContainerStyle={styles.tabsContent}>
-        {TABS.map((t) => {
-          const count = t.key === "PROPERTY" ? propertyCount : serviceCount;
-          const active = tab === t.key;
-          const label = count > 0 ? `${t.label} (${count})` : t.label;
-          return (
-            <Pressable
-              key={t.key}
-              style={[styles.tab, active && styles.tabActive]}
-              onPress={() => setTab(t.key)}
-            >
-              <Text style={[styles.tabText, active && styles.tabTextActive]}>
-                {label}
-              </Text>
-            </Pressable>
-          );
-        })}
-      </HorizontalChipScroll>
-
-      {query.isLoading && items.length === 0 ? <ListSkeleton /> : null}
-      {query.isError && items.length === 0 ? (
-        <ErrorState
-          onRetry={() => {
-            void query.refetch();
-            void hydrate();
-          }}
-        />
-      ) : null}
-
-      {!(query.isLoading && items.length === 0) && !query.isError ? (
-        <FlatList
-          data={filtered}
-          keyExtractor={(item) => item.id}
-          refreshControl={
-            <RefreshControl
-              refreshing={query.isRefetching}
-              onRefresh={() => {
-                void query.refetch();
-                void hydrate();
-              }}
-              tintColor={colors.primary}
-            />
-          }
-          contentContainerStyle={[
-            { paddingBottom: spacing.xxl },
-            filtered.length === 0 && { flexGrow: 1 },
-          ]}
-          ListEmptyComponent={
-            <EmptyState
-              fill
-              title={
-                tab === "PROPERTY" ? "Aucun bien favori" : "Aucun service favori"
-              }
-              message="Ajoutez un élément en tapant sur le cœur depuis une fiche."
-            />
-          }
-          renderItem={({ item }) => {
-            if (item.targetType === "PROPERTY" && item.property) {
-              const cover = item.property.media?.[0];
-              const targetId = item.propertyId ?? item.property.id;
-              return (
-                <Pressable
-                  style={styles.card}
-                  onPress={() =>
-                    router.push({
-                      pathname: "/property/[id]",
-                      params: { id: item.property!.id },
-                    } as never)
-                  }
-                >
-                  {cover ? (
-                    <Image
-                      source={{ uri: mediaUrl(cover.url) ?? undefined }}
-                      style={styles.image}
-                    />
-                  ) : (
-                    <View style={[styles.image, styles.placeholder]} />
-                  )}
-                  <View style={styles.info}>
-                    <Text style={styles.badge}>Bien</Text>
-                    <Text style={styles.name}>{item.property.title}</Text>
-                    <Text style={styles.meta}>
-                      {item.property.commune?.name ?? "Kinshasa"}
-                    </Text>
-                  </View>
-                  <FavoriteButton
-                    targetType="PROPERTY"
-                    targetId={targetId}
-                    returnTo="/(tabs)/favorites"
-                  />
-                </Pressable>
-              );
-            }
-            if (item.targetType === "SERVICE" && item.service) {
-              const cover = item.service.media?.[0];
-              const targetId = item.serviceId ?? item.service.id;
-              return (
-                <Pressable
-                  style={styles.card}
-                  onPress={() =>
-                    router.push({
-                      pathname: "/service/[id]",
-                      params: { id: item.service!.id },
-                    } as never)
-                  }
-                >
-                  {cover ? (
-                    <Image
-                      source={{ uri: mediaUrl(cover.url) ?? undefined }}
-                      style={styles.image}
-                    />
-                  ) : (
-                    <View style={[styles.image, styles.placeholder]} />
-                  )}
-                  <View style={styles.info}>
-                    <Text style={styles.badge}>Service</Text>
-                    <Text style={styles.name}>{item.service.title}</Text>
-                    <Text style={styles.meta}>
-                      {item.service.category?.name ?? "Service"}
-                    </Text>
-                  </View>
-                  <FavoriteButton
-                    targetType="SERVICE"
-                    targetId={targetId}
-                    returnTo="/(tabs)/favorites"
-                  />
-                </Pressable>
-              );
-            }
-            return null;
-          }}
-        />
-      ) : null}
-    </View>
+    </ScreenLayout>
   );
 }
 
 const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: colors.background },
-  tabsContent: { marginTop: spacing.md, marginBottom: spacing.md },
+  bodyFill: { flex: 1 },
+  listBottom: { paddingBottom: spacing.xxl },
+  tabsContent: {
+    paddingLeft: 0,
+    paddingRight: 0,
+    paddingBottom: 12,
+  },
   tab: {
-    paddingHorizontal: spacing.sm + 2,
+    paddingHorizontal: spacing.md,
     paddingVertical: spacing.sm,
     borderRadius: radii.pill,
     backgroundColor: colors.white,
@@ -243,18 +280,37 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     backgroundColor: colors.white,
-    marginHorizontal: 20,
-    marginBottom: spacing.md,
+    marginBottom: 12,
     borderRadius: radii.lg,
     overflow: "hidden",
     borderWidth: 1,
     borderColor: colors.border,
-    paddingRight: spacing.sm,
+    padding: spacing.md,
+    gap: spacing.md,
   },
-  image: { width: 96, height: 96 },
+  imageWrap: {
+    width: 88,
+    height: 88,
+    borderRadius: radii.md,
+    overflow: "hidden",
+    backgroundColor: colors.skeleton,
+  },
+  image: { width: "100%", height: "100%" },
   placeholder: { backgroundColor: colors.skeleton },
-  info: { flex: 1, padding: spacing.md, justifyContent: "center", gap: 4 },
-  badge: { color: colors.primary, fontWeight: "800", fontSize: 11 },
-  name: { color: colors.navy, fontWeight: "800" },
-  meta: { color: colors.textMuted, fontSize: 12 },
+  typeBadge: {
+    position: "absolute",
+    top: 6,
+    left: 6,
+    backgroundColor: colors.primary,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 6,
+  },
+  typeBadgeService: {
+    backgroundColor: colors.navy,
+  },
+  typeBadgeText: { color: colors.white, fontSize: 10, fontWeight: "800" },
+  info: { flex: 1, minWidth: 0, justifyContent: "center", gap: 6 },
+  name: { color: colors.navy, fontWeight: "800", fontSize: 16, lineHeight: 20 },
+  meta: { color: colors.textMuted, fontSize: 13 },
 });

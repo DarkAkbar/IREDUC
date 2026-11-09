@@ -1,6 +1,6 @@
 import { Ionicons } from "@expo/vector-icons";
 import { StyleSheet, Text, View } from "react-native";
-import { colors, spacing } from "../theme";
+import { colors, spacing, typography } from "../theme";
 
 type Props = {
   tagline?: string;
@@ -25,12 +25,9 @@ export function IreducLogo({
 const styles = StyleSheet.create({
   row: { flexDirection: "row", alignItems: "center", gap: spacing.sm },
   brand: {
-    color: colors.navy,
-    fontSize: 24,
-    fontWeight: "800",
-    letterSpacing: 0.5,
+    ...typography.screenH1,
   },
-  brandCompact: { fontSize: 18 },
+  brandCompact: { fontSize: 18, letterSpacing: 0.5 },
   tagline: {
     color: colors.textMuted,
     fontSize: 12,

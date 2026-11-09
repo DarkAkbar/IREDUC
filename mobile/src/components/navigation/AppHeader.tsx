@@ -2,7 +2,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import { useState } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
-import { colors, radii, spacing } from "../../theme";
+import { colors, radii, spacing, typography } from "../../theme";
 import { IreducLogo } from "../IreducLogo";
 import {
   HeaderSearchButton,
@@ -22,8 +22,7 @@ type Props = {
 };
 
 /**
- * En-tête listes : [← titre] | [loupe] [ville].
- * Réutilisable (Services, Biens…) — la recherche remplace la 1re ligne une fois déployée.
+ * En-tête listes : [← titre flex] … [loupe] [Kinshasa] alignés à droite (marge 16).
  */
 export function AppHeader({
   title,
@@ -95,28 +94,31 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     paddingHorizontal: spacing.lg,
-    paddingVertical: 10,
+    paddingTop: 10,
+    paddingBottom: 12,
     gap: 8,
-    minHeight: 48,
+    minHeight: 56,
+    backgroundColor: colors.background,
   },
   backBtn: {
     width: 36,
     height: 44,
     alignItems: "center",
     justifyContent: "center",
-    marginRight: 0,
+    flexShrink: 0,
   },
   title: {
+    ...typography.screenH1,
     flex: 1,
-    color: colors.navy,
-    fontWeight: "800",
-    fontSize: 19,
+    minWidth: 0,
   },
-  logoWrap: { flex: 1 },
+  logoWrap: { flex: 1, minWidth: 0 },
   right: {
     flexDirection: "row",
     alignItems: "center",
     gap: spacing.sm,
+    flexShrink: 0,
+    marginLeft: "auto",
   },
   city: {
     flexDirection: "row",

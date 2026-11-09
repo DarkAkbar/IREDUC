@@ -4,24 +4,28 @@ import { useLocalSearchParams, useRouter } from "expo-router";
 import { useEffect, useMemo, useState } from "react";
 import {
   FlatList,
+  Pressable,
   RefreshControl,
   StyleSheet,
   Text,
   View,
 } from "react-native";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { fetchCategories } from "../../api/catalog";
 import { fetchServices } from "../../api/services";
 import { Category } from "../../api/types";
-import { CategoryFilterRow } from "../../components/list/CategoryFilterRow";
+import { CategoryTabs } from "../../components/list/CategoryTabs";
 import { EmptyState } from "../../components/list/EmptyState";
 import { ErrorState } from "../../components/list/ErrorState";
 import { InfoBanner } from "../../components/list/InfoBanner";
 import { AppHeader } from "../../components/navigation/AppHeader";
+import {
+  ScreenLayout,
+  screenBodyContentStyle,
+} from "../../components/navigation/ScreenLayout";
 import { ServiceListCard } from "../../components/ServiceListCard";
 import { ListSkeleton } from "../../components/ui/SkeletonLoader";
 import { useDebouncedValue } from "../../hooks/useDebouncedValue";
-import { colors, spacing, typography } from "../../theme";
+import { colors, radii, spacing, typography } from "../../theme";
 import { formatResultCount } from "../../utils/formatCount";
 
 const CATEGORY_ICONS: Record<string, keyof typeof Ionicons.glyphMap> = {
@@ -41,7 +45,6 @@ function asCategoryList(value: unknown): Category[] {
 }
 
 export default function ServicesListScreen() {
-  const insets = useSafeAreaInsets();
   const router = useRouter();
   const params = useLocalSearchParams<{
     categoryId?: string;
@@ -79,6 +82,21 @@ export default function ServicesListScreen() {
     [categories]
   );
 
+  useEffect(() => {
+    if (!__DEV__) return;
+    console.log("[Services] categories diagnostic", {
+      source: "fetchCategories('SERVICE')",
+      status: categoriesQuery.status,
+      categoriesCount: categories.length,
+      tabsCount: categoryTabs.length,
+      labels: categoryTabs.map((t) => t.label),
+    });
+  }, [
+    categories.length,
+    categoryTabs,
+    categoriesQuery.status,
+  ]);
+
   const queryFilters = {
     categoryId: resolvedCategoryId || undefined,
     q: debouncedQ || undefined,
@@ -98,53 +116,91 @@ export default function ServicesListScreen() {
   const total = query.data?.pages[0]?.meta.total ?? 0;
 
   return (
-    <View style={[styles.screen, { paddingTop: insets.top }]}>
-      <AppHeader
-        title="Services"
-        searchable
-        searchValue={q}
-        onSearchChange={setQ}
-        searchPlaceholder="Rechercher un service…"
-      />
-
-      <View style={styles.tabsBlock}>
-        {categoryTabs.length > 0 ? (
-          <CategoryFilterRow
-            tabs={categoryTabs}
-            activeKey={resolvedCategoryId ?? ""}
-            onChange={setCategoryId}
-            onFilterPress={() => router.push("/filters" as never)}
-            activeColor={colors.primary}
-          />
-        ) : null}
-      </View>
-
-      <View style={styles.heading}>
-        <Text style={typography.title}>
-          {activeCategory ? `Services — ${activeCategory.name}` : "Services"}
-        </Text>
-        <View style={styles.metaRow}>
-          <Text style={styles.count}>{formatResultCount(total)}</Text>
-          <View style={styles.sortBtn}>
-            <Text style={styles.sortText}>Trier par · Récent</Text>
-            <Ionicons name="chevron-down" size={14} color={colors.navy} />
-          </View>
+    <ScreenLayout
+      header={
+        <AppHeader
+          title="Services"
+          searchable
+          searchValue={q}
+          onSearchChange={setQ}
+          searchPlaceholder="Rechercher un service…"
+        />
+      }
+      fixedBelow={
+        <View style={styles.filterRow}>
+          <Pressable
+            style={styles.filterBtn}
+            onPress={() => router.push("/filters" as never)}
+            accessibilityLabel="Filtres"
+          >
+            <Ionicons name="options-outline" size={16} color={colors.navy} />
+            <Text style={styles.filterText}>Filtres</Text>
+          </Pressable>
+          {categoryTabs.length > 0 ? (
+            <View style={styles.categoryScroll}>
+              <CategoryTabs
+                style={styles.categoryScrollInner}
+                contentContainerStyle={styles.categoryScrollContent}
+                tabs={categoryTabs}
+                activeKey={resolvedCategoryId ?? ""}
+                onChange={setCategoryId}
+                activeColor={colors.primary}
+              />
+            </View>
+          ) : null}
         </View>
-      </View>
-
+      }
+    >
       {categoriesQuery.isError ? (
-        <ErrorState onRetry={() => void categoriesQuery.refetch()} />
+        <View style={screenBodyContentStyle}>
+          <ErrorState onRetry={() => void categoriesQuery.refetch()} />
+        </View>
       ) : null}
 
-      {query.isLoading || categoriesQuery.isLoading ? <ListSkeleton /> : null}
-      {query.isError ? <ErrorState onRetry={() => void query.refetch()} /> : null}
+      {query.isLoading || categoriesQuery.isLoading ? (
+        <View style={screenBodyContentStyle}>
+          <ListSkeleton />
+        </View>
+      ) : null}
+      {query.isError ? (
+        <View style={screenBodyContentStyle}>
+          <ErrorState onRetry={() => void query.refetch()} />
+        </View>
+      ) : null}
 
       {!query.isLoading && !query.isError && !categoriesQuery.isError ? (
         <FlatList
           data={items}
           keyExtractor={(item) => item.id}
-          renderItem={({ item }) => <ServiceListCard item={item} />}
-          contentContainerStyle={styles.listContent}
+          renderItem={({ item }) => (
+            <View style={styles.cardSlot}>
+              <ServiceListCard item={item} />
+            </View>
+          )}
+          ListHeaderComponent={
+            <View style={styles.heading}>
+              <Text style={styles.listTitle}>
+                {activeCategory
+                  ? `Services — ${activeCategory.name}`
+                  : "Services"}
+              </Text>
+              <View style={styles.metaRow}>
+                <Text style={styles.count}>{formatResultCount(total)}</Text>
+                <View style={styles.sortBtn}>
+                  <Text style={styles.sortText}>Trier par · Récent</Text>
+                  <Ionicons
+                    name="chevron-down"
+                    size={14}
+                    color={colors.navy}
+                  />
+                </View>
+              </View>
+            </View>
+          }
+          contentContainerStyle={[
+            screenBodyContentStyle,
+            styles.listContent,
+          ]}
           onEndReached={() => {
             if (query.hasNextPage && !query.isFetchingNextPage) {
               void query.fetchNextPage();
@@ -176,21 +232,48 @@ export default function ServicesListScreen() {
           }
         />
       ) : null}
-    </View>
+    </ScreenLayout>
   );
 }
 
 const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: colors.background },
-  tabsBlock: {
-    marginTop: spacing.sm,
-    flexGrow: 0,
+  filterRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingLeft: spacing.lg,
+    gap: spacing.sm,
+  },
+  filterBtn: {
     flexShrink: 0,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    backgroundColor: colors.white,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: radii.pill,
+    paddingHorizontal: spacing.md,
+    minHeight: 40,
+  },
+  filterText: { color: colors.navy, fontWeight: "700", fontSize: 13 },
+  categoryScroll: {
+    flex: 1,
+    minWidth: 0,
+  },
+  categoryScrollInner: {
+    flex: 1,
+    minWidth: 0,
+    width: "100%",
+  },
+  categoryScrollContent: {
+    paddingLeft: 0,
+    paddingRight: spacing.lg,
   },
   heading: {
-    paddingHorizontal: spacing.lg,
-    marginBottom: spacing.sm,
-    marginTop: spacing.md,
+    marginBottom: spacing.md,
+  },
+  listTitle: {
+    ...typography.sectionHeading,
   },
   metaRow: {
     flexDirection: "row",
@@ -201,6 +284,10 @@ const styles = StyleSheet.create({
   count: { color: colors.textMuted, fontWeight: "600" },
   sortBtn: { flexDirection: "row", alignItems: "center", gap: 4 },
   sortText: { color: colors.navy, fontWeight: "700", fontSize: 13 },
+  cardSlot: {
+    marginHorizontal: -spacing.lg,
+    marginBottom: 12 - spacing.lg,
+  },
   listContent: {
     flexGrow: 1,
     paddingBottom: spacing.xxl,

@@ -1,40 +1,46 @@
 import { Ionicons } from "@expo/vector-icons";
 import { ReactNode } from "react";
 import { StyleSheet, Text, View } from "react-native";
-import { colors, radii, spacing } from "../../theme";
+import { colors, radii, spacing, typography } from "../../theme";
 
 type Props = {
   title: string;
-  /** Sous-titre affiché dans la zone d'en-tête (au-dessus de la ligne). */
+  /** Sous-titre optionnel (éviter sur les onglets refondus). */
   subtitle?: string;
   showCity?: boolean;
-  /** Contenu sous le titre (ex. barre de recherche) encore dans l'en-tête. */
-  children?: ReactNode;
-  /** Élément à droite du titre (badge, etc.). */
+  /** Contenu à droite sur la même ligne que le H1 (ex. recherche + filtres). */
+  trailing?: ReactNode;
+  /** Élément collé au titre (badge compteur…). */
   titleAccessory?: ReactNode;
 };
 
 /**
- * En-tête des onglets (Favoris, Demandes, Rechercher…) :
- * zone titre (+ actions) séparée du main par une ligne.
+ * En-tête fixe des onglets : seule cette zone reste hors scroll.
+ * Le corps laisse 16 px de fond de page visible en dessous.
  */
 export function TabScreenHeader({
   title,
   subtitle,
   showCity = false,
-  children,
+  trailing,
   titleAccessory,
 }: Props) {
   return (
     <View style={styles.wrap}>
       <View style={styles.topRow}>
-        <View style={styles.titleRow}>
-          <Text style={styles.title} numberOfLines={1}>
+        <View style={[styles.titleRow, trailing ? styles.titleRowCompact : null]}>
+          <Text
+            style={styles.title}
+            numberOfLines={1}
+            adjustsFontSizeToFit={Boolean(trailing)}
+            minimumFontScale={0.75}
+          >
             {title}
           </Text>
           {titleAccessory}
         </View>
-        {showCity ? (
+        {trailing ? <View style={styles.trailing}>{trailing}</View> : null}
+        {!trailing && showCity ? (
           <View style={styles.city}>
             <Ionicons name="location" size={14} color={colors.primary} />
             <Text style={styles.cityText}>Kinshasa</Text>
@@ -42,8 +48,6 @@ export function TabScreenHeader({
         ) : null}
       </View>
       {subtitle ? <Text style={styles.subtitle}>{subtitle}</Text> : null}
-      {children ? <View style={styles.children}>{children}</View> : null}
-      <View style={styles.divider} />
     </View>
   );
 }
@@ -55,12 +59,11 @@ const styles = StyleSheet.create({
   topRow: {
     flexDirection: "row",
     alignItems: "center",
-    justifyContent: "space-between",
     paddingHorizontal: spacing.lg,
     paddingTop: 10,
-    paddingBottom: spacing.sm,
+    paddingBottom: 12,
     gap: spacing.sm,
-    minHeight: 48,
+    minHeight: 56,
   },
   titleRow: {
     flex: 1,
@@ -69,11 +72,20 @@ const styles = StyleSheet.create({
     gap: spacing.sm,
     minWidth: 0,
   },
-  title: {
+  titleRowCompact: {
+    flex: 0,
     flexShrink: 1,
-    color: colors.navy,
-    fontWeight: "800",
-    fontSize: 19,
+    maxWidth: "42%",
+  },
+  title: {
+    ...typography.screenH1,
+    flexShrink: 1,
+  },
+  trailing: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    minWidth: 0,
   },
   subtitle: {
     color: colors.textMuted,
@@ -81,14 +93,6 @@ const styles = StyleSheet.create({
     lineHeight: 20,
     paddingHorizontal: spacing.lg,
     paddingBottom: spacing.sm,
-  },
-  children: {
-    paddingBottom: spacing.sm,
-  },
-  divider: {
-    height: StyleSheet.hairlineWidth,
-    backgroundColor: colors.border,
-    marginHorizontal: 0,
   },
   city: {
     flexDirection: "row",

@@ -16,18 +16,17 @@ type Props = {
   sections: ServicesExpandedSection[];
 };
 
-/** Affichage empilé d'origine des catégories de services (accueil déplié). */
+/** Affichage empilé des catégories de services (accueil déplié). */
 export function ServicesExpandedList({ sections }: Props) {
   const router = useRouter();
 
   return (
-    <View>
+    <View style={styles.list}>
       {sections.map((section) => (
         <View key={section.category.id} style={styles.section}>
           <SectionHeader
-            title={section.title}
-            subtitle="Prestataires vérifiés à Kinshasa"
-            icon="construct-outline"
+            variant="subsection"
+            title={section.category.name}
             onSeeAll={() =>
               router.push({
                 pathname: "/services",
@@ -68,7 +67,10 @@ export function ServicesExpandedList({ sections }: Props) {
 }
 
 const styles = StyleSheet.create({
-  section: { marginTop: spacing.md },
+  list: {
+    gap: 24,
+  },
+  section: {},
   carouselScroll: { flexGrow: 0, flexShrink: 0 },
   carousel: {
     flexGrow: 0,

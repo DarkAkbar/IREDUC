@@ -9,6 +9,8 @@ type Props = {
   onFilterPress?: () => void;
   /** Nombre de filtres actifs affiché sur le bouton. */
   activeFilterCount?: number;
+  /** Version compacte pour la ligne d'en-tête (sans padding latéral). */
+  compact?: boolean;
 };
 
 export function SearchInput({
@@ -17,16 +19,17 @@ export function SearchInput({
   placeholder = "Rechercher...",
   onFilterPress,
   activeFilterCount = 0,
+  compact = false,
 }: Props) {
   const filterLabel =
     activeFilterCount > 0 ? `Filtres (${activeFilterCount})` : "Filtres";
 
   return (
-    <View style={styles.row}>
-      <View style={styles.inputWrap}>
-        <Ionicons name="search" size={18} color={colors.textMuted} />
+    <View style={[styles.row, compact && styles.rowCompact]}>
+      <View style={[styles.inputWrap, compact && styles.inputWrapCompact]}>
+        <Ionicons name="search" size={compact ? 16 : 18} color={colors.textMuted} />
         <TextInput
-          style={styles.input}
+          style={[styles.input, compact && styles.inputCompact]}
           value={value}
           onChangeText={onChangeText}
           placeholder={placeholder}
@@ -42,12 +45,16 @@ export function SearchInput({
       </View>
       {onFilterPress ? (
         <Pressable
-          style={styles.filter}
+          style={[styles.filter, compact && styles.filterCompact]}
           onPress={onFilterPress}
           accessibilityLabel={filterLabel}
         >
           <Ionicons name="options-outline" size={16} color={colors.navy} />
-          <Text style={styles.filterText}>{filterLabel}</Text>
+          {!compact ? (
+            <Text style={styles.filterText}>{filterLabel}</Text>
+          ) : activeFilterCount > 0 ? (
+            <Text style={styles.filterText}>{activeFilterCount}</Text>
+          ) : null}
         </Pressable>
       ) : null}
     </View>
@@ -61,6 +68,10 @@ const styles = StyleSheet.create({
     gap: spacing.sm,
     paddingHorizontal: spacing.lg,
   },
+  rowCompact: {
+    flex: 1,
+    paddingHorizontal: 0,
+  },
   inputWrap: {
     flex: 1,
     flexDirection: "row",
@@ -73,7 +84,13 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.md,
     minHeight: 46,
   },
+  inputWrapCompact: {
+    minHeight: 40,
+    paddingHorizontal: spacing.sm,
+    borderRadius: radii.lg,
+  },
   input: { flex: 1, color: colors.navy, fontSize: 14, paddingVertical: 8 },
+  inputCompact: { fontSize: 13, paddingVertical: 6 },
   filter: {
     flexDirection: "row",
     alignItems: "center",
@@ -84,6 +101,13 @@ const styles = StyleSheet.create({
     borderRadius: radii.xl,
     paddingHorizontal: spacing.md,
     minHeight: 46,
+  },
+  filterCompact: {
+    minHeight: 40,
+    minWidth: 40,
+    paddingHorizontal: spacing.sm,
+    borderRadius: radii.lg,
+    justifyContent: "center",
   },
   filterText: { color: colors.navy, fontWeight: "700", fontSize: 13 },
 });

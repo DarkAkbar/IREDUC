@@ -1,6 +1,6 @@
 import { Ionicons } from "@expo/vector-icons";
 import { Image } from "expo-image";
-import { useMemo, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   Animated,
   Pressable,
@@ -32,8 +32,11 @@ export type ServiceCategoryCarouselItem = {
   name: string;
   slug: string;
   serviceCount: number;
-  /** URLs d'images des services de la catégorie (déjà chargées). */
-  imageUrls: string[];
+  /**
+   * URL de couverture du premier service (même champ que ServiceCard :
+   * mediaUrl(item.coverPhoto?.url)). Null si aucun service n'a d'image.
+   */
+  coverUri: string | null;
 };
 
 type Props = {
@@ -43,6 +46,50 @@ type Props = {
   seeAllLabel?: string;
   seeAllIcon?: keyof typeof Ionicons.glyphMap;
 };
+
+function CategoryCoverCard({
+  item,
+  width,
+  height,
+  onPress,
+}: {
+  item: ServiceCategoryCarouselItem;
+  width: number;
+  height: number;
+  onPress?: () => void;
+}) {
+  const [failed, setFailed] = useState(false);
+  const coverUri = item.coverUri;
+  const showImage = Boolean(coverUri) && !failed;
+  const iconName = CATEGORY_ICONS[item.slug] ?? ("briefcase-outline" as const);
+
+  return (
+    <Pressable
+      style={[styles.card, { width, height }]}
+      onPress={onPress}
+      accessibilityRole="button"
+      accessibilityLabel={`Catégorie ${item.name}`}
+    >
+      {showImage ? (
+        <Image
+          source={{ uri: coverUri! }}
+          style={styles.cardImage}
+          contentFit="cover"
+          cachePolicy="memory-disk"
+          onError={() => setFailed(true)}
+        />
+      ) : (
+        <View style={styles.cardFallback}>
+          <Ionicons name={iconName} size={40} color={colors.white} />
+        </View>
+      )}
+      <View style={styles.cardScrim} pointerEvents="none" />
+      <Text style={styles.cardTitle} numberOfLines={2}>
+        {item.name}
+      </Text>
+    </Pressable>
+  );
+}
 
 export function ServiceCategoryCarousel({
   categories,
@@ -57,24 +104,18 @@ export function ServiceCategoryCarousel({
   const initialIndex = categories.length >= 3 ? 1 : 0;
   const scrollX = useRef(new Animated.Value(initialIndex * itemSize)).current;
 
-  const imagesKey = categories
-    .map((c) => `${c.id}:${c.imageUrls.join(",")}`)
-    .join("|");
-
-  /** Choix aléatoire une seule fois par jeu de données (pas à chaque rendu). */
-  const coverByCategoryId = useMemo(() => {
-    const map: Record<string, string | null> = {};
-    for (const category of categories) {
-      const urls = category.imageUrls.filter(Boolean);
-      map[category.id] =
-        urls.length > 0
-          ? urls[Math.floor(Math.random() * urls.length)]!
-          : null;
-    }
-    return map;
-    // imagesKey capture le contenu des URLs ; categories seul changerait de référence à chaque render.
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- stabilisé via imagesKey
-  }, [imagesKey]);
+  useEffect(() => {
+    if (!__DEV__ || categories.length === 0) return;
+    // Diagnostic Bug 1 : la catégorie n'a pas de champ image ;
+    // coverUri = coverPhoto du 1er service (même champ que ServiceCard).
+    console.log("[ServiceCategoryCarousel] sample", {
+      name: categories[0].name,
+      categoryOwnImage: null,
+      coverUri: categories[0].coverUri,
+      serviceCount: categories[0].serviceCount,
+      all: categories.map((c) => ({ name: c.name, coverUri: c.coverUri })),
+    });
+  }, [categories]);
 
   if (categories.length === 0) {
     return null;
@@ -135,9 +176,6 @@ export function ServiceCategoryCarousel({
             outputRange: [12, 0, 12],
             extrapolate: "clamp",
           });
-          const iconName =
-            CATEGORY_ICONS[item.slug] ?? ("briefcase-outline" as const);
-          const coverUri = coverByCategoryId[item.id];
 
           return (
             <Animated.View
@@ -147,30 +185,15 @@ export function ServiceCategoryCarousel({
                 transform: [{ scale }, { translateY }],
               }}
             >
-              <Pressable
-                style={[styles.card, { width: cardWidth, height: CARD_HEIGHT }]}
+              <CategoryCoverCard
+                key={`${item.id}:${item.coverUri ?? "none"}`}
+                item={item}
+                width={cardWidth}
+                height={CARD_HEIGHT}
                 onPress={
                   onCategoryPress ? () => onCategoryPress(item) : undefined
                 }
-                accessibilityRole="button"
-                accessibilityLabel={`Catégorie ${item.name}`}
-              >
-                {coverUri ? (
-                  <Image
-                    source={{ uri: coverUri }}
-                    style={styles.cardImage}
-                    contentFit="cover"
-                  />
-                ) : (
-                  <View style={styles.cardFallback}>
-                    <Ionicons name={iconName} size={40} color={colors.white} />
-                  </View>
-                )}
-                <View style={styles.cardScrim} pointerEvents="none" />
-                <Text style={styles.cardTitle} numberOfLines={2}>
-                  {item.name}
-                </Text>
-              </Pressable>
+              />
             </Animated.View>
           );
         }}
@@ -201,9 +224,14 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
+  /** Dégradé sombre en bas pour lisibilité du titre (comme Maison). */
   cardScrim: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: "rgba(0, 0, 0, 0.35)",
+    position: "absolute",
+    left: 0,
+    right: 0,
+    bottom: 0,
+    height: "45%",
+    backgroundColor: "rgba(0, 0, 0, 0.45)",
   },
   cardTitle: {
     color: colors.white,

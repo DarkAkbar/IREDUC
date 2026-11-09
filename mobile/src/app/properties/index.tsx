@@ -1,7 +1,6 @@
 import { Ionicons } from "@expo/vector-icons";
 import { useInfiniteQuery } from "@tanstack/react-query";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { pushPath } from "../../utils/navigation";
 import { useMemo, useState } from "react";
 import {
   ActionSheetIOS,
@@ -13,22 +12,22 @@ import {
   Text,
   View,
 } from "react-native";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { fetchProperties } from "../../api/properties";
 import { PropertyKind, PropertySort } from "../../api/types";
 import { CategoryTabs } from "../../components/list/CategoryTabs";
 import { EmptyState } from "../../components/list/EmptyState";
 import { ErrorState } from "../../components/list/ErrorState";
 import { InfoBanner } from "../../components/list/InfoBanner";
-import { ListScreenHeader } from "../../components/list/ListScreenHeader";
-import { RemovableChip } from "../../components/list/RemovableChip";
+import { AppHeader } from "../../components/navigation/AppHeader";
+import {
+  ScreenLayout,
+  screenBodyContentStyle,
+} from "../../components/navigation/ScreenLayout";
 import { PropertyListCard } from "../../components/PropertyListCard";
-import { HorizontalChipScroll } from "../../components/ui/HorizontalChipScroll";
 import { ListSkeleton } from "../../components/ui/SkeletonLoader";
-import { SearchInput } from "../../components/ui/SearchInput";
 import { useDebouncedValue } from "../../hooks/useDebouncedValue";
 import { useSearchStore } from "../../store/searchStore";
-import { colors, spacing, typography } from "../../theme";
+import { colors, radii, spacing, typography } from "../../theme";
 import { kindLabel } from "../../utils/format";
 import { formatResultCount } from "../../utils/formatCount";
 
@@ -47,7 +46,6 @@ const SORT_OPTIONS: { key: PropertySort; label: string }[] = [
 ];
 
 export default function PropertiesListScreen() {
-  const insets = useSafeAreaInsets();
   const router = useRouter();
   const params = useLocalSearchParams<{
     kind?: string;
@@ -55,13 +53,11 @@ export default function PropertiesListScreen() {
     q?: string;
   }>();
   const filters = useSearchStore((s) => s.filters);
-  const patchFilters = useSearchStore((s) => s.patchFilters);
-  const resetFilters = useSearchStore((s) => s.resetFilters);
 
   const [kind, setKind] = useState<string>(params.kind ?? "HOUSE");
   const [sort, setSort] = useState<PropertySort>("recent");
   const [q, setQ] = useState(params.q ?? filters.q ?? "");
-  const [offerType, setOfferType] = useState<"RENT" | "SALE" | undefined>(
+  const [offerType] = useState<"RENT" | "SALE" | undefined>(
     (params.offerType as "RENT" | "SALE" | undefined) ?? filters.offerType
   );
   const debouncedQ = useDebouncedValue(q);
@@ -82,6 +78,17 @@ export default function PropertiesListScreen() {
     [kind, offerType, filters, debouncedQ, sort]
   );
 
+  const activeFilterCount = useMemo(() => {
+    let n = 0;
+    if (offerType) n += 1;
+    if (filters.communeId) n += 1;
+    if (filters.minPrice != null || filters.maxPrice != null) n += 1;
+    if (filters.bedrooms != null) n += 1;
+    if (filters.bathrooms != null) n += 1;
+    if (filters.minArea != null) n += 1;
+    return n;
+  }, [offerType, filters]);
+
   const query = useInfiniteQuery({
     queryKey: ["properties", queryFilters],
     queryFn: ({ pageParam }) =>
@@ -93,24 +100,6 @@ export default function PropertiesListScreen() {
 
   const items = query.data?.pages.flatMap((p) => p.data) ?? [];
   const total = query.data?.pages[0]?.meta.total ?? 0;
-
-  const activeChips = [
-    offerType === "RENT" ? { key: "offer", label: "À louer" } : null,
-    offerType === "SALE" ? { key: "offer", label: "À vendre" } : null,
-    filters.communeId ? { key: "commune", label: "Commune filtrée" } : null,
-    filters.minPrice != null || filters.maxPrice != null
-      ? { key: "price", label: "Prix" }
-      : null,
-    filters.bedrooms != null
-      ? { key: "bedrooms", label: `${filters.bedrooms}+ ch.` }
-      : null,
-    filters.bathrooms != null
-      ? { key: "bathrooms", label: `${filters.bathrooms}+ sdb` }
-      : null,
-    filters.minArea != null
-      ? { key: "area", label: `${filters.minArea}+ m²` }
-      : null,
-  ].filter(Boolean) as { key: string; label: string }[];
 
   function openSort() {
     if (Platform.OS === "ios") {
@@ -125,7 +114,6 @@ export default function PropertiesListScreen() {
       );
       return;
     }
-    // Android / web : cycle simple
     const idx = SORT_OPTIONS.findIndex((o) => o.key === sort);
     setSort(SORT_OPTIONS[(idx + 1) % SORT_OPTIONS.length].key);
   }
@@ -139,73 +127,86 @@ export default function PropertiesListScreen() {
         ? `${kindPlural} à vendre`
         : `${kindPlural} à louer et à vendre`;
 
+  const filterLabel =
+    activeFilterCount > 0 ? `Filtres (${activeFilterCount})` : "Filtres";
+
   return (
-    <View style={[styles.screen, { paddingTop: insets.top }]}>
-      <ListScreenHeader title="Biens" />
-      <SearchInput
-        value={q}
-        onChangeText={setQ}
-        placeholder="Rechercher par ville, quartier, type de bien..."
-        onFilterPress={() => router.push("/filters")}
-        activeFilterCount={activeChips.length}
-      />
-      <View style={styles.kindTabs}>
-        <CategoryTabs tabs={KIND_TABS} activeKey={kind} onChange={setKind} />
-      </View>
-
-      {activeChips.length > 0 ? (
-        <HorizontalChipScroll contentContainerStyle={styles.chips}>
-          {activeChips.map((chip) => (
-            <RemovableChip
-              key={chip.key}
-              label={chip.label}
-              onRemove={() => {
-                if (chip.key === "offer") {
-                  setOfferType(undefined);
-                  patchFilters({ offerType: undefined });
-                }
-                if (chip.key === "commune") patchFilters({ communeId: undefined });
-                if (chip.key === "price")
-                  patchFilters({ minPrice: undefined, maxPrice: undefined });
-                if (chip.key === "bedrooms") patchFilters({ bedrooms: undefined });
-                if (chip.key === "bathrooms") patchFilters({ bathrooms: undefined });
-                if (chip.key === "area") patchFilters({ minArea: undefined });
-              }}
-            />
-          ))}
-          <Pressable onPress={resetFilters} style={styles.resetBtn}>
-            <Text style={styles.reset}>Réinitialiser</Text>
-          </Pressable>
-        </HorizontalChipScroll>
-      ) : null}
-
-      <View style={styles.heading}>
-        <Text style={typography.title}>{listTitle}</Text>
-        <Text style={styles.subtitle}>
-          Des biens vérifiés pour un cadre de vie meilleur.
-        </Text>
-        <View style={styles.metaRow}>
-          <Text style={styles.count}>{formatResultCount(total)}</Text>
-          <Pressable style={styles.sortBtn} onPress={openSort}>
-            <Text style={styles.sortText}>
-              Trier par · {SORT_OPTIONS.find((o) => o.key === sort)?.label}
-            </Text>
-            <Ionicons name="chevron-down" size={14} color={colors.navy} />
-          </Pressable>
+    <ScreenLayout
+      header={
+        <AppHeader
+          title="Biens"
+          searchable
+          searchValue={q}
+          onSearchChange={setQ}
+          searchPlaceholder="Rechercher par ville, quartier…"
+        />
+      }
+      fixedBelow={
+        <CategoryTabs
+          tabs={KIND_TABS}
+          activeKey={kind}
+          onChange={setKind}
+          activeColor={colors.primary}
+        />
+      }
+    >
+      {query.isLoading ? (
+        <View style={screenBodyContentStyle}>
+          <ListSkeleton />
         </View>
-      </View>
-
-      {query.isLoading ? <ListSkeleton /> : null}
+      ) : null}
       {query.isError ? (
-        <ErrorState onRetry={() => void query.refetch()} />
+        <View style={screenBodyContentStyle}>
+          <ErrorState onRetry={() => void query.refetch()} />
+        </View>
       ) : null}
 
       {!query.isLoading && !query.isError ? (
         <FlatList
           data={items}
           keyExtractor={(item) => item.id}
-          renderItem={({ item }) => <PropertyListCard item={item} />}
-          contentContainerStyle={{ paddingBottom: spacing.xxl }}
+          renderItem={({ item }) => (
+            <View style={styles.cardSlot}>
+              <PropertyListCard item={item} />
+            </View>
+          )}
+          ListHeaderComponent={
+            <View style={styles.heading}>
+              <Text style={styles.listTitle}>{listTitle}</Text>
+              <View style={styles.metaRow}>
+                <Text style={styles.count}>{formatResultCount(total)}</Text>
+                <View style={styles.metaActions}>
+                  <Pressable
+                    style={styles.filterBtn}
+                    onPress={() => router.push("/filters")}
+                    accessibilityLabel={filterLabel}
+                  >
+                    <Ionicons
+                      name="options-outline"
+                      size={16}
+                      color={colors.navy}
+                    />
+                    <Text style={styles.filterText}>{filterLabel}</Text>
+                  </Pressable>
+                  <Pressable style={styles.sortBtn} onPress={openSort}>
+                    <Text style={styles.sortText}>
+                      Trier par ·{" "}
+                      {SORT_OPTIONS.find((o) => o.key === sort)?.label}
+                    </Text>
+                    <Ionicons
+                      name="chevron-down"
+                      size={14}
+                      color={colors.navy}
+                    />
+                  </Pressable>
+                </View>
+              </View>
+            </View>
+          }
+          contentContainerStyle={[
+            screenBodyContentStyle,
+            { paddingBottom: spacing.xxl },
+          ]}
           initialNumToRender={8}
           maxToRenderPerBatch={8}
           windowSize={7}
@@ -239,37 +240,50 @@ export default function PropertiesListScreen() {
           }
         />
       ) : null}
-    </View>
+    </ScreenLayout>
   );
 }
 
 const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: colors.background },
   heading: {
-    paddingHorizontal: spacing.lg,
     marginBottom: spacing.md,
-    marginTop: spacing.md,
   },
-  subtitle: { color: colors.textMuted, marginTop: 4 },
+  listTitle: {
+    ...typography.sectionHeading,
+  },
   metaRow: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
     marginTop: spacing.md,
+    gap: spacing.sm,
+    flexWrap: "wrap",
   },
   count: { color: colors.textMuted, fontWeight: "600" },
+  metaActions: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.sm,
+    flexShrink: 1,
+  },
+  filterBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    backgroundColor: colors.white,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: radii.pill,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+  },
+  filterText: { color: colors.navy, fontWeight: "700", fontSize: 13 },
   sortBtn: { flexDirection: "row", alignItems: "center", gap: 4 },
   sortText: { color: colors.navy, fontWeight: "700", fontSize: 13 },
-  kindTabs: {
-    marginTop: spacing.md,
-    flexGrow: 0,
-    flexShrink: 0,
+  cardSlot: {
+    marginHorizontal: -spacing.lg,
+    marginBottom: 12 - spacing.lg,
   },
-  chips: {
-    marginTop: spacing.sm,
-  },
-  resetBtn: { justifyContent: "center", paddingVertical: spacing.sm },
-  reset: { color: colors.primary, fontWeight: "700", fontSize: 12 },
   loadingMore: {
     textAlign: "center",
     color: colors.textMuted,

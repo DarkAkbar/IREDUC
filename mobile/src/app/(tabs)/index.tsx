@@ -34,7 +34,7 @@ import { SectionHeader } from "../../components/ui/SectionHeader";
 import { HomeSkeleton } from "../../components/ui/SkeletonLoader";
 import { useRequireAuth } from "../../hooks/useRequireAuth";
 import { useAuthStore } from "../../store/authStore";
-import { colors, radii, spacing, typography } from "../../theme";
+import { colors, HEADER_ICON_GAP, radii, spacing, typography } from "../../theme";
 
 /** Logo local de secours si aucune photo de bien n'est disponible. */
 const HERO_FALLBACK = require("../../../assets/icon.png");
@@ -131,6 +131,7 @@ export default function HomeScreen() {
           <View style={styles.headerRight}>
             <Pressable
               style={styles.bell}
+              hitSlop={8}
               onPress={() => {
                 if (requireAuth("/messages")) {
                   router.push("/messages" as never);
@@ -153,6 +154,7 @@ export default function HomeScreen() {
             </Pressable>
             <Pressable
               style={styles.bell}
+              hitSlop={8}
               onPress={() => {
                 if (requireAuth("/notifications")) {
                   router.push("/notifications" as never);
@@ -332,6 +334,27 @@ export default function HomeScreen() {
               )}
             </View>
 
+            <View style={styles.trust}>
+              <View style={styles.trustItem}>
+                <Ionicons name="people-outline" size={22} color={colors.navy} />
+                <Text style={styles.trustNumber}>
+                  + {data.counters.activeUsers.toLocaleString("fr-FR")}
+                </Text>
+                <Text style={styles.trustLabel}>utilisateurs actifs</Text>
+              </View>
+              <View style={styles.trustItem}>
+                <Ionicons name="shield-checkmark-outline" size={22} color={colors.navy} />
+                <Text style={styles.trustNumber}>
+                  {data.counters.verifiedProperties.toLocaleString("fr-FR")}
+                </Text>
+                <Text style={styles.trustLabel}>biens vérifiés</Text>
+              </View>
+              <View style={styles.trustItem}>
+                <Ionicons name="checkmark-done-circle-outline" size={22} color={colors.navy} />
+                <Text style={styles.trustLabel}>Un accompagnement{"\n"}de A à Z</Text>
+              </View>
+            </View>
+
             <View
               style={styles.section}
               onLayout={(e) => {
@@ -355,15 +378,20 @@ export default function HomeScreen() {
               ) : (
                 <ServiceCategoryCarousel
                   categories={data.sections.servicesByCategory.map(
-                    (section) => ({
-                      id: section.category.id,
-                      name: section.category.name,
-                      slug: section.category.slug,
-                      serviceCount: section.items.length,
-                      imageUrls: section.items
-                        .map((item) => mediaUrl(item.coverPhoto?.url))
-                        .filter((url): url is string => Boolean(url)),
-                    })
+                    (section) => {
+                      // Même source que ServiceCard (section ouverte) :
+                      // coverPhoto du premier service, résolu via mediaUrl.
+                      const firstService = section.items[0];
+                      return {
+                        id: section.category.id,
+                        name: section.category.name,
+                        slug: section.category.slug,
+                        serviceCount: section.items.length,
+                        coverUri:
+                          mediaUrl(firstService?.coverPhoto?.url) ??
+                          mediaUrl(firstService?.photos?.[0]?.url),
+                      };
+                    }
                   )}
                   onCategoryPress={(category) =>
                     router.push({
@@ -377,27 +405,6 @@ export default function HomeScreen() {
                   onSeeAll={() => setServicesExpanded(true)}
                 />
               )}
-            </View>
-
-            <View style={styles.trust}>
-              <View style={styles.trustItem}>
-                <Ionicons name="people-outline" size={22} color={colors.navy} />
-                <Text style={styles.trustNumber}>
-                  + {data.counters.activeUsers.toLocaleString("fr-FR")}
-                </Text>
-                <Text style={styles.trustLabel}>utilisateurs actifs</Text>
-              </View>
-              <View style={styles.trustItem}>
-                <Ionicons name="shield-checkmark-outline" size={22} color={colors.navy} />
-                <Text style={styles.trustNumber}>
-                  {data.counters.verifiedProperties.toLocaleString("fr-FR")}
-                </Text>
-                <Text style={styles.trustLabel}>biens vérifiés</Text>
-              </View>
-              <View style={styles.trustItem}>
-                <Ionicons name="checkmark-done-circle-outline" size={22} color={colors.navy} />
-                <Text style={styles.trustLabel}>Un accompagnement{"\n"}de A à Z</Text>
-              </View>
             </View>
 
             <PartnerHomeBanner />
@@ -422,11 +429,11 @@ const styles = StyleSheet.create({
   headerRight: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 12,
+    gap: HEADER_ICON_GAP,
   },
   bell: {
-    minWidth: 48,
-    minHeight: 48,
+    width: 36,
+    height: 36,
     alignItems: "center",
     justifyContent: "center",
     position: "relative",

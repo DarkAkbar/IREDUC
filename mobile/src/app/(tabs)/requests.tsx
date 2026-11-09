@@ -9,12 +9,15 @@ import {
   Text,
   View,
 } from "react-native";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { fetchMyRequests } from "../../api/requests";
 import { RequestStatus } from "../../api/types";
 import { GuestPrompt } from "../../components/GuestPrompt";
 import { EmptyState } from "../../components/list/EmptyState";
 import { ErrorState } from "../../components/list/ErrorState";
+import {
+  ScreenLayout,
+  screenBodyContentStyle,
+} from "../../components/navigation/ScreenLayout";
 import { TabScreenHeader } from "../../components/navigation/TabScreenHeader";
 import { RequestCard } from "../../components/requests/RequestCard";
 import { HorizontalChipScroll } from "../../components/ui/HorizontalChipScroll";
@@ -49,7 +52,6 @@ function tabCount(
 }
 
 export default function RequestsScreen() {
-  const insets = useSafeAreaInsets();
   const router = useRouter();
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   const isHydrated = useAuthStore((s) => s.isHydrated);
@@ -84,92 +86,109 @@ export default function RequestsScreen() {
     );
   }
 
+  const header = (
+    <TabScreenHeader
+      title="Demandes"
+      showCity
+      titleAccessory={
+        counters && counters.all > 0 ? (
+          <View style={styles.countBadge}>
+            <Text style={styles.countBadgeText}>{counters.all}</Text>
+          </View>
+        ) : null
+      }
+    />
+  );
+
+  const tabs = (
+    <HorizontalChipScroll contentContainerStyle={styles.tabsContent}>
+      {TABS.map((t) => {
+        const count = tabCount(t.key, counters);
+        const active = tab === t.key;
+        const label =
+          count != null && count > 0 ? `${t.label} (${count})` : t.label;
+        return (
+          <Pressable
+            key={t.key}
+            style={[styles.tab, active && styles.tabActive]}
+            onPress={() => setTab(t.key)}
+          >
+            <Text style={[styles.tabText, active && styles.tabTextActive]}>
+              {label}
+            </Text>
+          </Pressable>
+        );
+      })}
+    </HorizontalChipScroll>
+  );
+
+  if (query.isLoading) {
+    return (
+      <ScreenLayout header={header}>
+        <View style={[screenBodyContentStyle, styles.bodyFill]}>
+          {tabs}
+          <ListSkeleton />
+        </View>
+      </ScreenLayout>
+    );
+  }
+
+  if (query.isError) {
+    return (
+      <ScreenLayout header={header}>
+        <View style={[screenBodyContentStyle, styles.bodyFill]}>
+          {tabs}
+          <ErrorState onRetry={() => void query.refetch()} />
+        </View>
+      </ScreenLayout>
+    );
+  }
+
   return (
-    <View style={[styles.screen, { paddingTop: insets.top }]}>
-      <TabScreenHeader
-        title="Mes demandes"
-        showCity
-        titleAccessory={
-          counters && counters.all > 0 ? (
-            <View style={styles.countBadge}>
-              <Text style={styles.countBadgeText}>{counters.all}</Text>
-            </View>
-          ) : null
+    <ScreenLayout header={header}>
+      <FlatList
+        data={items}
+        style={styles.list}
+        initialNumToRender={10}
+        windowSize={7}
+        removeClippedSubviews
+        keyExtractor={(item) => item.id}
+        renderItem={({ item }) => <RequestCard item={item} />}
+        ListHeaderComponent={tabs}
+        contentContainerStyle={[
+          screenBodyContentStyle,
+          styles.listBottom,
+          isEmpty && styles.listContentEmpty,
+        ]}
+        onEndReached={() => {
+          if (query.hasNextPage && !query.isFetchingNextPage) {
+            void query.fetchNextPage();
+          }
+        }}
+        onEndReachedThreshold={0.4}
+        refreshControl={
+          <RefreshControl
+            refreshing={query.isRefetching && !query.isFetchingNextPage}
+            onRefresh={() => void query.refetch()}
+            tintColor={colors.primary}
+          />
+        }
+        ListEmptyComponent={
+          <EmptyState
+            fill
+            title="Aucune demande"
+            message="Découvrez des biens et services, puis lancez une réservation."
+            actionLabel="Découvrir les biens"
+            onAction={() => router.push("/properties" as never)}
+          />
         }
       />
-
-      <Text style={styles.subtitle}>
-        Suivez l'état de toutes vos demandes de réservation.
-      </Text>
-
-      <HorizontalChipScroll contentContainerStyle={styles.tabsContent}>
-        {TABS.map((t) => {
-          const count = tabCount(t.key, counters);
-          const active = tab === t.key;
-          const label =
-            count != null && count > 0 ? `${t.label} (${count})` : t.label;
-          return (
-            <Pressable
-              key={t.key}
-              style={[styles.tab, active && styles.tabActive]}
-              onPress={() => setTab(t.key)}
-            >
-              <Text style={[styles.tabText, active && styles.tabTextActive]}>
-                {label}
-              </Text>
-            </Pressable>
-          );
-        })}
-      </HorizontalChipScroll>
-
-      {query.isLoading ? <ListSkeleton /> : null}
-      {query.isError ? (
-        <ErrorState onRetry={() => void query.refetch()} />
-      ) : null}
-
-      {!query.isLoading && !query.isError ? (
-        <FlatList
-          data={items}
-          style={styles.list}
-          initialNumToRender={10}
-          windowSize={7}
-          removeClippedSubviews
-          keyExtractor={(item) => item.id}
-          renderItem={({ item }) => <RequestCard item={item} />}
-          contentContainerStyle={[
-            styles.listContent,
-            isEmpty && styles.listContentEmpty,
-          ]}
-          onEndReached={() => {
-            if (query.hasNextPage && !query.isFetchingNextPage) {
-              void query.fetchNextPage();
-            }
-          }}
-          onEndReachedThreshold={0.4}
-          refreshControl={
-            <RefreshControl
-              refreshing={query.isRefetching && !query.isFetchingNextPage}
-              onRefresh={() => void query.refetch()}
-              tintColor={colors.primary}
-            />
-          }
-          ListEmptyComponent={
-            <EmptyState
-              fill
-              title="Aucune demande"
-              message="Découvrez des biens et services, puis lancez une réservation."
-              actionLabel="Découvrir les biens"
-              onAction={() => router.push("/properties" as never)}
-            />
-          }
-        />
-      ) : null}
-    </View>
+    </ScreenLayout>
   );
 }
 
 const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: colors.background },
+  bodyFill: { flex: 1 },
   countBadge: {
     backgroundColor: colors.primary,
     minWidth: 22,
@@ -180,19 +199,13 @@ const styles = StyleSheet.create({
     paddingHorizontal: 6,
   },
   countBadgeText: { color: colors.white, fontWeight: "800", fontSize: 12 },
-  subtitle: {
-    color: colors.textMuted,
-    fontSize: 14,
-    lineHeight: 20,
-    paddingHorizontal: spacing.lg,
-    marginTop: spacing.md,
-    marginBottom: spacing.sm,
-  },
   tabsContent: {
-    paddingBottom: 0,
+    paddingLeft: 0,
+    paddingRight: 0,
+    paddingBottom: 12,
   },
   tab: {
-    paddingHorizontal: spacing.sm + 2,
+    paddingHorizontal: spacing.md,
     paddingVertical: spacing.sm,
     borderRadius: radii.pill,
     borderWidth: 1,
@@ -200,14 +213,9 @@ const styles = StyleSheet.create({
     backgroundColor: colors.white,
   },
   tabActive: { backgroundColor: colors.navy },
-  tabText: { color: colors.navy, fontWeight: "700", fontSize: 12 },
+  tabText: { color: colors.navy, fontWeight: "700", fontSize: 13 },
   tabTextActive: { color: colors.white },
   list: { flex: 1 },
-  listContent: {
-    paddingBottom: spacing.xxl,
-    paddingTop: spacing.md,
-  },
-  listContentEmpty: {
-    flexGrow: 1,
-  },
+  listBottom: { paddingBottom: spacing.xxl },
+  listContentEmpty: { flexGrow: 1 },
 });

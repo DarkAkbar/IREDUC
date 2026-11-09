@@ -251,6 +251,16 @@ export function RequestCard({ item, rejectionReason }: Props) {
         ).replace(" $", " USD")
       : null;
 
+  const specsLabel =
+    item.target?.type === "PROPERTY"
+      ? [
+          item.target.bedrooms != null ? `${item.target.bedrooms} ch.` : null,
+          item.target.bathrooms != null ? `${item.target.bathrooms} sdb` : null,
+        ]
+          .filter(Boolean)
+          .join(" · ")
+      : item.target?.category ?? null;
+
   return (
     <Pressable
       style={styles.card}
@@ -273,40 +283,42 @@ export function RequestCard({ item, rejectionReason }: Props) {
             <Text style={styles.typeBadgeText}>{badge.label}</Text>
           </View>
         </View>
+
         <View style={styles.info}>
-          <View style={styles.idRow}>
-            <Text style={styles.number}>{item.number}</Text>
-            <Text style={styles.date}>
-              Demandée le {formatRequestDate(item.createdAt)}
-            </Text>
+          <View style={styles.headerRow}>
+            <View style={styles.headerMain}>
+              <Text style={styles.title} numberOfLines={2}>
+                {item.target?.title ?? "Demande"}
+              </Text>
+              <Text style={styles.meta} numberOfLines={1}>
+                {item.target?.location ?? "Kinshasa"}
+              </Text>
+            </View>
+            <View style={styles.headerAside}>
+              <Text style={styles.number} numberOfLines={1}>
+                {item.number}
+              </Text>
+              <Text style={styles.date} numberOfLines={2}>
+                {formatRequestDate(item.createdAt)}
+              </Text>
+            </View>
           </View>
-          <Text style={styles.title} numberOfLines={2}>
-            {item.target?.title ?? "Demande"}
-          </Text>
-          <Text style={styles.meta} numberOfLines={1}>
-            {item.target?.location ?? "Kinshasa"}
-          </Text>
-          {priceLabel ? <Text style={styles.price}>{priceLabel}</Text> : null}
-          {item.target?.type === "PROPERTY" ? (
-            <Text style={styles.specs}>
-              {[
-                item.target.bedrooms != null ? `${item.target.bedrooms} ch.` : null,
-                item.target.bathrooms != null ? `${item.target.bathrooms} sdb` : null,
-                item.target.areaM2 != null
-                  ? `${Math.round(item.target.areaM2)} m²`
-                  : null,
-              ]
-                .filter(Boolean)
-                .join(" · ")}
-            </Text>
-          ) : (
-            <Text style={styles.specs}>{item.target?.category}</Text>
-          )}
-          <View style={[styles.statusPill, { backgroundColor: status.bg }]}>
-            <Ionicons name={status.icon} size={14} color={status.color} />
-            <Text style={[styles.statusText, { color: status.color }]}>
-              {status.label}
-            </Text>
+
+          <View style={styles.bottomRow}>
+            <View style={styles.bottomMain}>
+              {specsLabel ? <Text style={styles.specs}>{specsLabel}</Text> : null}
+              <View style={[styles.statusPill, { backgroundColor: status.bg }]}>
+                <Ionicons name={status.icon} size={14} color={status.color} />
+                <Text style={[styles.statusText, { color: status.color }]}>
+                  {status.label}
+                </Text>
+              </View>
+            </View>
+            {priceLabel ? (
+              <Text style={styles.price} numberOfLines={2}>
+                {priceLabel}
+              </Text>
+            ) : null}
           </View>
         </View>
       </View>
@@ -436,12 +448,22 @@ const styles = StyleSheet.create({
     borderRadius: radii.lg,
     borderWidth: 1,
     borderColor: colors.border,
-    marginHorizontal: spacing.lg,
-    marginBottom: spacing.lg,
+    marginHorizontal: 0,
+    marginBottom: 12,
     overflow: "hidden",
   },
-  top: { flexDirection: "row", gap: spacing.md, padding: spacing.md },
-  imageWrap: { width: 96, height: 110, borderRadius: radii.md, overflow: "hidden" },
+  top: {
+    flexDirection: "row",
+    gap: spacing.md,
+    padding: spacing.lg,
+  },
+  imageWrap: {
+    width: 88,
+    height: 104,
+    borderRadius: radii.md,
+    overflow: "hidden",
+    backgroundColor: colors.skeleton,
+  },
   image: { width: "100%", height: "100%" },
   placeholder: { backgroundColor: colors.skeleton },
   typeBadge: {
@@ -453,13 +475,46 @@ const styles = StyleSheet.create({
     borderRadius: 6,
   },
   typeBadgeText: { color: colors.white, fontSize: 10, fontWeight: "800" },
-  info: { flex: 1, gap: 2 },
-  idRow: { gap: 2 },
-  number: { color: colors.navy, fontWeight: "800", fontSize: 12 },
-  date: { color: colors.textMuted, fontSize: 11 },
-  title: { color: colors.navy, fontWeight: "800", fontSize: 15 },
-  meta: { color: colors.textMuted, fontSize: 12 },
-  price: { color: colors.primary, fontWeight: "800" },
+  info: { flex: 1, minWidth: 0, justifyContent: "space-between", gap: spacing.sm },
+  headerRow: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    gap: spacing.sm,
+  },
+  headerMain: { flex: 1, minWidth: 0, gap: 4 },
+  headerAside: {
+    alignItems: "flex-end",
+    maxWidth: "38%",
+    gap: 2,
+  },
+  number: {
+    color: colors.textMuted,
+    fontWeight: "700",
+    fontSize: 11,
+    textAlign: "right",
+  },
+  date: {
+    color: colors.textMuted,
+    fontSize: 11,
+    textAlign: "right",
+    lineHeight: 14,
+  },
+  title: { color: colors.navy, fontWeight: "800", fontSize: 16, lineHeight: 20 },
+  meta: { color: colors.textMuted, fontSize: 13 },
+  bottomRow: {
+    flexDirection: "row",
+    alignItems: "flex-end",
+    justifyContent: "space-between",
+    gap: spacing.sm,
+  },
+  bottomMain: { flex: 1, minWidth: 0, gap: 6 },
+  price: {
+    color: colors.primary,
+    fontWeight: "800",
+    fontSize: 14,
+    textAlign: "right",
+    maxWidth: "42%",
+  },
   specs: { color: colors.textMuted, fontSize: 12 },
   statusPill: {
     alignSelf: "flex-start",
@@ -467,16 +522,18 @@ const styles = StyleSheet.create({
     alignItems: "center",
     gap: 4,
     paddingHorizontal: spacing.sm,
-    paddingVertical: 4,
+    paddingVertical: 5,
     borderRadius: radii.pill,
-    marginTop: 4,
   },
   statusText: { fontWeight: "800", fontSize: 12 },
   banner: {
     flexDirection: "row",
     gap: spacing.sm,
+    marginHorizontal: spacing.md,
+    marginBottom: spacing.sm,
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.sm,
+    borderRadius: radii.md,
     alignItems: "flex-start",
   },
   bannerText: { flex: 1, fontSize: 12, lineHeight: 17, fontWeight: "600" },
@@ -484,8 +541,9 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     flexWrap: "wrap",
     gap: spacing.sm,
-    padding: spacing.md,
-    paddingTop: spacing.sm,
+    paddingHorizontal: spacing.lg,
+    paddingBottom: spacing.lg,
+    paddingTop: spacing.xs,
   },
   actionBtn: { flex: 1, minWidth: "45%" },
   modalBackdrop: {
